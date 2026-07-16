@@ -14,7 +14,262 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      achievements: {
+        Row: {
+          description: string | null
+          earned_at: string
+          id: string
+          key: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          description?: string | null
+          earned_at?: string
+          id?: string
+          key: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          description?: string | null
+          earned_at?: string
+          id?: string
+          key?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      life_areas: {
+        Row: {
+          archived: boolean
+          color: string
+          created_at: string
+          icon: string
+          id: string
+          name: string
+          priority: number
+          sort_order: number
+          updated_at: string
+          user_id: string
+          vision: string | null
+        }
+        Insert: {
+          archived?: boolean
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          name: string
+          priority?: number
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+          vision?: string | null
+        }
+        Update: {
+          archived?: boolean
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          name?: string
+          priority?: number
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+          vision?: string | null
+        }
+        Relationships: []
+      }
+      practice_sessions: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          duration_minutes: number
+          id: string
+          intensity: string | null
+          notes: string | null
+          reflection: string | null
+          scheduled_date: string
+          scheduled_time: string | null
+          skill_id: string | null
+          sort_order: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          intensity?: string | null
+          notes?: string | null
+          reflection?: string | null
+          scheduled_date: string
+          scheduled_time?: string | null
+          skill_id?: string | null
+          sort_order?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          intensity?: string | null
+          notes?: string | null
+          reflection?: string | null
+          scheduled_date?: string
+          scheduled_time?: string | null
+          skill_id?: string | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_sessions_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          onboarded: boolean
+          timezone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          onboarded?: boolean
+          timezone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          onboarded?: boolean
+          timezone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reflections: {
+        Row: {
+          created_at: string
+          difficult: string | null
+          feeling: number | null
+          id: string
+          learned: string | null
+          updated_at: string
+          user_id: string
+          week_start: string
+          went_well: string | null
+        }
+        Insert: {
+          created_at?: string
+          difficult?: string | null
+          feeling?: number | null
+          id?: string
+          learned?: string | null
+          updated_at?: string
+          user_id: string
+          week_start: string
+          went_well?: string | null
+        }
+        Update: {
+          created_at?: string
+          difficult?: string | null
+          feeling?: number | null
+          id?: string
+          learned?: string | null
+          updated_at?: string
+          user_id?: string
+          week_start?: string
+          went_well?: string | null
+        }
+        Relationships: []
+      }
+      skills: {
+        Row: {
+          archived: boolean
+          created_at: string
+          current_level: number
+          description: string | null
+          difficulty: number
+          id: string
+          life_area_id: string | null
+          name: string
+          notes: string | null
+          preferred_days: string[]
+          session_minutes: number
+          target_frequency: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean
+          created_at?: string
+          current_level?: number
+          description?: string | null
+          difficulty?: number
+          id?: string
+          life_area_id?: string | null
+          name: string
+          notes?: string | null
+          preferred_days?: string[]
+          session_minutes?: number
+          target_frequency?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived?: boolean
+          created_at?: string
+          current_level?: number
+          description?: string | null
+          difficulty?: number
+          id?: string
+          life_area_id?: string | null
+          name?: string
+          notes?: string | null
+          preferred_days?: string[]
+          session_minutes?: number
+          target_frequency?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skills_life_area_id_fkey"
+            columns: ["life_area_id"]
+            isOneToOne: false
+            referencedRelation: "life_areas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
