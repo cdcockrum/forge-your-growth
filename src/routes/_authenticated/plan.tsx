@@ -1,10 +1,21 @@
 import { Suspense, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+} from "@tanstack/react-router";
 import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { Check, Plus, Sparkles } from "lucide-react";
+import {
+  Check,
+  CirclePlay,
+  Plus,
+  RotateCcw,
+  SkipForward,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/forge/app-shell";
@@ -25,6 +36,13 @@ import {
 } from "@/features/forge/types";
 import { supabase } from "@/integrations/supabase/client";
 import { generateCurrentWeek } from "@/services/planningService";
+import {
+  completeSession,
+  removeSession,
+  restoreSession,
+  skipSession,
+  startSession,
+} from "@/services/sessionService";
 
 export const Route = createFileRoute("/_authenticated/plan")({
   loader: async ({ context }) => {
@@ -44,9 +62,22 @@ export const Route = createFileRoute("/_authenticated/plan")({
 function PlanPage() {
   return (
     <div className="mx-auto max-w-6xl px-5 pt-8 md:px-10 md:pt-12">
-      <Suspense fallback={null}>
+      <Suspense fallback={<PlanLoadingState />}>
         <PlanContent />
       </Suspense>
+    </div>
+  );
+}
+
+function PlanLoadingState() {
+  return (
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-7">
+      {Array.from({ length: 7 }, (_, index) => (
+        <div
+          key={index}
+          className="h-40 animate-pulse rounded-xl border border-border bg-surface/50"
+        />
+      ))}
     </div>
   );
 }
@@ -76,7 +107,9 @@ function PlanContent() {
 
   async function generateWeek() {
     if (skills.length === 0) {
-      toast.error("Add at least one skill before generating a week.");
+      toast.error(
+        "Add at least one skill before generating a week.",
+      );
       return;
     }
 
@@ -96,16 +129,16 @@ function PlanContent() {
 
       toast.success(
         `Forged ${result.created} ${
-          result.created === 1 ? "practice session" : "practice sessions"
+          result.created === 1
+            ? "practice session"
+            : "practice sessions"
         }.`,
       );
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "The week could not be generated.";
-
-      toast.error(message);
+      toast.error(getErrorMessage(
+        error,
+        "The week could not be generated.",
+      ));
     } finally {
       setGenerating(false);
     }
@@ -128,7 +161,7 @@ function PlanContent() {
             type="button"
             onClick={generateWeek}
             disabled={generating}
-            className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background transition hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Sparkles className="size-3.5" />
             {generating ? "Forging..." : "Generate week"}
@@ -142,13 +175,14 @@ function PlanContent() {
         <div className="grid grid-cols-1 gap-3 md:grid-cols-7">
           {dayList.map((day) => {
             const daySessions = sessions.filter(
-              (session) => session.scheduled_date === day.iso,
+              (session) =>
+                session.scheduled_date === day.iso,
             );
 
             const isToday = day.iso === todayIso();
 
             return (
-              <div
+              <section
                 key={day.iso}
                 className={`rounded-xl border p-3 ${
                   isToday
@@ -200,7 +234,7 @@ function PlanContent() {
                     existingSessions={daySessions}
                   />
                 </div>
-              </div>
+              </section>
             );
           })}
         </div>
@@ -221,14 +255,14 @@ function EmptyPlanState() {
       </h2>
 
       <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-        Define what you want to practice, how often you want to
-        practice it, and your preferred days. Forge will build the
-        weekly plan.
+        Define what you want to practice, how often you want
+        to practice it, and your preferred days. Forge will
+        build the weekly plan.
       </p>
 
       <Link
         to="/skills"
-        className="mt-6 inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background hover:bg-foreground/90"
+        className="mt-6 inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background transition hover:bg-foreground/90"
       >
         <Plus className="size-4" />
         Add your first skill
@@ -242,107 +276,82 @@ type PlanSlotProps = {
   area?: LifeArea;
 };
 
-function PlanSlot({ session, area }: PlanSlotProps) {
+function PlanSlot({
+  session,
+  area,
+}: PlanSlotProps) {
   const queryClient = useQueryClient();
   const [updating, setUpdating] = useState(false);
 
-  async function remove() {
-    try {
-      setUpdating(true);
+  const status =
+    session.status ??
+    (session.completed ? "completed" : "scheduled");
 
-      const { error } = await supabase
-        .from("practice_sessions")
-        .delete()
-        .eq("id", session.id);
-
-      if (error) {
-        throw error;
-      }
-
-      await queryClient.invalidateQueries({
-        queryKey: ["sessions"],
-      });
-
-      toast.success("Practice removed.");
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Practice could not be removed.";
-
-      toast.error(message);
-    } finally {
-      setUpdating(false);
-    }
+  async function refreshSessions() {
+    await queryClient.invalidateQueries({
+      queryKey: ["sessions"],
+    });
   }
 
-  async function toggle() {
+  async function runAction(
+    action: () => Promise<void>,
+    successMessage?: string,
+  ) {
     try {
       setUpdating(true);
 
-      const completed = !session.completed;
+      await action();
+      await refreshSessions();
 
-      const { error } = await supabase
-        .from("practice_sessions")
-        .update({
-          completed,
-          completed_at: completed
-            ? new Date().toISOString()
-            : null,
-        })
-        .eq("id", session.id);
-
-      if (error) {
-        throw error;
+      if (successMessage) {
+        toast.success(successMessage);
       }
-
-      await queryClient.invalidateQueries({
-        queryKey: ["sessions"],
-      });
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Practice could not be updated.";
-
-      toast.error(message);
+      toast.error(
+        getErrorMessage(
+          error,
+          "Practice could not be updated.",
+        ),
+      );
     } finally {
       setUpdating(false);
     }
   }
 
   return (
-    <div
-      className={`group rounded-lg border p-2.5 text-left transition-all ${
-        session.completed
-          ? "bg-muted opacity-50"
-          : "bg-background"
+    <article
+      className={`group rounded-lg border p-2.5 transition-all ${
+        status === "completed"
+          ? "bg-muted opacity-60"
+          : status === "skipped"
+            ? "border-dashed bg-muted/40 opacity-60"
+            : status === "in_progress"
+              ? "bg-accent/5"
+              : "bg-background"
       }`}
       style={{
-        borderColor: area?.color
-          ? `${area.color}33`
-          : undefined,
+        borderColor:
+          status === "scheduled" && area?.color
+            ? `${area.color}33`
+            : undefined,
       }}
     >
-      <div className="flex items-start justify-between gap-1">
-        <button
-          type="button"
-          onClick={toggle}
-          disabled={updating}
-          className="min-w-0 flex-1 text-left disabled:cursor-wait"
+      {area && (
+        <p
+          className="truncate font-mono text-[9px] uppercase tracking-widest"
+          style={{ color: area.color }}
         >
-          {area && (
-            <p
-              className="truncate font-mono text-[9px] uppercase tracking-widest"
-              style={{ color: area.color }}
-            >
-              {area.name}
-            </p>
-          )}
+          {area.name}
+        </p>
+      )}
 
+      <div className="mt-0.5 flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
           <p
             className={`truncate text-xs font-bold ${
-              session.completed ? "line-through" : ""
+              status === "completed"
+                ? "line-through"
+                : ""
             }`}
           >
             {session.title}
@@ -350,24 +359,146 @@ function PlanSlot({ session, area }: PlanSlotProps) {
 
           <p className="text-[10px] text-muted-foreground">
             {session.duration_minutes}m
+            {status === "in_progress" &&
+              " · In progress"}
+            {status === "skipped" && " · Skipped"}
           </p>
-        </button>
+        </div>
 
-        {session.completed ? (
-          <Check className="size-3 shrink-0 text-accent" />
-        ) : (
-          <button
-            type="button"
-            onClick={remove}
-            disabled={updating}
-            className="text-[10px] text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 disabled:cursor-wait"
-            aria-label={`Remove ${session.title}`}
-          >
-            ×
-          </button>
+        {status === "completed" && (
+          <Check className="size-3.5 shrink-0 text-accent" />
         )}
       </div>
-    </div>
+
+      <div className="mt-2 flex items-center gap-1">
+        {status === "scheduled" && (
+          <>
+            <button
+              type="button"
+              disabled={updating}
+              onClick={() =>
+                runAction(
+                  () => startSession(session.id),
+                  `${session.title} started.`,
+                )
+              }
+              className="inline-flex items-center gap-1 rounded-md border border-border px-1.5 py-1 text-[9px] font-semibold transition hover:bg-muted disabled:cursor-wait disabled:opacity-50"
+            >
+              <CirclePlay className="size-3" />
+              Start
+            </button>
+
+            <button
+              type="button"
+              disabled={updating}
+              onClick={() =>
+                runAction(
+                  () =>
+                    completeSession(session.id, {
+                      durationMinutes:
+                        session.duration_minutes,
+                    }),
+                  `${session.title} completed.`,
+                )
+              }
+              className="inline-flex items-center gap-1 rounded-md bg-foreground px-1.5 py-1 text-[9px] font-semibold text-background transition hover:bg-foreground/90 disabled:cursor-wait disabled:opacity-50"
+            >
+              <Check className="size-3" />
+              Done
+            </button>
+
+            <button
+              type="button"
+              disabled={updating}
+              onClick={() =>
+                runAction(
+                  () => skipSession(session.id),
+                  `${session.title} skipped.`,
+                )
+              }
+              className="ml-auto rounded-md p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:cursor-wait disabled:opacity-50"
+              aria-label={`Skip ${session.title}`}
+              title="Skip"
+            >
+              <SkipForward className="size-3" />
+            </button>
+          </>
+        )}
+
+        {status === "in_progress" && (
+          <>
+            <button
+              type="button"
+              disabled={updating}
+              onClick={() =>
+                runAction(
+                  () =>
+                    completeSession(session.id, {
+                      durationMinutes:
+                        session.duration_minutes,
+                    }),
+                  `${session.title} completed.`,
+                )
+              }
+              className="inline-flex items-center gap-1 rounded-md bg-foreground px-1.5 py-1 text-[9px] font-semibold text-background transition hover:bg-foreground/90 disabled:cursor-wait disabled:opacity-50"
+            >
+              <Check className="size-3" />
+              Complete
+            </button>
+
+            <button
+              type="button"
+              disabled={updating}
+              onClick={() =>
+                runAction(
+                  () => restoreSession(session.id),
+                  `${session.title} reset.`,
+                )
+              }
+              className="rounded-md p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:cursor-wait disabled:opacity-50"
+              aria-label={`Reset ${session.title}`}
+              title="Reset"
+            >
+              <RotateCcw className="size-3" />
+            </button>
+          </>
+        )}
+
+        {(status === "completed" ||
+          status === "skipped") && (
+          <button
+            type="button"
+            disabled={updating}
+            onClick={() =>
+              runAction(
+                () => restoreSession(session.id),
+                `${session.title} restored.`,
+              )
+            }
+            className="inline-flex items-center gap-1 rounded-md border border-border px-1.5 py-1 text-[9px] font-semibold transition hover:bg-muted disabled:cursor-wait disabled:opacity-50"
+          >
+            <RotateCcw className="size-3" />
+            Restore
+          </button>
+        )}
+
+        <button
+          type="button"
+          disabled={updating}
+          onClick={() =>
+            runAction(
+              () => removeSession(session.id),
+              "Practice removed.",
+            )
+          }
+          className="ml-auto rounded-md p-1 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100 disabled:cursor-wait disabled:opacity-50"
+          aria-label={`Remove ${session.title}`}
+          title="Remove"
+        >
+          <Trash2 className="size-3" />
+        </button>
+      </div>
+    </article>
   );
 }
 
@@ -383,10 +514,10 @@ function AddSlot({
   existingSessions,
 }: AddSlotProps) {
   const queryClient = useQueryClient();
+
   const [open, setOpen] = useState(false);
-  const [addingSkillId, setAddingSkillId] = useState<string | null>(
-    null,
-  );
+  const [addingSkillId, setAddingSkillId] =
+    useState<string | null>(null);
 
   const availableSkills = skills.filter(
     (skill) =>
@@ -399,13 +530,18 @@ function AddSlot({
     try {
       setAddingSkillId(skill.id);
 
-      const { data } = await supabase.auth.getUser();
+      const { data, error: userError } =
+        await supabase.auth.getUser();
+
+      if (userError) {
+        throw userError;
+      }
 
       if (!data.user) {
         throw new Error("User not authenticated.");
       }
 
-      const { error } = await supabase
+      const { error: insertError } = await supabase
         .from("practice_sessions")
         .insert({
           user_id: data.user.id,
@@ -415,6 +551,7 @@ function AddSlot({
           duration_minutes: skill.session_minutes,
           title: skill.name,
           notes: skill.notes,
+          status: "scheduled",
           completed: false,
           completed_at: null,
           reflection: null,
@@ -427,8 +564,8 @@ function AddSlot({
           sort_order: existingSessions.length,
         });
 
-      if (error) {
-        throw error;
+      if (insertError) {
+        throw insertError;
       }
 
       await queryClient.invalidateQueries({
@@ -438,12 +575,12 @@ function AddSlot({
       setOpen(false);
       toast.success(`${skill.name} added.`);
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Practice could not be added.";
-
-      toast.error(message);
+      toast.error(
+        getErrorMessage(
+          error,
+          "Practice could not be added.",
+        ),
+      );
     } finally {
       setAddingSkillId(null);
     }
@@ -478,7 +615,7 @@ function AddSlot({
                 key={skill.id}
                 onClick={() => add(skill)}
                 disabled={addingSkillId !== null}
-                className="w-full truncate rounded px-2 py-1.5 text-left text-xs hover:bg-muted disabled:opacity-50"
+                className="w-full truncate rounded px-2 py-1.5 text-left text-xs transition hover:bg-muted disabled:cursor-wait disabled:opacity-50"
               >
                 {addingSkillId === skill.id
                   ? "Adding..."
@@ -490,4 +627,13 @@ function AddSlot({
       )}
     </div>
   );
+}
+
+function getErrorMessage(
+  error: unknown,
+  fallback: string,
+): string {
+  return error instanceof Error
+    ? error.message
+    : fallback;
 }

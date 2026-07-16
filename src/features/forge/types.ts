@@ -1,3 +1,9 @@
+export type SessionStatus =
+  | "scheduled"
+  | "in_progress"
+  | "completed"
+  | "skipped";
+
 export type LifeArea = {
   id: string;
   user_id: string;
@@ -38,6 +44,7 @@ export type PracticeSession = {
   duration_minutes: number;
   title: string;
   notes: string | null;
+  status?: SessionStatus | null;
   completed: boolean;
   completed_at: string | null;
   reflection: string | null;
@@ -57,15 +64,50 @@ export type Reflection = {
   feeling: number | null;
 };
 
-export const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+export const DAYS = [
+  "mon",
+  "tue",
+  "wed",
+  "thu",
+  "fri",
+  "sat",
+  "sun",
+] as const;
+
 export const DAY_LABELS: Record<string, string> = {
-  mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun",
+  mon: "Mon",
+  tue: "Tue",
+  wed: "Wed",
+  thu: "Thu",
+  fri: "Fri",
+  sat: "Sat",
+  sun: "Sun",
 };
 
 export const LIFE_AREA_ICONS = [
-  "briefcase", "heart", "palette", "languages", "banknote", "users", "sparkles", "compass", "book", "dumbbell", "music", "leaf",
+  "briefcase",
+  "heart",
+  "palette",
+  "languages",
+  "banknote",
+  "users",
+  "sparkles",
+  "compass",
+  "book",
+  "dumbbell",
+  "music",
+  "leaf",
 ] as const;
 
 export const LIFE_AREA_COLORS = [
-  "#c2410c", "#0f766e", "#7c3aed", "#0369a1", "#166534", "#b91c1c", "#a16207", "#4338ca", "#be185d", "#0891b2",
+  "#c2410c",
+  "#0f766e",
+  "#7c3aed",
+  "#0369a1",
+  "#166534",
+  "#b91c1c",
+  "#a16207",
+  "#4338ca",
+  "#be185d",
+  "#0891b2",
 ] as const;

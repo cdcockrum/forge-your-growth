@@ -1,58 +1,81 @@
-import { supabase } from "@/integrations/supabase/client";
 import { generateWeeklySessions } from "@/features/forge/planner";
 import { weekBounds } from "@/features/forge/queries";
-import type { Skill, PracticeSession } from "@/features/forge/types";
+import type {
+  PracticeSession,
+  Skill,
+} from "@/features/forge/types";
+import { supabase } from "@/integrations/supabase/client";
 
 export async function generateCurrentWeek() {
-  const { data: userData } = await supabase.auth.getUser();
+  const { data: userData, error: userError } =
+    await supabase.auth.getUser();
+
+  if (userError) {
+    throw userError;
+  }
 
   if (!userData.user) {
     throw new Error("User not authenticated.");
   }
 
   const userId = userData.user.id;
-
   const { start, end } = weekBounds();
 
-  // Load Skills
-  const { data: skills, error: skillsError } = await supabase
-    .from("skills")
-    .select("*")
-    .eq("archived", false);
+  const { data: skillsData, error: skillsError } =
+    await supabase
+      .from("skills")
+      .select("*")
+      .eq("archived", false);
 
-  if (skillsError) throw skillsError;
+  if (skillsError) {
+    throw skillsError;
+  }
 
-  // Load Existing Sessions
-  const { data: existingSessions, error: sessionError } =
+  const { data: sessionsData, error: sessionsError } =
     await supabase
       .from("practice_sessions")
       .select("*")
       .gte("scheduled_date", start)
       .lte("scheduled_date", end);
 
-  if (sessionError) throw sessionError;
+  if (sessionsError) {
+    throw sessionsError;
+  }
 
-  const sessions = generateWeeklySessions({
+  const skills = (skillsData ?? []) as Skill[];
+  const existingSessions =
+    (sessionsData ?? []) as PracticeSession[];
+
+  const generatedSessions = generateWeeklySessions({
     userId,
     weekStart: start,
-    skills: (skills ?? []) as Skill[],
-    existingSessions:
-      (existingSessions ?? []) as PracticeSession[],
+    skills,
+    existingSessions,
   });
 
-  if (sessions.length === 0) {
+  if (generatedSessions.length === 0) {
     return {
       created: 0,
     };
   }
 
-  const { error } = await supabase
-    .from("practice_sessions")
-    .insert(sessions);
+  const databaseSessions = generatedSessions.map(
+    ({
+      planning_score: _planningScore,
+      planning_reasons: _planningReasons,
+      ...session
+    }) => session,
+  );
 
-  if (error) throw error;
+  const { error: insertError } = await supabase
+    .from("practice_sessions")
+    .insert(databaseSessions);
+
+  if (insertError) {
+    throw insertError;
+  }
 
   return {
-    created: sessions.length,
+    created: databaseSessions.length,
   };
 }

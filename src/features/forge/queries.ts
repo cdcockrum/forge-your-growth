@@ -47,6 +47,25 @@ export const sessionsInRangeQuery = (start: string, end: string) =>
     },
   });
 
+export const sessionsForDateQuery = (date: string) =>
+  queryOptions({
+    queryKey: ["sessions", "date", date],
+    queryFn: async (): Promise<PracticeSession[]> => {
+      const { data, error } = await supabase
+        .from("practice_sessions")
+        .select("*")
+        .eq("scheduled_date", date)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      return (data ?? []) as unknown as PracticeSession[];
+    },
+  });
+
 export const reflectionQuery = (weekStart: string) =>
   queryOptions({
     queryKey: ["reflection", weekStart],

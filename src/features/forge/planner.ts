@@ -1,42 +1,22 @@
+import type { PracticeSession } from "./types";
+import type {
+  GeneratedPracticeSession,
+  GenerateWeeklySessionsOptions,
+} from "./planner.types";
 import {
-  DAYS,
-  type PracticeSession,
-  type Skill,
-} from "./types";
-
-export type GeneratedPracticeSession = Pick<
-  PracticeSession,
-  | "user_id"
-  | "skill_id"
-  | "scheduled_date"
-  | "scheduled_time"
-  | "duration_minutes"
-  | "title"
-  | "notes"
-  | "completed"
-  | "completed_at"
-  | "reflection"
-  | "intensity"
-  | "sort_order"
->;
-
-type GenerateWeeklySessionsOptions = {
-  userId: string;
-  skills: Skill[];
-  weekStart: string;
-  existingSessions?: PracticeSession[];
-};
-
-const DAY_INDEX = new Map<string, number>(
-  DAYS.map((day, index) => [day, index]),
-);
+  clamp,
+  createDailyLoad,
+  getIntensity,
+  getPreferredDayIndexes,
+  parseDateString,
+  rankCandidateDays,
+} from "./planner.utils";
+import { scoreCandidateDay } from "./planner.scoring";
 
 /**
- * Generates missing practice sessions for one Monday–Sunday week.
- *
- * Existing sessions are preserved and counted toward each skill's
- * weekly target. The function only returns sessions that still need
- * to be inserted.
+ * Generates only the missing practice sessions for one Monday–Sunday
+ * week. Existing sessions are preserved and count toward each skill's
+ * weekly target.
  */
 export function generateWeeklySessions({
   userId,
@@ -60,7 +40,6 @@ export function generateWeeklySessions({
   );
 
   const dailyLoad = createDailyLoad(existingSessions, monday);
-
   const generated: GeneratedPracticeSession[] = [];
 
   for (const skill of activeSkills) {
@@ -87,22 +66,22 @@ export function generateWeeklySessions({
       skill.preferred_days,
     );
 
-    const candidateIndexes = rankCandidateDays(
+    const candidates = rankCandidateDays(
       preferredIndexes,
       dailyLoad,
-    );
-
+      monday,
+    )
+      .map(candidate => scoreCandidateDay(candidate, skill))
+      .sort((a, b) => b.score - a.score);
     let sessionsCreated = 0;
 
-    for (const dayIndex of candidateIndexes) {
+    for (const candidate of candidates) {
       if (sessionsCreated >= sessionsNeeded) {
         break;
       }
 
-      const scheduledDate = addDays(monday, dayIndex);
-      const key = `${skill.id}:${scheduledDate}`;
+      const key = `${skill.id}:${candidate.date}`;
 
-      // Do not generate the same skill twice on the same day.
       if (existingKeys.has(key)) {
         continue;
       }
@@ -110,7 +89,7 @@ export function generateWeeklySessions({
       generated.push({
         user_id: userId,
         skill_id: skill.id,
-        scheduled_date: scheduledDate,
+        scheduled_date: candidate.date,
         scheduled_time: null,
         duration_minutes: skill.session_minutes,
         title: skill.name,
@@ -119,16 +98,24 @@ export function generateWeeklySessions({
         completed_at: null,
         reflection: null,
         intensity: getIntensity(skill.difficulty),
-        sort_order: dailyLoad[dayIndex],
+        sort_order: dailyLoad[candidate.dayIndex],
+        planning_score: candidate.score,
+        planning_reasons: candidate.reasons,
       });
 
       existingKeys.add(key);
-      dailyLoad[dayIndex] += 1;
+      dailyLoad[candidate.dayIndex] += 1;
       sessionsCreated += 1;
     }
   }
 
-  return generated.sort((a, b) => {
+  return sortGeneratedSessions(generated);
+}
+
+function sortGeneratedSessions(
+  sessions: GeneratedPracticeSession[],
+): GeneratedPracticeSession[] {
+  return sessions.sort((a, b) => {
     const dateComparison = a.scheduled_date.localeCompare(
       b.scheduled_date,
     );
@@ -141,130 +128,10 @@ export function generateWeeklySessions({
   });
 }
 
-function getPreferredDayIndexes(
-  preferredDays: string[],
-): number[] {
-  const indexes = preferredDays
-    .map((day) => DAY_INDEX.get(day))
-    .filter((index): index is number => index !== undefined);
+export type {
+  CandidateDay,
+  GeneratedPracticeSession,
+  GenerateWeeklySessionsOptions,
+} from "./planner.types";
 
-  return [...new Set(indexes)];
-}
-
-/**
- * Preferred days are considered first.
- *
- * Within preferred and non-preferred groups, days with fewer existing
- * sessions are selected first so the week remains reasonably balanced.
- */
-function rankCandidateDays(
-  preferredIndexes: number[],
-  dailyLoad: number[],
-): number[] {
-  const preferredSet = new Set(preferredIndexes);
-
-  const preferred = preferredIndexes
-    .slice()
-    .sort((a, b) => dailyLoad[a] - dailyLoad[b] || a - b);
-
-  const fallback = DAYS.map((_, index) => index)
-    .filter((index) => !preferredSet.has(index))
-    .sort((a, b) => dailyLoad[a] - dailyLoad[b] || a - b);
-
-  return [...preferred, ...fallback];
-}
-
-function createDailyLoad(
-  sessions: PracticeSession[],
-  monday: Date,
-): number[] {
-  const load = Array.from({ length: 7 }, () => 0);
-
-  for (const session of sessions) {
-    const sessionDate = parseDateString(
-      session.scheduled_date,
-    );
-
-    const difference = differenceInCalendarDays(
-      sessionDate,
-      monday,
-    );
-
-    if (difference >= 0 && difference <= 6) {
-      load[difference] += 1;
-    }
-  }
-
-  return load;
-}
-
-function getIntensity(
-  difficulty: number,
-): PracticeSession["intensity"] {
-  if (difficulty >= 4) {
-    return "high";
-  }
-
-  if (difficulty <= 1) {
-    return "recovery";
-  }
-
-  return "deliberate";
-}
-
-function parseDateString(value: string): Date {
-  const [year, month, day] = value.split("-").map(Number);
-
-  if (!year || !month || !day) {
-    throw new Error(`Invalid date string: ${value}`);
-  }
-
-  return new Date(year, month - 1, day);
-}
-
-function addDays(date: Date, amount: number): string {
-  const result = new Date(date);
-  result.setDate(result.getDate() + amount);
-
-  return formatDate(result);
-}
-
-function differenceInCalendarDays(
-  laterDate: Date,
-  earlierDate: Date,
-): number {
-  const laterUtc = Date.UTC(
-    laterDate.getFullYear(),
-    laterDate.getMonth(),
-    laterDate.getDate(),
-  );
-
-  const earlierUtc = Date.UTC(
-    earlierDate.getFullYear(),
-    earlierDate.getMonth(),
-    earlierDate.getDate(),
-  );
-
-  return Math.round(
-    (laterUtc - earlierUtc) / 86_400_000,
-  );
-}
-
-function formatDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(
-    2,
-    "0",
-  );
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
-function clamp(
-  value: number,
-  minimum: number,
-  maximum: number,
-): number {
-  return Math.min(Math.max(value, minimum), maximum);
-}
+export type { PracticeSession };
