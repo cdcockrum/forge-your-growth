@@ -40,10 +40,12 @@ import {
   skipSession,
   startSession,
 } from "@/services/sessionService";
+
 import {
-  calculateForgeScore,
+  buildForgeState,
   type ScoreBreakdown,
 } from "@/features/forge-engine";
+import { CoachPanel } from "@/features/coach";
 
 export const Route = createFileRoute("/_authenticated/today")({
   loader: async ({ context }) => {
@@ -100,33 +102,48 @@ function TodayContent() {
   const today = todayIso();
   const { start, end } = weekBounds();
 
-  const { data: profile } = useSuspenseQuery(profileQuery());
-  const { data: skills } = useSuspenseQuery(skillsQuery());
-  const { data: areas } = useSuspenseQuery(lifeAreasQuery());
+  const { data: profile } = useSuspenseQuery(
+    profileQuery(),
+  );
+
+  const { data: skills } = useSuspenseQuery(
+    skillsQuery(),
+  );
+
+  const { data: areas } = useSuspenseQuery(
+    lifeAreasQuery(),
+  );
+
   const { data: todaySessions } = useSuspenseQuery(
     sessionsForDateQuery(today),
   );
+
   const { data: weekSessions } = useSuspenseQuery(
     sessionsInRangeQuery(start, end),
   );
 
+  const forge = buildForgeState({
+    sessions: weekSessions,
+    skills,
+    lifeAreas: areas,
+    // Add this back later once assessment is available:
+    // assessment,
+  });
+
   const todayProgress = calculateTodayProgress(todaySessions);
+
   const weekProgress = calculateWeekProgress(weekSessions);
 
-  const firstName =
+    const firstName =
     profile?.full_name?.trim().split(/\s+/)[0] || "there";
 
   const now = new Date();
+
   const formattedDate = now.toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
-  });
-
-  const forgeScore = calculateForgeScore({
-    sessions: weekSessions,
-    skills,
-  });
+});
 
   return (
     <>
@@ -142,6 +159,10 @@ function TodayContent() {
 
       <div className="mb-8">
         <DailyQuote quote={getDailyQuote(now)} />
+      </div>
+
+      <div className="mb-8">
+        <CoachPanel coach={forge.coach} />
       </div>
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
@@ -195,8 +216,8 @@ function TodayContent() {
         <aside className="space-y-4">
 
           <ForgeScorePanel
-            score={forgeScore.score}
-            breakdown={forgeScore.breakdown}
+            score={forge.forgeScore.score}
+            breakdown={forge.forgeScore.breakdown}
           />
 
           <ProgressPanel

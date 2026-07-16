@@ -1,19 +1,61 @@
+import {Suspense, useEffect, useMemo,} from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { Suspense } from "react";
-import { skillsQuery, lifeAreasQuery, sessionsInRangeQuery, weekBounds, iso } from "@/features/forge/queries";
-import { PageHeader } from "@/components/forge/app-shell";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from "recharts";
+import {
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  Clock3,
+  Flame,
+  Target,
+  Trophy,
+} from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
-export const Route = createFileRoute("/_authenticated/progress")({
+import { PageHeader } from "@/components/forge/app-shell";
+import {
+  iso,
+  lifeAreasQuery,
+  sessionsInRangeQuery,
+  skillsQuery,
+} from "@/features/forge/queries";
+import type {
+  PracticeSession,
+} from "@/features/forge/types";
+import {
+  calculateProgress,
+  generateProgressInsights,
+  syncAchievements,
+  type LifeAreaProgress,
+  type ProgressInsight,
+  type SkillProgress,
+} from "@/features/forge-engine";
+
+export const Route = createFileRoute(
+  "/_authenticated/progress",
+)({
   loader: async ({ context }) => {
-    const now = new Date();
-    const start = new Date(now);
-    start.setDate(now.getDate() - 28);
+    const { start, end } = getProgressRange();
+
     await Promise.all([
-      context.queryClient.ensureQueryData(sessionsInRangeQuery(iso(start), iso(now))),
-      context.queryClient.ensureQueryData(skillsQuery()),
-      context.queryClient.ensureQueryData(lifeAreasQuery()),
+      context.queryClient.ensureQueryData(
+        sessionsInRangeQuery(start, end),
+      ),
+      context.queryClient.ensureQueryData(
+        skillsQuery(),
+      ),
+      context.queryClient.ensureQueryData(
+        lifeAreasQuery(),
+      ),
     ]);
   },
   component: ProgressPage,
@@ -21,138 +63,809 @@ export const Route = createFileRoute("/_authenticated/progress")({
 
 function ProgressPage() {
   return (
-    <div className="px-5 md:px-10 pt-8 md:pt-12 max-w-5xl mx-auto">
-      <Suspense fallback={null}>
+    <main className="mx-auto max-w-6xl px-5 pb-16 pt-8 md:px-10 md:pt-12">
+      <Suspense fallback={<ProgressLoadingState />}>
         <ProgressContent />
       </Suspense>
+    </main>
+  );
+}
+
+function ProgressLoadingState() {
+  return (
+    <div className="space-y-6">
+      <div className="h-28 animate-pulse rounded-2xl bg-muted" />
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <div
+            key={index}
+            className="h-32 animate-pulse rounded-2xl bg-muted"
+          />
+        ))}
+      </div>
+
+      <div className="h-72 animate-pulse rounded-2xl bg-muted" />
     </div>
   );
 }
 
 function ProgressContent() {
-  const now = new Date();
-  const start = new Date(now);
-  start.setDate(now.getDate() - 28);
-  const { data: sessions } = useSuspenseQuery(sessionsInRangeQuery(iso(start), iso(now)));
-  const { data: skills } = useSuspenseQuery(skillsQuery());
-  const { data: areas } = useSuspenseQuery(lifeAreasQuery());
+  const { start, end, startDate, endDate } =
+    getProgressRange();
 
-  const completed = sessions.filter((s) => s.completed);
-  const totalHours = Math.round((completed.reduce((sum, s) => sum + s.duration_minutes, 0) / 60) * 10) / 10;
-  const completionPct = sessions.length > 0 ? Math.round((completed.length / sessions.length) * 100) : 0;
-  const streak = calcStreak(sessions);
+  const queryClient = useQueryClient();
 
-  // Weekly bar data (4 weeks)
-  const weeklyData = Array.from({ length: 4 }, (_, i) => {
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - (3 - i) * 7 - 6);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
-    const s = sessions.filter((x) => x.scheduled_date >= iso(weekStart) && x.scheduled_date <= iso(weekEnd));
-    const c = s.filter((x) => x.completed);
-    return {
-      week: weekStart.toLocaleDateString("en", { month: "short", day: "numeric" }),
-      hours: Math.round((c.reduce((sum, x) => sum + x.duration_minutes, 0) / 60) * 10) / 10,
-      sessions: c.length,
-    };
-  });
+  const { data: sessions } = useSuspenseQuery(
+    sessionsInRangeQuery(start, end),
+  );
 
-  // Life area balance
-  const areaData = areas.map((a) => {
-    const areaSkills = skills.filter((s) => s.life_area_id === a.id);
-    const done = completed.filter((s) => areaSkills.some((k) => k.id === s.skill_id)).length;
-    return { name: a.name, value: done, color: a.color };
-  }).filter((a) => a.value > 0);
+  const { data: skills } = useSuspenseQuery(
+    skillsQuery(),
+  );
+
+  const { data: lifeAreas } = useSuspenseQuery(
+    lifeAreasQuery(),
+  );
+
+  const progress = useMemo(
+    () =>
+      calculateProgress({
+        sessions,
+        skills,
+        lifeAreas,
+      }),
+    [sessions, skills, lifeAreas],
+  );
+
+  useEffect(() => {
+  let cancelled = false;
+
+  async function sync() {
+    try {
+      const result = await syncAchievements(progress);
+
+      if (
+        !cancelled &&
+        result.newlyEarnedKeys.length > 0
+      ) {
+        await queryClient.invalidateQueries({
+          queryKey: ["achievements"],
+        });
+      }
+    } catch (error) {
+      console.error(
+        "Achievement synchronization failed:",
+        error,
+      );
+    }
+  }
+
+  void sync();
+
+  return () => {
+    cancelled = true;
+  };
+}, [progress, queryClient]);
+
+  const insights = useMemo(
+    () =>
+      generateProgressInsights({
+        progress,
+      }),
+    [progress],
+  );
+
+  const weeklyData = useMemo(
+    () =>
+      createWeeklyData(
+        sessions,
+        startDate,
+        endDate,
+      ),
+    [sessions, startDate, endDate],
+  );
+
+  const dateRange = `${startDate.toLocaleDateString(
+    "en-US",
+    {
+      month: "short",
+      day: "numeric",
+    },
+  )} — ${endDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  })}`;
 
   return (
     <>
       <PageHeader
-        eyebrow="Last 28 days"
+        eyebrow={`Your journey · ${dateRange}`}
         title={
           <>
-            The <span className="text-accent">record</span>.
+            The{" "}
+            <span className="text-accent">
+              record
+            </span>
+            .
           </>
         }
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-        <Stat label="Hours" value={`${totalHours}`} />
-        <Stat label="Sessions" value={`${completed.length}`} />
-        <Stat label="Consistency" value={`${completionPct}%`} />
-        <Stat label="Streak" value={`${streak}d`} dark />
-      </div>
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          label="Time invested"
+          value={formatMinutes(progress.totalMinutes)}
+          note={`${progress.completedSessions} completed practices`}
+          icon={Clock3}
+        />
 
-      <section className="p-6 bg-surface border border-border rounded-2xl mb-6">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-6">
-          Weekly hours
-        </h2>
-        <div className="h-56">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={weeklyData}>
-              <XAxis dataKey="week" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
-              <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
-              <Tooltip
-                cursor={{ fill: "var(--muted)" }}
-                contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
-              />
-              <Bar dataKey="hours" fill="var(--accent)" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <MetricCard
+          label="Consistency"
+          value={`${progress.completionRate}%`}
+          note={`${progress.scheduledSessions} still scheduled`}
+          icon={Target}
+        />
+
+        <MetricCard
+          label="Current streak"
+          value={`${progress.currentStreak}d`}
+          note={`Longest: ${progress.longestStreak} days`}
+          icon={Flame}
+          dark
+        />
+
+        <MetricCard
+          label="Completed"
+          value={String(progress.completedSessions)}
+          note={`${progress.skippedSessions} skipped`}
+          icon={Trophy}
+        />
       </section>
 
-      {areaData.length > 0 && (
-        <section className="p-6 bg-surface border border-border rounded-2xl">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-6">
-            Life Balance
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={areaData} innerRadius={50} outerRadius={90} dataKey="value" stroke="var(--surface)" strokeWidth={2}>
-                    {areaData.map((a, i) => (
-                      <Cell key={i} fill={a.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="space-y-2">
-              {areaData.map((a) => (
-                <div key={a.name} className="flex items-center gap-3">
-                  <span className="size-3 rounded-sm" style={{ backgroundColor: a.color }} />
-                  <span className="text-sm font-medium flex-1">{a.name}</span>
-                  <span className="font-mono text-xs text-muted-foreground">{a.value} sessions</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      <ForgeNotices insights={insights} />
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.7fr)]">
+        <WeeklyPracticeChart data={weeklyData} />
+
+        <PracticeSignals
+          strongestSkill={progress.strongestSkill}
+          neglectedSkill={progress.neglectedSkill}
+        />
+      </div>
+
+      <section className="mt-6 rounded-2xl border border-border bg-surface p-6">
+        <SectionHeading
+          eyebrow="Life-area balance"
+          title="Where your attention has gone."
+          description="The share of completed practice time invested in each part of your life."
+        />
+
+        {progress.lifeAreas.some(
+          (area) => area.completedMinutes > 0,
+        ) ? (
+          <LifeAreaBalance
+            areas={progress.lifeAreas}
+          />
+        ) : (
+          <EmptyPanel message="Complete a practice to begin building your life-area record." />
+        )}
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-border bg-surface p-6">
+        <SectionHeading
+          eyebrow="Skill record"
+          title="The practices shaping you."
+          description="Completion, time invested, and recency across your active skills."
+        />
+
+        {progress.skills.length > 0 ? (
+          <SkillRecord skills={progress.skills} />
+        ) : (
+          <EmptyPanel message="Add a skill to begin tracking meaningful progress." />
+        )}
+      </section>
     </>
   );
 }
 
-function Stat({ label, value, dark }: { label: string; value: string; dark?: boolean }) {
+type MetricCardProps = {
+  label: string;
+  value: string;
+  note: string;
+  icon: typeof Clock3;
+  dark?: boolean;
+};
+
+function MetricCard({
+  label,
+  value,
+  note,
+  icon: Icon,
+  dark = false,
+}: MetricCardProps) {
   return (
-    <div className={`p-5 rounded-2xl ${dark ? "bg-foreground text-background" : "bg-muted"}`}>
-      <p className={`font-mono text-[10px] uppercase tracking-widest ${dark ? "opacity-60" : "text-muted-foreground"}`}>{label}</p>
-      <p className="mt-2 text-3xl font-extrabold tracking-tighter">{value}</p>
+    <article
+      className={`rounded-2xl p-5 ${
+        dark
+          ? "bg-foreground text-background"
+          : "border border-border bg-surface"
+      }`}
+    >
+      <div className="flex items-center justify-between">
+        <p
+          className={`font-mono text-[9px] uppercase tracking-[0.22em] ${
+            dark
+              ? "text-background/60"
+              : "text-muted-foreground"
+          }`}
+        >
+          {label}
+        </p>
+
+        <Icon
+          className={`size-4 ${
+            dark
+              ? "text-background/70"
+              : "text-muted-foreground"
+          }`}
+        />
+      </div>
+
+      <p className="mt-4 text-3xl font-extrabold tracking-tight">
+        {value}
+      </p>
+
+      <p
+        className={`mt-2 text-xs leading-5 ${
+          dark
+            ? "text-background/65"
+            : "text-muted-foreground"
+        }`}
+      >
+        {note}
+      </p>
+    </article>
+  );
+}
+
+type ForgeNoticesProps = {
+  insights: ProgressInsight[];
+};
+
+function ForgeNotices({
+  insights,
+}: ForgeNoticesProps) {
+  return (
+    <section className="mt-6 rounded-2xl border border-border bg-foreground p-6 text-background">
+      <header className="max-w-2xl">
+        <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-background/55">
+          What Forge notices
+        </p>
+
+        <h2 className="mt-2 text-xl font-extrabold tracking-tight">
+          Patterns worth paying attention to.
+        </h2>
+
+        <p className="mt-2 text-sm leading-6 text-background/65">
+          These observations come from your completed practices,
+          consistency, streaks, and distribution of attention.
+        </p>
+      </header>
+
+      <div className="mt-6 grid gap-3 md:grid-cols-2">
+        {insights.length === 0 ? (
+          <p className="text-sm leading-6 text-background/65">
+            Complete a few practices and Forge will begin surfacing
+            useful patterns.
+          </p>
+        ) : (
+          insights.map((insight) => (
+            <InsightCard
+              key={insight.id}
+              insight={insight}
+            />
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+function InsightCard({
+  insight,
+}: {
+  insight: ProgressInsight;
+}) {
+  const toneStyles = {
+    positive: {
+      marker: "bg-emerald-400",
+      label: "Momentum",
+    },
+    attention: {
+      marker: "bg-amber-400",
+      label: "Attention",
+    },
+    neutral: {
+      marker: "bg-background/45",
+      label: "Observation",
+    },
+  } as const;
+
+  const style = toneStyles[insight.tone];
+
+  return (
+    <article className="rounded-xl border border-background/10 bg-background/5 p-5">
+      <div className="flex items-center gap-2">
+        <span
+          className={`size-2 rounded-full ${style.marker}`}
+        />
+
+        <p className="font-mono text-[8px] uppercase tracking-[0.2em] text-background/50">
+          {style.label}
+        </p>
+      </div>
+
+      <h3 className="mt-3 text-base font-extrabold tracking-tight">
+        {insight.title}
+      </h3>
+
+      <p className="mt-2 text-sm leading-6 text-background/65">
+        {insight.description}
+      </p>
+    </article>
+  );
+}
+
+type WeeklyData = {
+  week: string;
+  hours: number;
+  sessions: number;
+};
+
+function WeeklyPracticeChart({
+  data,
+}: {
+  data: WeeklyData[];
+}) {
+  return (
+    <section className="rounded-2xl border border-border bg-surface p-6">
+      <SectionHeading
+        eyebrow="Practice rhythm"
+        title="Four weeks of deliberate work."
+        description="Completed hours grouped by week."
+      />
+
+      <div className="mt-8 h-64">
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+        >
+          <BarChart data={data}>
+            <XAxis
+              dataKey="week"
+              tickLine={false}
+              axisLine={false}
+              tick={{
+                fontSize: 11,
+                fill: "var(--muted-foreground)",
+              }}
+            />
+
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              allowDecimals={false}
+              tick={{
+                fontSize: 11,
+                fill: "var(--muted-foreground)",
+              }}
+            />
+
+            <Tooltip
+              cursor={{
+                fill: "var(--muted)",
+              }}
+              contentStyle={{
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: 12,
+                fontSize: 12,
+              }}
+              formatter={(value, name) => {
+                if (name === "hours") {
+                  return [
+                    `${Number(value).toFixed(1)}h`,
+                    "Hours",
+                  ];
+                }
+
+                return [value, name];
+              }}
+            />
+
+            <Bar
+              dataKey="hours"
+              fill="var(--accent)"
+              radius={[8, 8, 0, 0]}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </section>
+  );
+}
+
+type PracticeSignalsProps = {
+  strongestSkill: SkillProgress | null;
+  neglectedSkill: SkillProgress | null;
+};
+
+function PracticeSignals({
+  strongestSkill,
+  neglectedSkill,
+}: PracticeSignalsProps) {
+  return (
+    <section className="space-y-3">
+      <SignalCard
+        eyebrow="Strongest practice"
+        skill={strongestSkill}
+        icon={ArrowUpRight}
+        emptyMessage="Complete practices to reveal your strongest skill."
+      />
+
+      <SignalCard
+        eyebrow="Needs attention"
+        skill={neglectedSkill}
+        icon={ArrowDownRight}
+        emptyMessage="Forge needs more history before identifying a neglected skill."
+        neglected
+      />
+    </section>
+  );
+}
+
+type SignalCardProps = {
+  eyebrow: string;
+  skill: SkillProgress | null;
+  icon: typeof ArrowUpRight;
+  emptyMessage: string;
+  neglected?: boolean;
+};
+
+function SignalCard({
+  eyebrow,
+  skill,
+  icon: Icon,
+  emptyMessage,
+  neglected = false,
+}: SignalCardProps) {
+  return (
+    <article className="rounded-2xl border border-border bg-surface p-6">
+      <div className="flex items-center justify-between">
+        <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
+          {eyebrow}
+        </p>
+
+        <Icon className="size-4 text-muted-foreground" />
+      </div>
+
+      {skill ? (
+        <>
+          <h3 className="mt-4 text-2xl font-extrabold tracking-tight">
+            {skill.name}
+          </h3>
+
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            {neglected
+              ? formatNeglectedSkill(skill)
+              : `${skill.completedSessions} completed sessions · ${formatMinutes(
+                  skill.completedMinutes,
+                )} invested`}
+          </p>
+        </>
+      ) : (
+        <p className="mt-4 text-sm leading-6 text-muted-foreground">
+          {emptyMessage}
+        </p>
+      )}
+    </article>
+  );
+}
+
+function LifeAreaBalance({
+  areas,
+}: {
+  areas: LifeAreaProgress[];
+}) {
+  const activeAreas = areas.filter(
+    (area) => area.completedMinutes > 0,
+  );
+
+  return (
+    <div className="mt-7 space-y-5">
+      {activeAreas.map((area) => (
+        <div key={area.areaId}>
+          <div className="flex items-end justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span
+                className="size-3 rounded-full"
+                style={{
+                  backgroundColor: area.color,
+                }}
+              />
+
+              <div>
+                <p className="text-sm font-semibold">
+                  {area.name}
+                </p>
+
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {area.completedSessions} completed ·{" "}
+                  {formatMinutes(area.completedMinutes)}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-sm font-extrabold">
+              {area.percentageOfPractice}%
+            </p>
+          </div>
+
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full transition-[width] duration-500"
+              style={{
+                width: `${area.percentageOfPractice}%`,
+                backgroundColor: area.color,
+              }}
+            />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
-function calcStreak(sessions: { scheduled_date: string; completed: boolean }[]) {
-  const done = new Set(sessions.filter((s) => s.completed).map((s) => s.scheduled_date));
-  let streak = 0;
-  const d = new Date();
-  while (done.has(iso(d))) {
-    streak++;
-    d.setDate(d.getDate() - 1);
+function SkillRecord({
+  skills,
+}: {
+  skills: SkillProgress[];
+}) {
+  const sortedSkills = [...skills].sort(
+    (a, b) =>
+      b.completedMinutes - a.completedMinutes ||
+      b.completedSessions - a.completedSessions ||
+      a.name.localeCompare(b.name),
+  );
+
+  return (
+    <div className="mt-7 divide-y divide-border">
+      {sortedSkills.map((skill) => (
+        <article
+          key={skill.skillId}
+          className="grid gap-4 py-5 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_100px_120px_150px] sm:items-center"
+        >
+          <div>
+            <h3 className="font-extrabold tracking-tight">
+              {skill.name}
+            </h3>
+
+            <p className="mt-1 text-xs text-muted-foreground">
+              {formatLastPracticed(skill)}
+            </p>
+          </div>
+
+          <RecordValue
+            label="Sessions"
+            value={String(skill.completedSessions)}
+          />
+
+          <RecordValue
+            label="Time"
+            value={formatMinutes(
+              skill.completedMinutes,
+            )}
+          />
+
+          <div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                Completion
+              </span>
+
+              <span className="font-semibold">
+                {skill.completionRate}%
+              </span>
+            </div>
+
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-accent transition-[width] duration-500"
+                style={{
+                  width: `${skill.completionRate}%`,
+                }}
+              />
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function RecordValue({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div>
+      <p className="font-mono text-[8px] uppercase tracking-[0.2em] text-muted-foreground">
+        {label}
+      </p>
+
+      <p className="mt-1 text-sm font-bold">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+type SectionHeadingProps = {
+  eyebrow: string;
+  title: string;
+  description: string;
+};
+
+function SectionHeading({
+  eyebrow,
+  title,
+  description,
+}: SectionHeadingProps) {
+  return (
+    <header>
+      <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
+        {eyebrow}
+      </p>
+
+      <h2 className="mt-2 text-xl font-extrabold tracking-tight">
+        {title}
+      </h2>
+
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+        {description}
+      </p>
+    </header>
+  );
+}
+
+function EmptyPanel({
+  message,
+}: {
+  message: string;
+}) {
+  return (
+    <div className="mt-6 rounded-xl border border-dashed border-border bg-background px-5 py-10 text-center">
+      <p className="text-sm text-muted-foreground">
+        {message}
+      </p>
+    </div>
+  );
+}
+
+function getProgressRange() {
+  const endDate = new Date();
+  endDate.setHours(0, 0, 0, 0);
+
+  const startDate = new Date(endDate);
+  startDate.setDate(endDate.getDate() - 27);
+
+  return {
+    start: iso(startDate),
+    end: iso(endDate),
+    startDate,
+    endDate,
+  };
+}
+
+function createWeeklyData(
+  sessions: PracticeSession[],
+  rangeStart: Date,
+  rangeEnd: Date,
+): WeeklyData[] {
+  return Array.from({ length: 4 }, (_, index) => {
+    const weekStart = new Date(rangeStart);
+    weekStart.setDate(
+      rangeStart.getDate() + index * 7,
+    );
+
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    if (weekEnd > rangeEnd) {
+      weekEnd.setTime(rangeEnd.getTime());
+    }
+
+    const completedSessions = sessions.filter(
+      (session) =>
+        isCompleted(session) &&
+        session.scheduled_date >= iso(weekStart) &&
+        session.scheduled_date <= iso(weekEnd),
+    );
+
+    const minutes = completedSessions.reduce(
+      (sum, session) =>
+        sum + (session.duration_minutes ?? 0),
+      0,
+    );
+
+    return {
+      week: weekStart.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      hours: Math.round((minutes / 60) * 10) / 10,
+      sessions: completedSessions.length,
+    };
+  });
+}
+
+function isCompleted(
+  session: PracticeSession,
+): boolean {
+  return (
+    session.status === "completed" ||
+    session.completed === true
+  );
+}
+
+function formatMinutes(minutes: number): string {
+  if (minutes < 60) {
+    return `${minutes}m`;
   }
-  return streak;
+
+  const hours = minutes / 60;
+
+  return Number.isInteger(hours)
+    ? `${hours}h`
+    : `${hours.toFixed(1)}h`;
+}
+
+function formatNeglectedSkill(
+  skill: SkillProgress,
+): string {
+  if (skill.daysSincePracticed === null) {
+    return "No completed practice recorded yet.";
+  }
+
+  if (skill.daysSincePracticed === 0) {
+    return "Practiced today.";
+  }
+
+  if (skill.daysSincePracticed === 1) {
+    return "Last practiced yesterday.";
+  }
+
+  return `${skill.daysSincePracticed} days since last practice.`;
+}
+
+function formatLastPracticed(
+  skill: SkillProgress,
+): string {
+  if (!skill.lastPracticedDate) {
+    return "No completed sessions yet";
+  }
+
+  if (skill.daysSincePracticed === 0) {
+    return "Practiced today";
+  }
+
+  if (skill.daysSincePracticed === 1) {
+    return "Practiced yesterday";
+  }
+
+  return `${skill.daysSincePracticed} days since last practice`;
 }

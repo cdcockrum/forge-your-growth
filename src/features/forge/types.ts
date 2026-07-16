@@ -61,7 +61,25 @@ export type Reflection = {
   went_well: string | null;
   difficult: string | null;
   learned: string | null;
+  focus_next_week: string | null;
   feeling: number | null;
+};
+
+export type WeeklyReview = {
+  id: string;
+  user_id: string;
+
+  week_start: string;
+
+  wins: string | null;
+  challenges: string | null;
+  lessons: string | null;
+  focus_next_week: string | null;
+
+  energy: number | null;
+
+  created_at: string;
+  updated_at: string;
 };
 
 export const DAYS = [
@@ -111,3 +129,12 @@ export const LIFE_AREA_COLORS = [
   "#be185d",
   "#0891b2",
 ] as const;
+
+export type EarnedAchievement = {
+  id: string;
+  user_id: string;
+  key: string;
+  title: string;
+  description: string | null;
+  earned_at: string;
+};

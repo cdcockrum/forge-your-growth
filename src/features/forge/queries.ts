@@ -1,6 +1,12 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { LifeArea, Skill, PracticeSession, Reflection } from "./types";
+import type {
+  EarnedAchievement,
+  LifeArea,
+  PracticeSession,
+  Reflection,
+  Skill,
+} from "./types";
 
 export const lifeAreasQuery = () =>
   queryOptions({
@@ -14,6 +20,25 @@ export const lifeAreasQuery = () =>
         .order("created_at", { ascending: true });
       if (error) throw error;
       return (data ?? []) as unknown as LifeArea[];
+    },
+  });
+
+export const achievementsQuery = () =>
+  queryOptions({
+    queryKey: ["achievements"],
+    queryFn: async (): Promise<EarnedAchievement[]> => {
+      const { data, error } = await supabase
+        .from("achievements")
+        .select("*")
+        .order("earned_at", {
+          ascending: false,
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      return (data ?? []) as EarnedAchievement[];
     },
   });
 

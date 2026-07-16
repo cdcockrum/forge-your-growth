@@ -34,6 +34,11 @@ import {
   type PracticeSession,
   type Skill,
 } from "@/features/forge/types";
+import {
+  assessWeeklyPlan,
+  type PlanAssessmentItem,
+  type WeeklyPlanAssessment,
+} from "@/features/forge-engine";
 import { supabase } from "@/integrations/supabase/client";
 import { generateCurrentWeek } from "@/services/planningService";
 import {
@@ -61,23 +66,29 @@ export const Route = createFileRoute("/_authenticated/plan")({
 
 function PlanPage() {
   return (
-    <div className="mx-auto max-w-6xl px-5 pt-8 md:px-10 md:pt-12">
+    <main className="mx-auto max-w-6xl px-5 pb-16 pt-8 md:px-10 md:pt-12">
       <Suspense fallback={<PlanLoadingState />}>
         <PlanContent />
       </Suspense>
-    </div>
+    </main>
   );
 }
 
 function PlanLoadingState() {
   return (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-7">
-      {Array.from({ length: 7 }, (_, index) => (
-        <div
-          key={index}
-          className="h-40 animate-pulse rounded-xl border border-border bg-surface/50"
-        />
-      ))}
+    <div className="space-y-6">
+      <div className="h-28 animate-pulse rounded-2xl bg-muted" />
+
+      <div className="h-52 animate-pulse rounded-2xl bg-muted" />
+
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-7">
+        {Array.from({ length: 7 }, (_, index) => (
+          <div
+            key={index}
+            className="h-44 animate-pulse rounded-xl border border-border bg-surface/50"
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -93,6 +104,12 @@ function PlanContent() {
   );
 
   const [generating, setGenerating] = useState(false);
+
+  const assessment = assessWeeklyPlan({
+    sessions,
+    skills,
+    lifeAreas: areas,
+  });
 
   const dayList = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(monday);
@@ -135,10 +152,12 @@ function PlanContent() {
         }.`,
       );
     } catch (error) {
-      toast.error(getErrorMessage(
-        error,
-        "The week could not be generated.",
-      ));
+      toast.error(
+        getErrorMessage(
+          error,
+          "The week could not be generated.",
+        ),
+      );
     } finally {
       setGenerating(false);
     }
@@ -147,13 +166,17 @@ function PlanContent() {
   return (
     <>
       <PageHeader
-        eyebrow={`Week of ${monday.toLocaleDateString("en", {
+        eyebrow={`Week of ${monday.toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
         })}`}
         title={
           <>
-            The <span className="text-accent">week ahead</span>.
+            The{" "}
+            <span className="text-accent">
+              week ahead
+            </span>
+            .
           </>
         }
         action={
@@ -168,6 +191,8 @@ function PlanContent() {
           </button>
         }
       />
+
+      <WeekAssessment assessment={assessment} />
 
       {skills.length === 0 ? (
         <EmptyPlanState />
@@ -243,6 +268,111 @@ function PlanContent() {
   );
 }
 
+type WeekAssessmentProps = {
+  assessment: WeeklyPlanAssessment;
+};
+
+function WeekAssessment({
+  assessment,
+}: WeekAssessmentProps) {
+  return (
+    <section className="mb-6 rounded-2xl border border-border bg-surface p-6">
+      <div className="grid gap-6 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+        <div className="rounded-xl bg-foreground p-5 text-background">
+          <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-background/55">
+            Plan quality
+          </p>
+
+          <p className="mt-3 text-5xl font-extrabold tracking-tight">
+            {assessment.score}
+          </p>
+
+          <p className="mt-2 text-sm font-semibold">
+            {getAssessmentLabel(assessment.label)}
+          </p>
+
+          <p className="mt-2 text-xs leading-5 text-background/60">
+            {assessment.totalSessions}{" "}
+            {assessment.totalSessions === 1
+              ? "session"
+              : "sessions"}{" "}
+            ·{" "}
+            {formatAssessmentMinutes(
+              assessment.totalMinutes,
+            )}
+          </p>
+        </div>
+
+        <div>
+          <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
+            Week assessment
+          </p>
+
+          <h2 className="mt-2 text-xl font-extrabold tracking-tight">
+            {getAssessmentHeadline(assessment.label)}
+          </h2>
+
+          {assessment.items.length > 0 && (
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              {assessment.items.map((item) => (
+                <AssessmentItem
+                  key={item.id}
+                  item={item}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AssessmentItem({
+  item,
+}: {
+  item: PlanAssessmentItem;
+}) {
+  const toneStyles = {
+    positive: {
+      marker: "bg-emerald-500",
+      label: "Strong",
+    },
+    attention: {
+      marker: "bg-amber-500",
+      label: "Review",
+    },
+    neutral: {
+      marker: "bg-muted-foreground",
+      label: "Note",
+    },
+  } as const;
+
+  const style = toneStyles[item.tone];
+
+  return (
+    <article className="flex items-start gap-3 rounded-xl border border-border bg-background p-4">
+      <span
+        className={`mt-1.5 size-2.5 shrink-0 rounded-full ${style.marker}`}
+      />
+
+      <div>
+        <p className="font-mono text-[8px] uppercase tracking-[0.2em] text-muted-foreground">
+          {style.label}
+        </p>
+
+        <h3 className="mt-1 text-sm font-bold tracking-tight">
+          {item.title}
+        </h3>
+
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+          {item.description}
+        </p>
+      </div>
+    </article>
+  );
+}
+
 function EmptyPlanState() {
   return (
     <div className="rounded-2xl border border-dashed border-border bg-surface/40 px-6 py-16 text-center">
@@ -257,7 +387,7 @@ function EmptyPlanState() {
       <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
         Define what you want to practice, how often you want
         to practice it, and your preferred days. Forge will
-        build the weekly plan.
+        build and assess the weekly plan.
       </p>
 
       <Link
@@ -627,6 +757,56 @@ function AddSlot({
       )}
     </div>
   );
+}
+
+function getAssessmentLabel(
+  label: WeeklyPlanAssessment["label"],
+): string {
+  switch (label) {
+    case "balanced":
+      return "Balanced week";
+
+    case "demanding":
+      return "Demanding week";
+
+    case "light":
+      return "Light week";
+
+    case "unplanned":
+      return "Not planned";
+  }
+}
+
+function getAssessmentHeadline(
+  label: WeeklyPlanAssessment["label"],
+): string {
+  switch (label) {
+    case "balanced":
+      return "The week looks sustainable and intentional.";
+
+    case "demanding":
+      return "The week may need more recovery or fewer commitments.";
+
+    case "light":
+      return "The week leaves room for recovery or additional focus.";
+
+    case "unplanned":
+      return "Generate the week to evaluate its balance.";
+  }
+}
+
+function formatAssessmentMinutes(
+  minutes: number,
+): string {
+  if (minutes < 60) {
+    return `${minutes}m`;
+  }
+
+  const hours = minutes / 60;
+
+  return Number.isInteger(hours)
+    ? `${hours}h`
+    : `${hours.toFixed(1)}h`;
 }
 
 function getErrorMessage(

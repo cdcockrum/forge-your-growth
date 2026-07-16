@@ -97,6 +97,7 @@ export type Database = {
           scheduled_time: string | null
           skill_id: string | null
           sort_order: number
+          status: string
           title: string
           updated_at: string
           user_id: string
@@ -114,6 +115,7 @@ export type Database = {
           scheduled_time?: string | null
           skill_id?: string | null
           sort_order?: number
+          status?: string
           title: string
           updated_at?: string
           user_id: string
@@ -131,6 +133,7 @@ export type Database = {
           scheduled_time?: string | null
           skill_id?: string | null
           sort_order?: number
+          status?: string
           title?: string
           updated_at?: string
           user_id?: string
@@ -180,6 +183,7 @@ export type Database = {
           created_at: string
           difficult: string | null
           feeling: number | null
+          focus_next_week: string | null
           id: string
           learned: string | null
           updated_at: string
@@ -191,6 +195,7 @@ export type Database = {
           created_at?: string
           difficult?: string | null
           feeling?: number | null
+          focus_next_week?: string | null
           id?: string
           learned?: string | null
           updated_at?: string
@@ -202,6 +207,7 @@ export type Database = {
           created_at?: string
           difficult?: string | null
           feeling?: number | null
+          focus_next_week?: string | null
           id?: string
           learned?: string | null
           updated_at?: string
@@ -269,6 +275,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      weekly_reviews: {
+        Row: {
+          challenges: string | null
+          created_at: string | null
+          energy: number | null
+          focus_next_week: string | null
+          id: string
+          lessons: string | null
+          updated_at: string | null
+          user_id: string
+          week_start: string
+          wins: string | null
+        }
+        Insert: {
+          challenges?: string | null
+          created_at?: string | null
+          energy?: number | null
+          focus_next_week?: string | null
+          id?: string
+          lessons?: string | null
+          updated_at?: string | null
+          user_id: string
+          week_start: string
+          wins?: string | null
+        }
+        Update: {
+          challenges?: string | null
+          created_at?: string | null
+          energy?: number | null
+          focus_next_week?: string | null
+          id?: string
+          lessons?: string | null
+          updated_at?: string | null
+          user_id?: string
+          week_start?: string
+          wins?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
