@@ -2,6 +2,7 @@ import {
   calculateProgress,
   calculateMomentum,
   calculateForgeScore,
+  calculateIdentityProgress,
   generateForgeCoach,
 } from ".";
 
@@ -12,6 +13,8 @@ import type {
 } from "@/features/forge/types";
 
 import type { WeeklyPlanAssessment } from "./planning-assessment/assessment.types";
+
+
 
 type PipelineOptions = {
   sessions: PracticeSession[];
@@ -42,15 +45,21 @@ export function buildForgeState({
     skills,
   });
 
+  const identity = calculateIdentityProgress({
+  sessions,
+  skills,
+});
+
   const coach = generateForgeCoach({
     progress,
     assessment,
   });
 
   return {
-    progress,
-    momentum,
-    forgeScore,
-    coach,
+  progress,
+  momentum,
+  forgeScore,
+  identity,
+  coach,
   };
 }

@@ -1,4 +1,8 @@
-import {Suspense, useEffect, useMemo,} from "react";
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+} from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   useQueryClient,
@@ -22,23 +26,34 @@ import {
 } from "recharts";
 
 import { PageHeader } from "@/components/forge/app-shell";
+
 import {
+  achievementsQuery,
   iso,
   lifeAreasQuery,
   sessionsInRangeQuery,
   skillsQuery,
 } from "@/features/forge/queries";
-import type {
-  PracticeSession,
-} from "@/features/forge/types";
+
+import type { PracticeSession } from "@/features/forge/types";
+
+import { IdentityOverview } from "@/features/identity";
+
 import {
+  calculateIdentityProgress,
   calculateProgress,
+  evaluateAchievements,
   generateProgressInsights,
   syncAchievements,
   type LifeAreaProgress,
   type ProgressInsight,
   type SkillProgress,
 } from "@/features/forge-engine";
+
+import {
+  AchievementsOverview,
+} from "@/features/achievements";
+
 
 export const Route = createFileRoute(
   "/_authenticated/progress",
@@ -55,6 +70,9 @@ export const Route = createFileRoute(
       ),
       context.queryClient.ensureQueryData(
         lifeAreasQuery(),
+      ),
+      context.queryClient.ensureQueryData(
+        achievementsQuery(),
       ),
     ]);
   },
@@ -86,15 +104,25 @@ function ProgressLoadingState() {
       </div>
 
       <div className="h-72 animate-pulse rounded-2xl bg-muted" />
+      <div className="h-96 animate-pulse rounded-2xl bg-muted" />
     </div>
   );
 }
 
 function ProgressContent() {
-  const { start, end, startDate, endDate } =
-    getProgressRange();
-
   const queryClient = useQueryClient();
+
+  const {
+    start,
+    end,
+    startDate,
+    endDate,
+  } = getProgressRange();
+
+  const { data: earnedAchievements } =
+  useSuspenseQuery(
+    achievementsQuery(),
+  );
 
   const { data: sessions } = useSuspenseQuery(
     sessionsInRangeQuery(start, end),
@@ -108,6 +136,8 @@ function ProgressContent() {
     lifeAreasQuery(),
   );
 
+
+
   const progress = useMemo(
     () =>
       calculateProgress({
@@ -118,35 +148,20 @@ function ProgressContent() {
     [sessions, skills, lifeAreas],
   );
 
-  useEffect(() => {
-  let cancelled = false;
+  const achievementProgress = useMemo(
+  () => evaluateAchievements(progress),
+  [progress],
+);
 
-  async function sync() {
-    try {
-      const result = await syncAchievements(progress);
+  const identity = useMemo(
+    () =>
+      calculateIdentityProgress({
+        sessions,
+        skills,
+      }),
+    [sessions, skills],
+  );
 
-      if (
-        !cancelled &&
-        result.newlyEarnedKeys.length > 0
-      ) {
-        await queryClient.invalidateQueries({
-          queryKey: ["achievements"],
-        });
-      }
-    } catch (error) {
-      console.error(
-        "Achievement synchronization failed:",
-        error,
-      );
-    }
-  }
-
-  void sync();
-
-  return () => {
-    cancelled = true;
-  };
-}, [progress, queryClient]);
 
   const insights = useMemo(
     () =>
@@ -165,6 +180,37 @@ function ProgressContent() {
       ),
     [sessions, startDate, endDate],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function synchronizeAchievements() {
+      try {
+        const result =
+          await syncAchievements(progress);
+
+        if (
+          !cancelled &&
+          result.newlyEarnedKeys.length > 0
+        ) {
+          await queryClient.invalidateQueries({
+            queryKey: ["achievements"],
+          });
+        }
+      } catch (error) {
+        console.error(
+          "Achievement synchronization failed:",
+          error,
+        );
+      }
+    }
+
+    void synchronizeAchievements();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [progress, queryClient]);
 
   const dateRange = `${startDate.toLocaleDateString(
     "en-US",
@@ -195,7 +241,9 @@ function ProgressContent() {
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           label="Time invested"
-          value={formatMinutes(progress.totalMinutes)}
+          value={formatMinutes(
+            progress.totalMinutes,
+          )}
           note={`${progress.completedSessions} completed practices`}
           icon={Clock3}
         />
@@ -217,7 +265,9 @@ function ProgressContent() {
 
         <MetricCard
           label="Completed"
-          value={String(progress.completedSessions)}
+          value={String(
+            progress.completedSessions,
+          )}
           note={`${progress.skippedSessions} skipped`}
           icon={Trophy}
         />
@@ -225,12 +275,30 @@ function ProgressContent() {
 
       <ForgeNotices insights={insights} />
 
+      <div className="mt-6">
+        <IdentityOverview
+          result={identity}
+          skills={skills}
+        />
+      </div>
+
+      <div className="mt-6">
+        <AchievementsOverview
+          evaluated={achievementProgress}
+          earned={earnedAchievements}
+        />
+      </div>
+
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.7fr)]">
         <WeeklyPracticeChart data={weeklyData} />
 
         <PracticeSignals
-          strongestSkill={progress.strongestSkill}
-          neglectedSkill={progress.neglectedSkill}
+          strongestSkill={
+            progress.strongestSkill
+          }
+          neglectedSkill={
+            progress.neglectedSkill
+          }
         />
       </div>
 
@@ -242,7 +310,8 @@ function ProgressContent() {
         />
 
         {progress.lifeAreas.some(
-          (area) => area.completedMinutes > 0,
+          (area) =>
+            area.completedMinutes > 0,
         ) ? (
           <LifeAreaBalance
             areas={progress.lifeAreas}
@@ -260,7 +329,9 @@ function ProgressContent() {
         />
 
         {progress.skills.length > 0 ? (
-          <SkillRecord skills={progress.skills} />
+          <SkillRecord
+            skills={progress.skills}
+          />
         ) : (
           <EmptyPanel message="Add a skill to begin tracking meaningful progress." />
         )}
@@ -356,8 +427,8 @@ function ForgeNotices({
       <div className="mt-6 grid gap-3 md:grid-cols-2">
         {insights.length === 0 ? (
           <p className="text-sm leading-6 text-background/65">
-            Complete a few practices and Forge will begin surfacing
-            useful patterns.
+            Complete a few practices and Forge will begin
+            surfacing useful patterns.
           </p>
         ) : (
           insights.map((insight) => (
@@ -467,15 +538,19 @@ function WeeklyPracticeChart({
                 fill: "var(--muted)",
               }}
               contentStyle={{
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
+                background:
+                  "var(--surface)",
+                border:
+                  "1px solid var(--border)",
                 borderRadius: 12,
                 fontSize: 12,
               }}
               formatter={(value, name) => {
                 if (name === "hours") {
                   return [
-                    `${Number(value).toFixed(1)}h`,
+                    `${Number(value).toFixed(
+                      1,
+                    )}h`,
                     "Hours",
                   ];
                 }
@@ -558,7 +633,9 @@ function SignalCard({
 
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             {neglected
-              ? formatNeglectedSkill(skill)
+              ? formatNeglectedSkill(
+                  skill,
+                )
               : `${skill.completedSessions} completed sessions · ${formatMinutes(
                   skill.completedMinutes,
                 )} invested`}
@@ -579,7 +656,8 @@ function LifeAreaBalance({
   areas: LifeAreaProgress[];
 }) {
   const activeAreas = areas.filter(
-    (area) => area.completedMinutes > 0,
+    (area) =>
+      area.completedMinutes > 0,
   );
 
   return (
@@ -591,7 +669,8 @@ function LifeAreaBalance({
               <span
                 className="size-3 rounded-full"
                 style={{
-                  backgroundColor: area.color,
+                  backgroundColor:
+                    area.color,
                 }}
               />
 
@@ -601,8 +680,11 @@ function LifeAreaBalance({
                 </p>
 
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {area.completedSessions} completed ·{" "}
-                  {formatMinutes(area.completedMinutes)}
+                  {area.completedSessions}{" "}
+                  completed ·{" "}
+                  {formatMinutes(
+                    area.completedMinutes,
+                  )}
                 </p>
               </div>
             </div>
@@ -617,7 +699,8 @@ function LifeAreaBalance({
               className="h-full rounded-full transition-[width] duration-500"
               style={{
                 width: `${area.percentageOfPractice}%`,
-                backgroundColor: area.color,
+                backgroundColor:
+                  area.color,
               }}
             />
           </div>
@@ -633,10 +716,14 @@ function SkillRecord({
   skills: SkillProgress[];
 }) {
   const sortedSkills = [...skills].sort(
-    (a, b) =>
-      b.completedMinutes - a.completedMinutes ||
-      b.completedSessions - a.completedSessions ||
-      a.name.localeCompare(b.name),
+    (first, second) =>
+      second.completedMinutes -
+        first.completedMinutes ||
+      second.completedSessions -
+        first.completedSessions ||
+      first.name.localeCompare(
+        second.name,
+      ),
   );
 
   return (
@@ -652,13 +739,17 @@ function SkillRecord({
             </h3>
 
             <p className="mt-1 text-xs text-muted-foreground">
-              {formatLastPracticed(skill)}
+              {formatLastPracticed(
+                skill,
+              )}
             </p>
           </div>
 
           <RecordValue
             label="Sessions"
-            value={String(skill.completedSessions)}
+            value={String(
+              skill.completedSessions,
+            )}
           />
 
           <RecordValue
@@ -761,7 +852,9 @@ function getProgressRange() {
   endDate.setHours(0, 0, 0, 0);
 
   const startDate = new Date(endDate);
-  startDate.setDate(endDate.getDate() - 27);
+  startDate.setDate(
+    endDate.getDate() - 27,
+  );
 
   return {
     start: iso(startDate),
@@ -776,41 +869,67 @@ function createWeeklyData(
   rangeStart: Date,
   rangeEnd: Date,
 ): WeeklyData[] {
-  return Array.from({ length: 4 }, (_, index) => {
-    const weekStart = new Date(rangeStart);
-    weekStart.setDate(
-      rangeStart.getDate() + index * 7,
-    );
+  return Array.from(
+    { length: 4 },
+    (_, index) => {
+      const weekStart =
+        new Date(rangeStart);
 
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
+      weekStart.setDate(
+        rangeStart.getDate() +
+          index * 7,
+      );
 
-    if (weekEnd > rangeEnd) {
-      weekEnd.setTime(rangeEnd.getTime());
-    }
+      const weekEnd =
+        new Date(weekStart);
 
-    const completedSessions = sessions.filter(
-      (session) =>
-        isCompleted(session) &&
-        session.scheduled_date >= iso(weekStart) &&
-        session.scheduled_date <= iso(weekEnd),
-    );
+      weekEnd.setDate(
+        weekStart.getDate() + 6,
+      );
 
-    const minutes = completedSessions.reduce(
-      (sum, session) =>
-        sum + (session.duration_minutes ?? 0),
-      0,
-    );
+      if (weekEnd > rangeEnd) {
+        weekEnd.setTime(
+          rangeEnd.getTime(),
+        );
+      }
 
-    return {
-      week: weekStart.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      }),
-      hours: Math.round((minutes / 60) * 10) / 10,
-      sessions: completedSessions.length,
-    };
-  });
+      const completedSessions =
+        sessions.filter(
+          (session) =>
+            isCompleted(session) &&
+            session.scheduled_date >=
+              iso(weekStart) &&
+            session.scheduled_date <=
+              iso(weekEnd),
+        );
+
+      const minutes =
+        completedSessions.reduce(
+          (sum, session) =>
+            sum +
+            (session.duration_minutes ??
+              0),
+          0,
+        );
+
+      return {
+        week:
+          weekStart.toLocaleDateString(
+            "en-US",
+            {
+              month: "short",
+              day: "numeric",
+            },
+          ),
+        hours:
+          Math.round(
+            (minutes / 60) * 10,
+          ) / 10,
+        sessions:
+          completedSessions.length,
+      };
+    },
+  );
 }
 
 function isCompleted(
@@ -822,7 +941,9 @@ function isCompleted(
   );
 }
 
-function formatMinutes(minutes: number): string {
+function formatMinutes(
+  minutes: number,
+): string {
   if (minutes < 60) {
     return `${minutes}m`;
   }
@@ -837,15 +958,21 @@ function formatMinutes(minutes: number): string {
 function formatNeglectedSkill(
   skill: SkillProgress,
 ): string {
-  if (skill.daysSincePracticed === null) {
+  if (
+    skill.daysSincePracticed === null
+  ) {
     return "No completed practice recorded yet.";
   }
 
-  if (skill.daysSincePracticed === 0) {
+  if (
+    skill.daysSincePracticed === 0
+  ) {
     return "Practiced today.";
   }
 
-  if (skill.daysSincePracticed === 1) {
+  if (
+    skill.daysSincePracticed === 1
+  ) {
     return "Last practiced yesterday.";
   }
 
@@ -859,11 +986,15 @@ function formatLastPracticed(
     return "No completed sessions yet";
   }
 
-  if (skill.daysSincePracticed === 0) {
+  if (
+    skill.daysSincePracticed === 0
+  ) {
     return "Practiced today";
   }
 
-  if (skill.daysSincePracticed === 1) {
+  if (
+    skill.daysSincePracticed === 1
+  ) {
     return "Practiced yesterday";
   }
 

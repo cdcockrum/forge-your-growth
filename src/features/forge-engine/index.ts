@@ -24,3 +24,5 @@ export * from "./coach/coachEngine";
 
 export * from "./momentum";
 export * from "./forgePipeline";
+
+export * from "./identity";
