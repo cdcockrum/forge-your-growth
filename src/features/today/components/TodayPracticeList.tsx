@@ -18,7 +18,7 @@ import {
   restoreSession,
   skipSession,
   startSession,
-} from "@/services/sessionService";
+} from "@/features/focus/services/sessionService";
 
 type TodayPracticeListProps = {
   sessions: PracticeSession[];

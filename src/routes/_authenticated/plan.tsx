@@ -40,14 +40,14 @@ import {
   type WeeklyPlanAssessment,
 } from "@/features/forge-engine";
 import { supabase } from "@/integrations/supabase/client";
-import { generateCurrentWeek } from "@/services/planningService";
+import { generateCurrentWeek } from "@/features/focus/services/planningService";
 import {
   completeSession,
   removeSession,
   restoreSession,
   skipSession,
   startSession,
-} from "@/services/sessionService";
+} from "@/features/focus/services/sessionService";
 
 export const Route = createFileRoute("/_authenticated/plan")({
   loader: async ({ context }) => {
