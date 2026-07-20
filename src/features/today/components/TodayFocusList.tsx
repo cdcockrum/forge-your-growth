@@ -8,6 +8,12 @@ import {
   type FocusItem,
 } from "@/features/focus";
 
+import {
+  ForgeCard,
+  ForgeEmptyState,
+  ForgeSection,
+} from "@/components/forge";
+
 type TodayFocusListProps = {
   items: FocusItem[];
 };
@@ -85,17 +91,19 @@ export function TodayFocusList({
   ).length;
 
   return (
-    <section className="rounded-2xl border border-border bg-surface p-5 md:p-6">
+    <ForgeCard>
       <div className="flex items-end justify-between gap-4">
-        <div>
-          <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
-            Focus
-          </p>
-
-          <h2 className="mt-2 text-xl font-extrabold tracking-tight">
-            What needs your attention today?
-          </h2>
-        </div>
+        <ForgeSection
+          eyebrow="Focus"
+          title="What needs your attention today?"
+          action={
+            items.length > 0 ? (
+              <p className="text-xs font-semibold text-muted-foreground">
+                {completedCount} of {items.length} complete
+              </p>
+            ) : undefined
+          }
+        />
 
         {items.length > 0 && (
           <p className="text-xs font-semibold text-muted-foreground">
@@ -105,15 +113,11 @@ export function TodayFocusList({
       </div>
 
       {items.length === 0 ? (
-        <div className="mt-5 rounded-xl border border-dashed border-border px-5 py-8 text-center">
-          <p className="text-sm font-semibold">
-            Nothing scheduled for today.
-          </p>
-
-          <p className="mt-2 text-xs leading-5 text-muted-foreground">
-            Weekly Focus items assigned to today will appear here.
-          </p>
-        </div>
+        <ForgeEmptyState
+          title="Nothing scheduled for today."
+          description="Weekly Focus items assigned to today will appear here."
+          className="mt-5 py-8"
+        />
       ) : (
         <div className="mt-5 divide-y divide-border">
           {items.map((item) => {
@@ -175,7 +179,7 @@ export function TodayFocusList({
           })}
         </div>
       )}
-    </section>
+    </ForgeCard>
   );
 }
 

@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/forge/app-shell";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { SessionCard } from "@/components/forge/session-card";
+import { ForgePage } from "@/components/forge";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   loader: async ({ context }) => {

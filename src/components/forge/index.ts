@@ -4,3 +4,4 @@ export * from "./ForgeEmptyState";
 export * from "./ForgeSection";
 export * from "./ForgeStat";
 export * from "./ForgePage";
+export * from "./ForgeSidebarLayout";
