@@ -10,6 +10,7 @@ import {
   todayIso,
   weekBounds,
 } from "@/features/forge/queries";
+import { focusItemsForDateQuery } from "@/features/focus";
 import { buildForgeState } from "@/features/forge-engine";
 
 export function useTodayDashboard() {
@@ -40,6 +41,10 @@ export function useTodayDashboard() {
     achievementsQuery(),
   );
 
+  const { data: focusItems } = useSuspenseQuery(
+    focusItemsForDateQuery(today),
+  );
+
   const forge = buildForgeState({
     sessions: weekSessions,
     skills,
@@ -53,6 +58,7 @@ export function useTodayDashboard() {
     todaySessions,
     weekSessions,
     achievements,
+    focusItems,
     forge,
   };
 }

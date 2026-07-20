@@ -55,6 +55,14 @@ import {
   startSession,
 } from "@/features/focus/services/sessionService";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  ForgeButton,
+  ForgeCard,
+  ForgeEmptyState,
+  ForgePage,
+  ForgeSection,
+  ForgeStat,
+} from "@/components/forge";
 
 export const Route = createFileRoute(
   "/_authenticated/plan",
@@ -82,11 +90,11 @@ export const Route = createFileRoute(
 
 function PlanPage() {
   return (
-    <main className="mx-auto max-w-6xl px-5 pb-16 pt-8 md:px-10 md:pt-12">
+    <ForgePage>
       <Suspense fallback={<PlanLoadingState />}>
         <PlanContent />
       </Suspense>
-    </main>
+    </ForgePage>
   );
 }
 
@@ -100,15 +108,12 @@ function PlanLoadingState() {
       <div className="h-64 animate-pulse rounded-2xl bg-muted" />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-7">
-        {Array.from(
-          { length: 7 },
-          (_, index) => (
-            <div
-              key={index}
-              className="h-44 animate-pulse rounded-xl border border-border bg-surface/50"
-            />
-          ),
-        )}
+        {Array.from({ length: 7 }, (_, index) => (
+          <div
+            key={index}
+            className="h-44 animate-pulse rounded-xl border border-border bg-surface/50"
+          />
+        ))}
       </div>
     </div>
   );
@@ -153,6 +158,7 @@ function PlanContent() {
     { length: 7 },
     (_, index) => {
       const date = new Date(monday);
+
       date.setDate(
         monday.getDate() + index,
       );
@@ -339,6 +345,33 @@ function PlanContent() {
           })}
         </div>
       )}
+
+    <div className="mt-8 grid gap-4 md:grid-cols-4">
+      <ForgeStat
+        label="Practice"
+        value={sessions.length}
+        subtitle="Sessions this week"
+      />
+
+      <ForgeStat
+        label="Focus"
+        value={focusItems.length}
+        subtitle="Weekly focus items"
+      />
+
+      <ForgeStat
+        label="Skills"
+        value={skills.length}
+        subtitle="Skills being trained"
+      />
+
+      <ForgeStat
+        label="Score"
+        value={assessment.score}
+        subtitle={assessment.label}
+      />
+    </div>
+
     </>
   );
 }
@@ -357,6 +390,9 @@ function WeeklyFocus({
   const [title, setTitle] =
     useState("");
 
+  const [scheduledDate, setScheduledDate] =
+    useState(weekStart);
+
   const [adding, setAdding] =
     useState(false);
 
@@ -366,6 +402,24 @@ function WeeklyFocus({
   const completedCount = items.filter(
     (item) => item.completed,
   ).length;
+
+  const weekDates = Array.from(
+    { length: 7 },
+    (_, index) => {
+      const date = new Date(
+        `${weekStart}T00:00:00`,
+      );
+
+      date.setDate(
+        date.getDate() + index,
+      );
+
+      return {
+        date,
+        value: iso(date),
+      };
+    },
+  );
 
   async function refreshFocus() {
     await queryClient.invalidateQueries({
@@ -404,7 +458,7 @@ function WeeklyFocus({
         user_id: data.user.id,
         title: trimmedTitle,
         notes: null,
-        scheduled_date: weekStart,
+        scheduled_date: scheduledDate,
         completed: false,
         completed_at: null,
         priority: 2,
@@ -492,34 +546,28 @@ function WeeklyFocus({
   }
 
   return (
-    <section className="mb-6 rounded-2xl border border-border bg-surface p-5 md:p-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
-            Focus
-          </p>
-
-          <h2 className="mt-2 text-xl font-extrabold tracking-tight">
-            What must happen this week?
-          </h2>
-
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Responsibilities and commitments
-            outside your deliberate practice.
-          </p>
-        </div>
-
-        {items.length > 0 && (
+    <ForgeCard className="mb-6">
+      <ForgeSection
+      eyebrow="Focus"
+      title="What must happen this week?"
+      description={
+        <>
+          Responsibilities and commitments outside your
+          deliberate practice.
+        </>
+      }
+      action={
+        items.length > 0 ? (
           <p className="text-xs font-semibold text-muted-foreground">
-            {completedCount} of{" "}
-            {items.length} complete
+            {completedCount} of {items.length} complete
           </p>
-        )}
-      </div>
+        ) : undefined
+      }
+    />
 
       <form
         onSubmit={addItem}
-        className="mt-5 flex flex-col gap-2 sm:flex-row"
+        className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px_auto]"
       >
         <input
           type="text"
@@ -528,34 +576,57 @@ function WeeklyFocus({
             setTitle(event.target.value)
           }
           placeholder="Add something that needs to happen..."
-          className="h-11 flex-1 rounded-xl border border-border bg-background px-4 text-sm outline-none transition focus:border-foreground/30 focus:ring-2 focus:ring-accent/20"
+          className="h-11 rounded-xl border border-border bg-background px-4 text-sm outline-none transition focus:border-foreground/30 focus:ring-2 focus:ring-accent/20"
         />
 
-        <button
-          type="submit"
-          disabled={
-            adding || !title.trim()
+        <select
+          value={scheduledDate}
+          onChange={(event) =>
+            setScheduledDate(
+              event.target.value,
+            )
           }
-          className="h-11 rounded-xl bg-foreground px-5 text-sm font-semibold text-background transition hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none transition focus:border-foreground/30 focus:ring-2 focus:ring-accent/20"
         >
-          {adding
-            ? "Adding..."
-            : "Add"}
-        </button>
+          {weekDates.map(
+            ({ date, value }) => (
+              <option
+                key={value}
+                value={value}
+              >
+                {date.toLocaleDateString(
+                  "en-US",
+                  {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                  },
+                )}
+              </option>
+            ),
+          )}
+        </select>
+
+        <ForgeButton
+          type="submit"
+          size="large"
+          disabled={adding || !title.trim()}
+        >
+          {adding ? "Adding..." : "Add"}
+        </ForgeButton>
       </form>
 
       {items.length === 0 ? (
-        <div className="mt-5 rounded-xl border border-dashed border-border px-5 py-8 text-center">
-          <p className="text-sm font-semibold">
-            Nothing has been added yet.
-          </p>
-
-          <p className="mt-2 text-xs leading-5 text-muted-foreground">
-            Use Focus as a simple weekly
-            checklist, with or without a
-            guided practice plan.
-          </p>
-        </div>
+        <ForgeEmptyState
+          title="Nothing has been added yet."
+          description={
+            <>
+              Use Focus as a simple weekly checklist, with or
+              without a guided practice plan.
+            </>
+          }
+          className="mt-5 py-8"
+        />
       ) : (
         <div className="mt-5 divide-y divide-border">
           {items.map((item) => {
@@ -589,20 +660,35 @@ function WeeklyFocus({
                     : ""}
                 </button>
 
-                <button
-                  type="button"
-                  disabled={updating}
-                  onClick={() =>
-                    toggleItem(item)
-                  }
-                  className={`min-w-0 flex-1 text-left text-sm font-semibold transition disabled:opacity-50 ${
-                    item.completed
-                      ? "text-muted-foreground line-through"
-                      : "text-foreground"
-                  }`}
-                >
-                  {item.title}
-                </button>
+                <div className="min-w-0 flex-1">
+                  <button
+                    type="button"
+                    disabled={updating}
+                    onClick={() =>
+                      toggleItem(item)
+                    }
+                    className={`block w-full text-left text-sm font-semibold transition disabled:opacity-50 ${
+                      item.completed
+                        ? "text-muted-foreground line-through"
+                        : "text-foreground"
+                    }`}
+                  >
+                    {item.title}
+                  </button>
+
+                  {item.scheduled_date && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {new Date(
+                        `${item.scheduled_date}T00:00:00`,
+                      ).toLocaleDateString(
+                        "en-US",
+                        {
+                          weekday: "long",
+                        },
+                      )}
+                    </p>
+                  )}
+                </div>
 
                 <button
                   type="button"
@@ -619,7 +705,7 @@ function WeeklyFocus({
           })}
         </div>
       )}
-    </section>
+    </ForgeCard>
   );
 }
 
@@ -738,31 +824,25 @@ function AssessmentItem({
 
 function EmptyPlanState() {
   return (
-    <div className="rounded-2xl border border-dashed border-border bg-surface/40 px-6 py-16 text-center">
-      <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-        Your growth system begins here
-      </p>
-
-      <h2 className="mt-3 text-2xl font-extrabold tracking-tight">
-        Add a skill to generate your first
-        week.
-      </h2>
-
-      <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-        Define what you want to practice,
-        how often you want to practice it,
-        and your preferred days. Forge will
-        build and assess the weekly plan.
-      </p>
-
-      <Link
-        to="/skills"
-        className="mt-6 inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background transition hover:bg-foreground/90"
-      >
-        <Plus className="size-4" />
-        Add your first skill
-      </Link>
-    </div>
+    <ForgeEmptyState
+      eyebrow="Your growth system begins here"
+      title="Add a skill to generate your first week."
+      description={
+        <>
+          Define what you want to practice, how often you
+          want to practice it, and your preferred days.
+          Forge will build and assess the weekly plan.
+        </>
+      }
+      action={
+        <Link to="/skills">
+          <ForgeButton size="large">
+            <Plus className="size-4" />
+            Add your first skill
+          </ForgeButton>
+        </Link>
+      }
+    />
   );
 }
 

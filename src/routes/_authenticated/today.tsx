@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
 import {
@@ -20,11 +20,17 @@ import {
   ProgressPanel,
   QuoteCard,
   RecentAchievementCard,
+  TodayFocusList,
   TodayHeader,
   TodayPracticeList,
   calculateTodayProgress,
   useTodayDashboard,
 } from "@/features/today";
+
+import {
+  focusItemsForDateQuery,
+} from "@/features/focus";
+
 
 export const Route = createFileRoute(
   "/_authenticated/today",
@@ -51,6 +57,10 @@ export const Route = createFileRoute(
       ),
       context.queryClient.ensureQueryData(
         achievementsQuery(),
+      ),
+
+      context.queryClient.ensureQueryData(
+        focusItemsForDateQuery(today),
       ),
     ]);
   },
@@ -111,6 +121,7 @@ function TodayContent() {
     todaySessions,
     weekSessions,
     achievements,
+    focusItems,
     forge,
   } = dashboard;
 
@@ -129,11 +140,17 @@ function TodayContent() {
       <CoachCard coach={forge.coach} />
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <TodayPracticeList
-          sessions={todaySessions}
-          skills={skills}
-          areas={areas}
-        />
+        <div className="space-y-6">
+          <TodayPracticeList
+            sessions={todaySessions}
+            skills={skills}
+            areas={areas}
+          />
+
+          <TodayFocusList
+            items={focusItems}
+          />
+        </div>
 
         <aside className="space-y-4">
           <MomentumPanel
@@ -142,16 +159,24 @@ function TodayContent() {
             consistency={
               forge.momentum.consistency
             }
-            recovery={forge.momentum.recovery}
-            adherence={forge.momentum.adherence}
+            recovery={
+              forge.momentum.recovery
+            }
+            adherence={
+              forge.momentum.adherence
+            }
             burnoutRisk={
               forge.momentum.burnoutRisk
             }
-            message={forge.momentum.message}
+            message={
+              forge.momentum.message
+            }
           />
 
           <ForgeScorePanel
-            score={forge.forgeScore.score}
+            score={
+              forge.forgeScore.score
+            }
             breakdown={
               forge.forgeScore.breakdown
             }
@@ -161,14 +186,18 @@ function TodayContent() {
             todayCompleted={
               todayProgress.completed
             }
-            todayTotal={todayProgress.total}
+            todayTotal={
+              todayProgress.total
+            }
             todayPercentage={
               todayProgress.percentage
             }
             weekCompleted={
               weekProgress.completed
             }
-            weekTotal={weekProgress.total}
+            weekTotal={
+              weekProgress.total
+            }
           />
 
           <IdentityCard
@@ -185,6 +214,7 @@ function TodayContent() {
     </>
   );
 }
+
 
 function calculateWeekProgress(
   sessions: PracticeSession[],
@@ -204,4 +234,32 @@ function calculateWeekProgress(
     completed,
     total: includedSessions.length,
   };
+}
+
+function getErrorMessage(
+  error: unknown,
+  fallback: string,
+): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (
+      error as {
+        message?: unknown;
+      }
+    ).message === "string"
+  ) {
+    return (
+      error as {
+        message: string;
+      }
+    ).message;
+  }
+
+  return fallback;
 }
