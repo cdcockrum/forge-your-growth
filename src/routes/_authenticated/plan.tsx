@@ -39,7 +39,13 @@ import {
   type PlanAssessmentItem,
   type WeeklyPlanAssessment,
 } from "@/features/forge-engine";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  createFocusItem,
+  deleteFocusItem,
+  focusItemsQuery,
+  toggleFocusComplete,
+  type FocusItem,
+} from "@/features/focus";
 import { generateCurrentWeek } from "@/features/focus/services/planningService";
 import {
   completeSession,
@@ -48,14 +54,24 @@ import {
   skipSession,
   startSession,
 } from "@/features/focus/services/sessionService";
+import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/_authenticated/plan")({
+export const Route = createFileRoute(
+  "/_authenticated/plan",
+)({
   loader: async ({ context }) => {
     const { start, end } = weekBounds();
 
     await Promise.all([
-      context.queryClient.ensureQueryData(skillsQuery()),
-      context.queryClient.ensureQueryData(lifeAreasQuery()),
+      context.queryClient.ensureQueryData(
+        skillsQuery(),
+      ),
+      context.queryClient.ensureQueryData(
+        lifeAreasQuery(),
+      ),
+      context.queryClient.ensureQueryData(
+        focusItemsQuery(),
+      ),
       context.queryClient.ensureQueryData(
         sessionsInRangeQuery(start, end),
       ),
@@ -81,13 +97,18 @@ function PlanLoadingState() {
 
       <div className="h-52 animate-pulse rounded-2xl bg-muted" />
 
+      <div className="h-64 animate-pulse rounded-2xl bg-muted" />
+
       <div className="grid grid-cols-1 gap-3 md:grid-cols-7">
-        {Array.from({ length: 7 }, (_, index) => (
-          <div
-            key={index}
-            className="h-44 animate-pulse rounded-xl border border-border bg-surface/50"
-          />
-        ))}
+        {Array.from(
+          { length: 7 },
+          (_, index) => (
+            <div
+              key={index}
+              className="h-44 animate-pulse rounded-xl border border-border bg-surface/50"
+            />
+          ),
+        )}
       </div>
     </div>
   );
@@ -97,13 +118,30 @@ function PlanContent() {
   const queryClient = useQueryClient();
   const { start, end, monday } = weekBounds();
 
-  const { data: skills } = useSuspenseQuery(skillsQuery());
-  const { data: areas } = useSuspenseQuery(lifeAreasQuery());
+  const { data: skills } = useSuspenseQuery(
+    skillsQuery(),
+  );
+
+  const { data: areas } = useSuspenseQuery(
+    lifeAreasQuery(),
+  );
+
   const { data: sessions } = useSuspenseQuery(
     sessionsInRangeQuery(start, end),
   );
 
-  const [generating, setGenerating] = useState(false);
+  const { data: allFocusItems } =
+    useSuspenseQuery(focusItemsQuery());
+
+  const focusItems = allFocusItems.filter(
+    (item) =>
+      item.scheduled_date !== null &&
+      item.scheduled_date >= start &&
+      item.scheduled_date <= end,
+  );
+
+  const [generating, setGenerating] =
+    useState(false);
 
   const assessment = assessWeeklyPlan({
     sessions,
@@ -111,16 +149,21 @@ function PlanContent() {
     lifeAreas: areas,
   });
 
-  const dayList = Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(monday);
-    date.setDate(monday.getDate() + index);
+  const dayList = Array.from(
+    { length: 7 },
+    (_, index) => {
+      const date = new Date(monday);
+      date.setDate(
+        monday.getDate() + index,
+      );
 
-    return {
-      date,
-      iso: iso(date),
-      key: DAYS[index],
-    };
-  });
+      return {
+        date,
+        iso: iso(date),
+        key: DAYS[index],
+      };
+    },
+  );
 
   async function generateWeek() {
     if (skills.length === 0) {
@@ -133,10 +176,13 @@ function PlanContent() {
     try {
       setGenerating(true);
 
-      const result = await generateCurrentWeek();
+      const result =
+        await generateCurrentWeek();
 
       if (result.created === 0) {
-        toast.info("This week is already fully planned.");
+        toast.info(
+          "This week is already fully planned.",
+        );
         return;
       }
 
@@ -152,6 +198,11 @@ function PlanContent() {
         }.`,
       );
     } catch (error) {
+      console.error(
+        "Generate week error:",
+        error,
+      );
+
       toast.error(
         getErrorMessage(
           error,
@@ -166,10 +217,13 @@ function PlanContent() {
   return (
     <>
       <PageHeader
-        eyebrow={`Week of ${monday.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        })}`}
+        eyebrow={`Week of ${monday.toLocaleDateString(
+          "en-US",
+          {
+            month: "short",
+            day: "numeric",
+          },
+        )}`}
         title={
           <>
             The{" "}
@@ -187,24 +241,37 @@ function PlanContent() {
             className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background transition hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Sparkles className="size-3.5" />
-            {generating ? "Forging..." : "Generate week"}
+
+            {generating
+              ? "Forging..."
+              : "Generate week"}
           </button>
         }
       />
 
-      <WeekAssessment assessment={assessment} />
+      <WeekAssessment
+        assessment={assessment}
+      />
+
+      <WeeklyFocus
+        items={focusItems}
+        weekStart={start}
+      />
 
       {skills.length === 0 ? (
         <EmptyPlanState />
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-7">
           {dayList.map((day) => {
-            const daySessions = sessions.filter(
-              (session) =>
-                session.scheduled_date === day.iso,
-            );
+            const daySessions =
+              sessions.filter(
+                (session) =>
+                  session.scheduled_date ===
+                  day.iso,
+              );
 
-            const isToday = day.iso === todayIso();
+            const isToday =
+              day.iso === todayIso();
 
             return (
               <section
@@ -232,31 +299,39 @@ function PlanContent() {
                 </div>
 
                 <div className="min-h-[80px] space-y-2">
-                  {daySessions.map((session) => {
-                    const skill = skills.find(
-                      (item) => item.id === session.skill_id,
-                    );
-
-                    const area = skill
-                      ? areas.find(
+                  {daySessions.map(
+                    (session) => {
+                      const skill =
+                        skills.find(
                           (item) =>
-                            item.id === skill.life_area_id,
-                        )
-                      : undefined;
+                            item.id ===
+                            session.skill_id,
+                        );
 
-                    return (
-                      <PlanSlot
-                        key={session.id}
-                        session={session}
-                        area={area}
-                      />
-                    );
-                  })}
+                      const area = skill
+                        ? areas.find(
+                            (item) =>
+                              item.id ===
+                              skill.life_area_id,
+                          )
+                        : undefined;
+
+                      return (
+                        <PlanSlot
+                          key={session.id}
+                          session={session}
+                          area={area}
+                        />
+                      );
+                    },
+                  )}
 
                   <AddSlot
                     date={day.iso}
                     skills={skills}
-                    existingSessions={daySessions}
+                    existingSessions={
+                      daySessions
+                    }
                   />
                 </div>
               </section>
@@ -265,6 +340,286 @@ function PlanContent() {
         </div>
       )}
     </>
+  );
+}
+
+type WeeklyFocusProps = {
+  items: FocusItem[];
+  weekStart: string;
+};
+
+function WeeklyFocus({
+  items,
+  weekStart,
+}: WeeklyFocusProps) {
+  const queryClient = useQueryClient();
+
+  const [title, setTitle] =
+    useState("");
+
+  const [adding, setAdding] =
+    useState(false);
+
+  const [updatingId, setUpdatingId] =
+    useState<string | null>(null);
+
+  const completedCount = items.filter(
+    (item) => item.completed,
+  ).length;
+
+  async function refreshFocus() {
+    await queryClient.invalidateQueries({
+      queryKey: ["focus-items"],
+    });
+  }
+
+  async function addItem(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    const trimmedTitle = title.trim();
+
+    if (!trimmedTitle) {
+      return;
+    }
+
+    try {
+      setAdding(true);
+
+      const { data, error } =
+        await supabase.auth.getUser();
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data.user) {
+        throw new Error(
+          "User not authenticated.",
+        );
+      }
+
+      await createFocusItem({
+        user_id: data.user.id,
+        title: trimmedTitle,
+        notes: null,
+        scheduled_date: weekStart,
+        completed: false,
+        completed_at: null,
+        priority: 2,
+        sort_order: items.length,
+        chronicle: false,
+        category: null,
+      });
+
+      setTitle("");
+
+      await refreshFocus();
+
+      toast.success(
+        "Focus item added.",
+      );
+    } catch (error) {
+      console.error(
+        "Focus add error:",
+        error,
+      );
+
+      toast.error(
+        getErrorMessage(
+          error,
+          "Focus item could not be added.",
+        ),
+      );
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  async function toggleItem(
+    item: FocusItem,
+  ) {
+    try {
+      setUpdatingId(item.id);
+
+      await toggleFocusComplete(item);
+      await refreshFocus();
+    } catch (error) {
+      console.error(
+        "Focus update error:",
+        error,
+      );
+
+      toast.error(
+        getErrorMessage(
+          error,
+          "Focus item could not be updated.",
+        ),
+      );
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  async function removeItem(
+    item: FocusItem,
+  ) {
+    try {
+      setUpdatingId(item.id);
+
+      await deleteFocusItem(item.id);
+      await refreshFocus();
+
+      toast.success(
+        "Focus item removed.",
+      );
+    } catch (error) {
+      console.error(
+        "Focus removal error:",
+        error,
+      );
+
+      toast.error(
+        getErrorMessage(
+          error,
+          "Focus item could not be removed.",
+        ),
+      );
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  return (
+    <section className="mb-6 rounded-2xl border border-border bg-surface p-5 md:p-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
+            Focus
+          </p>
+
+          <h2 className="mt-2 text-xl font-extrabold tracking-tight">
+            What must happen this week?
+          </h2>
+
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Responsibilities and commitments
+            outside your deliberate practice.
+          </p>
+        </div>
+
+        {items.length > 0 && (
+          <p className="text-xs font-semibold text-muted-foreground">
+            {completedCount} of{" "}
+            {items.length} complete
+          </p>
+        )}
+      </div>
+
+      <form
+        onSubmit={addItem}
+        className="mt-5 flex flex-col gap-2 sm:flex-row"
+      >
+        <input
+          type="text"
+          value={title}
+          onChange={(event) =>
+            setTitle(event.target.value)
+          }
+          placeholder="Add something that needs to happen..."
+          className="h-11 flex-1 rounded-xl border border-border bg-background px-4 text-sm outline-none transition focus:border-foreground/30 focus:ring-2 focus:ring-accent/20"
+        />
+
+        <button
+          type="submit"
+          disabled={
+            adding || !title.trim()
+          }
+          className="h-11 rounded-xl bg-foreground px-5 text-sm font-semibold text-background transition hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {adding
+            ? "Adding..."
+            : "Add"}
+        </button>
+      </form>
+
+      {items.length === 0 ? (
+        <div className="mt-5 rounded-xl border border-dashed border-border px-5 py-8 text-center">
+          <p className="text-sm font-semibold">
+            Nothing has been added yet.
+          </p>
+
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">
+            Use Focus as a simple weekly
+            checklist, with or without a
+            guided practice plan.
+          </p>
+        </div>
+      ) : (
+        <div className="mt-5 divide-y divide-border">
+          {items.map((item) => {
+            const updating =
+              updatingId === item.id;
+
+            return (
+              <div
+                key={item.id}
+                className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+              >
+                <button
+                  type="button"
+                  disabled={updating}
+                  onClick={() =>
+                    toggleItem(item)
+                  }
+                  aria-label={
+                    item.completed
+                      ? `Mark ${item.title} incomplete`
+                      : `Complete ${item.title}`
+                  }
+                  className={`flex size-6 shrink-0 items-center justify-center rounded-md border text-xs font-bold transition disabled:opacity-50 ${
+                    item.completed
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border bg-background hover:border-foreground/40"
+                  }`}
+                >
+                  {item.completed
+                    ? "✓"
+                    : ""}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={updating}
+                  onClick={() =>
+                    toggleItem(item)
+                  }
+                  className={`min-w-0 flex-1 text-left text-sm font-semibold transition disabled:opacity-50 ${
+                    item.completed
+                      ? "text-muted-foreground line-through"
+                      : "text-foreground"
+                  }`}
+                >
+                  {item.title}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={updating}
+                  onClick={() =>
+                    removeItem(item)
+                  }
+                  className="shrink-0 px-2 py-1 text-xs font-semibold text-muted-foreground transition hover:text-destructive disabled:opacity-50"
+                >
+                  Remove
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -288,7 +643,9 @@ function WeekAssessment({
           </p>
 
           <p className="mt-2 text-sm font-semibold">
-            {getAssessmentLabel(assessment.label)}
+            {getAssessmentLabel(
+              assessment.label,
+            )}
           </p>
 
           <p className="mt-2 text-xs leading-5 text-background/60">
@@ -309,17 +666,21 @@ function WeekAssessment({
           </p>
 
           <h2 className="mt-2 text-xl font-extrabold tracking-tight">
-            {getAssessmentHeadline(assessment.label)}
+            {getAssessmentHeadline(
+              assessment.label,
+            )}
           </h2>
 
           {assessment.items.length > 0 && (
             <div className="mt-4 grid gap-3 lg:grid-cols-2">
-              {assessment.items.map((item) => (
-                <AssessmentItem
-                  key={item.id}
-                  item={item}
-                />
-              ))}
+              {assessment.items.map(
+                (item) => (
+                  <AssessmentItem
+                    key={item.id}
+                    item={item}
+                  />
+                ),
+              )}
             </div>
           )}
         </div>
@@ -343,12 +704,14 @@ function AssessmentItem({
       label: "Review",
     },
     neutral: {
-      marker: "bg-muted-foreground",
+      marker:
+        "bg-muted-foreground",
       label: "Note",
     },
   } as const;
 
-  const style = toneStyles[item.tone];
+  const style =
+    toneStyles[item.tone];
 
   return (
     <article className="flex items-start gap-3 rounded-xl border border-border bg-background p-4">
@@ -381,12 +744,14 @@ function EmptyPlanState() {
       </p>
 
       <h2 className="mt-3 text-2xl font-extrabold tracking-tight">
-        Add a skill to generate your first week.
+        Add a skill to generate your first
+        week.
       </h2>
 
       <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-        Define what you want to practice, how often you want
-        to practice it, and your preferred days. Forge will
+        Define what you want to practice,
+        how often you want to practice it,
+        and your preferred days. Forge will
         build and assess the weekly plan.
       </p>
 
@@ -411,11 +776,15 @@ function PlanSlot({
   area,
 }: PlanSlotProps) {
   const queryClient = useQueryClient();
-  const [updating, setUpdating] = useState(false);
+
+  const [updating, setUpdating] =
+    useState(false);
 
   const status =
     session.status ??
-    (session.completed ? "completed" : "scheduled");
+    (session.completed
+      ? "completed"
+      : "scheduled");
 
   async function refreshSessions() {
     await queryClient.invalidateQueries({
@@ -437,6 +806,11 @@ function PlanSlot({
         toast.success(successMessage);
       }
     } catch (error) {
+      console.error(
+        "Practice update error:",
+        error,
+      );
+
       toast.error(
         getErrorMessage(
           error,
@@ -461,7 +835,8 @@ function PlanSlot({
       }`}
       style={{
         borderColor:
-          status === "scheduled" && area?.color
+          status === "scheduled" &&
+          area?.color
             ? `${area.color}33`
             : undefined,
       }}
@@ -469,7 +844,9 @@ function PlanSlot({
       {area && (
         <p
           className="truncate font-mono text-[9px] uppercase tracking-widest"
-          style={{ color: area.color }}
+          style={{
+            color: area.color,
+          }}
         >
           {area.name}
         </p>
@@ -489,9 +866,13 @@ function PlanSlot({
 
           <p className="text-[10px] text-muted-foreground">
             {session.duration_minutes}m
-            {status === "in_progress" &&
+
+            {status ===
+              "in_progress" &&
               " · In progress"}
-            {status === "skipped" && " · Skipped"}
+
+            {status === "skipped" &&
+              " · Skipped"}
           </p>
         </div>
 
@@ -508,7 +889,10 @@ function PlanSlot({
               disabled={updating}
               onClick={() =>
                 runAction(
-                  () => startSession(session.id),
+                  () =>
+                    startSession(
+                      session.id,
+                    ),
                   `${session.title} started.`,
                 )
               }
@@ -524,10 +908,13 @@ function PlanSlot({
               onClick={() =>
                 runAction(
                   () =>
-                    completeSession(session.id, {
-                      durationMinutes:
-                        session.duration_minutes,
-                    }),
+                    completeSession(
+                      session.id,
+                      {
+                        durationMinutes:
+                          session.duration_minutes,
+                      },
+                    ),
                   `${session.title} completed.`,
                 )
               }
@@ -542,7 +929,10 @@ function PlanSlot({
               disabled={updating}
               onClick={() =>
                 runAction(
-                  () => skipSession(session.id),
+                  () =>
+                    skipSession(
+                      session.id,
+                    ),
                   `${session.title} skipped.`,
                 )
               }
@@ -555,7 +945,8 @@ function PlanSlot({
           </>
         )}
 
-        {status === "in_progress" && (
+        {status ===
+          "in_progress" && (
           <>
             <button
               type="button"
@@ -563,10 +954,13 @@ function PlanSlot({
               onClick={() =>
                 runAction(
                   () =>
-                    completeSession(session.id, {
-                      durationMinutes:
-                        session.duration_minutes,
-                    }),
+                    completeSession(
+                      session.id,
+                      {
+                        durationMinutes:
+                          session.duration_minutes,
+                      },
+                    ),
                   `${session.title} completed.`,
                 )
               }
@@ -581,7 +975,10 @@ function PlanSlot({
               disabled={updating}
               onClick={() =>
                 runAction(
-                  () => restoreSession(session.id),
+                  () =>
+                    restoreSession(
+                      session.id,
+                    ),
                   `${session.title} reset.`,
                 )
               }
@@ -601,7 +998,10 @@ function PlanSlot({
             disabled={updating}
             onClick={() =>
               runAction(
-                () => restoreSession(session.id),
+                () =>
+                  restoreSession(
+                    session.id,
+                  ),
                 `${session.title} restored.`,
               )
             }
@@ -617,7 +1017,10 @@ function PlanSlot({
           disabled={updating}
           onClick={() =>
             runAction(
-              () => removeSession(session.id),
+              () =>
+                removeSession(
+                  session.id,
+                ),
               "Practice removed.",
             )
           }
@@ -645,14 +1048,19 @@ function AddSlot({
 }: AddSlotProps) {
   const queryClient = useQueryClient();
 
-  const [open, setOpen] = useState(false);
-  const [addingSkillId, setAddingSkillId] =
-    useState<string | null>(null);
+  const [open, setOpen] =
+    useState(false);
+
+  const [
+    addingSkillId,
+    setAddingSkillId,
+  ] = useState<string | null>(null);
 
   const availableSkills = skills.filter(
     (skill) =>
       !existingSessions.some(
-        (session) => session.skill_id === skill.id,
+        (session) =>
+          session.skill_id === skill.id,
       ),
   );
 
@@ -660,25 +1068,32 @@ function AddSlot({
     try {
       setAddingSkillId(skill.id);
 
-      const { data, error: userError } =
-        await supabase.auth.getUser();
+      const {
+        data,
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError) {
         throw userError;
       }
 
       if (!data.user) {
-        throw new Error("User not authenticated.");
+        throw new Error(
+          "User not authenticated.",
+        );
       }
 
-      const { error: insertError } = await supabase
+      const {
+        error: insertError,
+      } = await supabase
         .from("practice_sessions")
         .insert({
           user_id: data.user.id,
           skill_id: skill.id,
           scheduled_date: date,
           scheduled_time: null,
-          duration_minutes: skill.session_minutes,
+          duration_minutes:
+            skill.session_minutes,
           title: skill.name,
           notes: skill.notes,
           status: "scheduled",
@@ -691,7 +1106,8 @@ function AddSlot({
               : skill.difficulty <= 1
                 ? "recovery"
                 : "deliberate",
-          sort_order: existingSessions.length,
+          sort_order:
+            existingSessions.length,
         });
 
       if (insertError) {
@@ -703,8 +1119,16 @@ function AddSlot({
       });
 
       setOpen(false);
-      toast.success(`${skill.name} added.`);
+
+      toast.success(
+        `${skill.name} added.`,
+      );
     } catch (error) {
+      console.error(
+        "Add practice error:",
+        error,
+      );
+
       toast.error(
         getErrorMessage(
           error,
@@ -724,7 +1148,11 @@ function AddSlot({
     <div className="relative">
       <button
         type="button"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() =>
+          setOpen(
+            (current) => !current,
+          )
+        }
         className="flex w-full items-center justify-center rounded-lg border border-dashed border-border py-1.5 text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
         aria-label="Add practice session"
         aria-expanded={open}
@@ -734,24 +1162,34 @@ function AddSlot({
 
       {open && (
         <div className="absolute z-20 mt-1 max-h-60 w-48 overflow-auto rounded-lg border border-border bg-surface p-1 shadow-xl">
-          {availableSkills.length === 0 ? (
+          {availableSkills.length ===
+          0 ? (
             <p className="px-2 py-2 text-xs text-muted-foreground">
-              Every skill is already scheduled today.
+              Every skill is already
+              scheduled today.
             </p>
           ) : (
-            availableSkills.map((skill) => (
-              <button
-                type="button"
-                key={skill.id}
-                onClick={() => add(skill)}
-                disabled={addingSkillId !== null}
-                className="w-full truncate rounded px-2 py-1.5 text-left text-xs transition hover:bg-muted disabled:cursor-wait disabled:opacity-50"
-              >
-                {addingSkillId === skill.id
-                  ? "Adding..."
-                  : skill.name}
-              </button>
-            ))
+            availableSkills.map(
+              (skill) => (
+                <button
+                  type="button"
+                  key={skill.id}
+                  onClick={() =>
+                    add(skill)
+                  }
+                  disabled={
+                    addingSkillId !==
+                    null
+                  }
+                  className="w-full truncate rounded px-2 py-1.5 text-left text-xs transition hover:bg-muted disabled:cursor-wait disabled:opacity-50"
+                >
+                  {addingSkillId ===
+                  skill.id
+                    ? "Adding..."
+                    : skill.name}
+                </button>
+              ),
+            )
           )}
         </div>
       )}
@@ -813,7 +1251,18 @@ function getErrorMessage(
   error: unknown,
   fallback: string,
 ): string {
-  return error instanceof Error
-    ? error.message
-    : fallback;
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+
+  return fallback;
 }
