@@ -1,245 +1,399 @@
-import {
-  DAYS,
-  type PracticeSession,
-  type Skill,
-} from "@/features/forge/types";
 import type {
-  AdaptivePlanningResult,
+  PracticeSession,
+  Skill,
+} from "@/features/forge/types";
+
+import type {
+  AdaptivePlan,
+  AdaptationConfidence,
+  AdaptationSuggestion,
   DayPerformance,
   SkillAdaptation,
 } from "./adaptation.types";
 
-type AnalyzeAdaptivePlanningOptions = {
+type PlannerOptions = {
   sessions: PracticeSession[];
   skills: Skill[];
 };
 
-const DAY_INDEX = new Map(
-  DAYS.map((day, index) => [day, index]),
-);
+const WEEK_DAYS = [
+  "mon",
+  "tue",
+  "wed",
+  "thu",
+  "fri",
+  "sat",
+  "sun",
+] as const;
 
-export function analyzeAdaptivePlanning({
+export function buildAdaptivePlan({
   sessions,
   skills,
-}: AnalyzeAdaptivePlanningOptions): AdaptivePlanningResult {
-  const adaptations = skills
-    .filter((skill) => !skill.archived)
-    .map((skill) =>
-      analyzeSkill({
-        skill,
-        sessions: sessions.filter(
-          (session) => session.skill_id === skill.id,
-        ),
-      }),
+}: PlannerOptions): AdaptivePlan {
+  const skillAdaptations: SkillAdaptation[] = [];
+  const suggestions: AdaptationSuggestion[] = [];
+
+  for (const skill of skills) {
+    if (skill.archived) {
+      continue;
+    }
+
+    const skillSessions = sessions.filter(
+      (session) => session.skill_id === skill.id,
     );
 
+    const includedSessions = skillSessions.filter(
+      (session) => session.status !== "skipped",
+    );
+
+    const completedSessions = skillSessions.filter(
+      isCompletedSession,
+    );
+
+    const dayPerformance =
+      calculateDayPerformance(skillSessions);
+
+    const recommendedDays = recommendDays({
+      currentDays: skill.preferred_days,
+      targetFrequency: skill.target_frequency,
+      dayPerformance,
+    });
+
+    const confidence = calculateConfidence(
+      includedSessions.length,
+    );
+
+    const reasons = buildReasons({
+      currentDays: skill.preferred_days,
+      recommendedDays,
+      dayPerformance,
+      sessionCount: includedSessions.length,
+    });
+
+    skillAdaptations.push({
+      skillId: skill.id,
+      skillName: skill.name,
+      currentPreferredDays: [...skill.preferred_days],
+      recommendedDays,
+      confidence,
+      reasons,
+      dayPerformance,
+    });
+
+    addWorkloadSuggestions({
+      skill,
+      includedSessions,
+      completedSessions,
+      suggestions,
+    });
+  }
+
   return {
-    skills: adaptations,
+    generatedAt: new Date().toISOString(),
+    skills: skillAdaptations,
+    suggestions,
   };
 }
 
-function analyzeSkill({
-  skill,
-  sessions,
-}: {
-  skill: Skill;
-  sessions: PracticeSession[];
-}): SkillAdaptation {
-  const dayPerformance = calculateDayPerformance(sessions);
-
-  const daysWithHistory = dayPerformance.filter(
-    (day) => day.scheduledSessions > 0,
-  );
-
-  const recommendedDays = [...dayPerformance]
-    .filter((day) => day.scheduledSessions > 0)
-    .sort((a, b) => {
-      return (
-        b.completionRate - a.completionRate ||
-        b.completedSessions - a.completedSessions ||
-        a.scheduledSessions - b.scheduledSessions ||
-        getDayIndex(a.day) - getDayIndex(b.day)
-      );
-    })
-    .slice(0, Math.min(skill.target_frequency, 7))
-    .map((day) => day.day);
-
-  const confidence = getConfidence(sessions.length);
-  const reasons = buildReasons({
-    skill,
-    dayPerformance,
-    recommendedDays,
-    confidence,
-  });
-
-  return {
-    skillId: skill.id,
-    skillName: skill.name,
-    currentPreferredDays: skill.preferred_days,
-    recommendedDays:
-      recommendedDays.length > 0
-        ? recommendedDays
-        : skill.preferred_days,
-    dayPerformance: daysWithHistory,
-    confidence,
-    reasons,
-  };
+/**
+ * Backward-compatible name used by the existing Skills page.
+ */
+export function analyzeAdaptivePlanning(
+  options: PlannerOptions,
+): AdaptivePlan {
+  return buildAdaptivePlan(options);
 }
 
 function calculateDayPerformance(
   sessions: PracticeSession[],
 ): DayPerformance[] {
-  return DAYS.map((day) => {
-    const matchingSessions = sessions.filter(
+  return WEEK_DAYS.map((day) => {
+    const daySessions = sessions.filter(
       (session) =>
-        getDayKey(session.scheduled_date) === day,
+        getWeekdayKey(session.scheduled_date) === day,
     );
 
-    const completedSessions = matchingSessions.filter(
-      isCompleted,
-    ).length;
-
-    const skippedSessions = matchingSessions.filter(
-      (session) => session.status === "skipped",
-    ).length;
-
-    const includedSessions = matchingSessions.filter(
+    const includedSessions = daySessions.filter(
       (session) => session.status !== "skipped",
     );
 
-    const completionRate =
-      includedSessions.length === 0
-        ? 0
-        : Math.round(
-            (completedSessions / includedSessions.length) *
-              100,
-          );
+    const completedSessions =
+      daySessions.filter(isCompletedSession);
 
     return {
       day,
-      scheduledSessions: matchingSessions.length,
-      completedSessions,
-      skippedSessions,
-      completionRate,
+      scheduledSessions: includedSessions.length,
+      completedSessions: completedSessions.length,
+      completionRate:
+        includedSessions.length === 0
+          ? 0
+          : Math.round(
+              (completedSessions.length /
+                includedSessions.length) *
+                100,
+            ),
     };
-  });
+  }).filter(
+    (performance) =>
+      performance.scheduledSessions > 0,
+  );
 }
 
-function buildReasons({
-  skill,
+function recommendDays({
+  currentDays,
+  targetFrequency,
   dayPerformance,
-  recommendedDays,
-  confidence,
 }: {
-  skill: Skill;
+  currentDays: string[];
+  targetFrequency: number;
   dayPerformance: DayPerformance[];
-  recommendedDays: string[];
-  confidence: SkillAdaptation["confidence"];
 }): string[] {
-  const reasons: string[] = [];
-
-  if (confidence === "low") {
-    reasons.push(
-      "More completed history is needed before Forge can make a strong recommendation.",
-    );
+  if (dayPerformance.length === 0) {
+    return [...currentDays];
   }
 
-  const strongestDay = [...dayPerformance]
-    .filter((day) => day.scheduledSessions > 0)
-    .sort(
-      (a, b) =>
-        b.completionRate - a.completionRate ||
-        b.completedSessions - a.completedSessions,
-    )[0];
+  const rankedDays = [...dayPerformance].sort(
+    (first, second) =>
+      second.completionRate -
+        first.completionRate ||
+      second.completedSessions -
+        first.completedSessions ||
+      getDayIndex(first.day) -
+        getDayIndex(second.day),
+  );
 
-  if (strongestDay && strongestDay.completionRate >= 70) {
-    reasons.push(
-      `${formatDay(strongestDay.day)} has a ${strongestDay.completionRate}% completion rate.`,
-    );
+  const desiredCount = Math.max(
+    1,
+    Math.min(
+      targetFrequency,
+      WEEK_DAYS.length,
+    ),
+  );
+
+  const recommended = rankedDays
+    .slice(0, desiredCount)
+    .map((performance) => performance.day);
+
+  for (const currentDay of currentDays) {
+    if (recommended.length >= desiredCount) {
+      break;
+    }
+
+    if (!recommended.includes(currentDay)) {
+      recommended.push(currentDay);
+    }
   }
 
-  const weakestDay = [...dayPerformance]
-    .filter((day) => day.scheduledSessions >= 2)
-    .sort(
-      (a, b) =>
-        a.completionRate - b.completionRate ||
-        b.scheduledSessions - a.scheduledSessions,
-    )[0];
+  for (const day of WEEK_DAYS) {
+    if (recommended.length >= desiredCount) {
+      break;
+    }
 
-  if (
-    weakestDay &&
-    weakestDay.completionRate < 50
-  ) {
-    reasons.push(
-      `${formatDay(weakestDay.day)} has produced lower follow-through.`,
-    );
+    if (!recommended.includes(day)) {
+      recommended.push(day);
+    }
   }
 
-  const changed =
-    recommendedDays.length > 0 &&
-    !sameDays(
-      recommendedDays,
-      skill.preferred_days.slice(
-        0,
-        recommendedDays.length,
-      ),
-    );
-
-  if (changed) {
-    reasons.push(
-      "Recommended days prioritize the user’s demonstrated completion pattern.",
-    );
-  } else if (recommendedDays.length > 0) {
-    reasons.push(
-      "The existing preferred days already align with observed behavior.",
-    );
-  }
-
-  return reasons;
+  return recommended.sort(
+    (first, second) =>
+      getDayIndex(first) - getDayIndex(second),
+  );
 }
 
-function getConfidence(
+function calculateConfidence(
   sessionCount: number,
-): SkillAdaptation["confidence"] {
+): AdaptationConfidence {
   if (sessionCount >= 12) {
     return "high";
   }
 
-  if (sessionCount >= 5) {
+  if (sessionCount >= 6) {
     return "medium";
   }
 
   return "low";
 }
 
-function getDayKey(dateValue: string): string {
-  const [year, month, day] = dateValue
-    .split("-")
-    .map(Number);
+function buildReasons({
+  currentDays,
+  recommendedDays,
+  dayPerformance,
+  sessionCount,
+}: {
+  currentDays: string[];
+  recommendedDays: string[];
+  dayPerformance: DayPerformance[];
+  sessionCount: number;
+}): string[] {
+  if (sessionCount < 3) {
+    return [];
+  }
 
-  const date = new Date(year, month - 1, day);
-  const mondayIndex = (date.getDay() + 6) % 7;
+  const reasons: string[] = [];
 
-  return DAYS[mondayIndex];
+  const strongestDay = [...dayPerformance].sort(
+    (first, second) =>
+      second.completionRate -
+      first.completionRate,
+  )[0];
+
+  const weakestDay = [...dayPerformance]
+    .filter(
+      (performance) =>
+        performance.scheduledSessions > 0,
+    )
+    .sort(
+      (first, second) =>
+        first.completionRate -
+        second.completionRate,
+    )[0];
+
+  if (strongestDay) {
+    reasons.push(
+      `${capitalize(
+        strongestDay.day,
+      )} has produced your strongest follow-through at ${strongestDay.completionRate}%.`,
+    );
+  }
+
+  if (
+    weakestDay &&
+    strongestDay &&
+    weakestDay.day !== strongestDay.day &&
+    weakestDay.completionRate <
+      strongestDay.completionRate
+  ) {
+    reasons.push(
+      `${capitalize(
+        weakestDay.day,
+      )} has produced lower completion at ${weakestDay.completionRate}%.`,
+    );
+  }
+
+  if (!sameDays(currentDays, recommendedDays)) {
+    reasons.push(
+      "The recommended schedule favors the days on which you have completed practices most consistently.",
+    );
+  }
+
+  return reasons;
 }
 
-function getDayIndex(day: string): number {
-  return DAY_INDEX.get(
-    day as (typeof DAYS)[number],
-  ) ?? 7;
+function addWorkloadSuggestions({
+  skill,
+  includedSessions,
+  completedSessions,
+  suggestions,
+}: {
+  skill: Skill;
+  includedSessions: PracticeSession[];
+  completedSessions: PracticeSession[];
+  suggestions: AdaptationSuggestion[];
+}) {
+  if (includedSessions.length === 0) {
+    return;
+  }
+
+  const completionRate =
+    completedSessions.length /
+    includedSessions.length;
+
+  const averageDuration =
+    completedSessions.reduce(
+      (sum, session) =>
+        sum +
+        (session.duration_minutes ?? 0),
+      0,
+    ) / Math.max(completedSessions.length, 1);
+
+  if (completionRate < 0.5) {
+    suggestions.push({
+      skillId: skill.id,
+      skillName: skill.name,
+      title: "Reduce weekly workload",
+      explanation: `You completed ${Math.round(
+        completionRate * 100,
+      )}% of your recent ${
+        skill.name
+      } sessions. A smaller weekly commitment may make consistency easier to rebuild.`,
+      confidence: getNumericConfidence(
+        includedSessions.length,
+      ),
+      changes: {
+        frequency: Math.max(
+          1,
+          skill.target_frequency - 1,
+        ),
+      },
+    });
+  }
+
+  if (
+    averageDuration > 90 &&
+    completionRate < 0.75
+  ) {
+    suggestions.push({
+      skillId: skill.id,
+      skillName: skill.name,
+      title: "Shorten sessions",
+      explanation:
+        "Long sessions appear to coincide with lower follow-through. Try shorter sessions before increasing the workload again.",
+      confidence: getNumericConfidence(
+        includedSessions.length,
+      ),
+      changes: {
+        duration: 60,
+      },
+    });
+  }
 }
 
-function isCompleted(
+function isCompletedSession(
   session: PracticeSession,
 ): boolean {
   return (
-    session.status === "completed" ||
-    session.completed === true
+    session.completed === true ||
+    session.status === "completed"
   );
 }
 
-function formatDay(day: string): string {
-  return day.charAt(0).toUpperCase() + day.slice(1);
+function getWeekdayKey(
+  dateValue: string,
+): string {
+  const [year, month, day] = dateValue
+    .slice(0, 10)
+    .split("-")
+    .map(Number);
+
+  const date = new Date(
+    year,
+    month - 1,
+    day,
+  );
+
+  const keys = [
+    "sun",
+    "mon",
+    "tue",
+    "wed",
+    "thu",
+    "fri",
+    "sat",
+  ];
+
+  return keys[date.getDay()];
+}
+
+function getDayIndex(
+  day: string,
+): number {
+  const index = WEEK_DAYS.indexOf(
+    day as (typeof WEEK_DAYS)[number],
+  );
+
+  return index === -1
+    ? WEEK_DAYS.length
+    : index;
 }
 
 function sameDays(
@@ -253,4 +407,27 @@ function sameDays(
   return first.every(
     (day, index) => day === second[index],
   );
+}
+
+function capitalize(
+  value: string,
+): string {
+  return (
+    value.charAt(0).toUpperCase() +
+    value.slice(1)
+  );
+}
+
+function getNumericConfidence(
+  sessionCount: number,
+): number {
+  if (sessionCount >= 12) {
+    return 0.9;
+  }
+
+  if (sessionCount >= 6) {
+    return 0.75;
+  }
+
+  return 0.55;
 }

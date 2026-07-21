@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedVisionRouteImport } from './routes/_authenticated/vision'
 import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
+import { Route as AuthenticatedStoryRouteImport } from './routes/_authenticated/story'
 import { Route as AuthenticatedSkillsRouteImport } from './routes/_authenticated/skills'
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedProgressRouteImport } from './routes/_authenticated/progress'
@@ -44,6 +45,11 @@ const AuthenticatedVisionRoute = AuthenticatedVisionRouteImport.update({
 const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
   id: '/today',
   path: '/today',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedStoryRoute = AuthenticatedStoryRouteImport.update({
+  id: '/story',
+  path: '/story',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSkillsRoute = AuthenticatedSkillsRouteImport.update({
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/progress': typeof AuthenticatedProgressRoute
   '/review': typeof AuthenticatedReviewRoute
   '/skills': typeof AuthenticatedSkillsRoute
+  '/story': typeof AuthenticatedStoryRoute
   '/today': typeof AuthenticatedTodayRoute
   '/vision': typeof AuthenticatedVisionRoute
   '/dev/forge': typeof AuthenticatedDevForgeRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/progress': typeof AuthenticatedProgressRoute
   '/review': typeof AuthenticatedReviewRoute
   '/skills': typeof AuthenticatedSkillsRoute
+  '/story': typeof AuthenticatedStoryRoute
   '/today': typeof AuthenticatedTodayRoute
   '/vision': typeof AuthenticatedVisionRoute
   '/dev/forge': typeof AuthenticatedDevForgeRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/_authenticated/progress': typeof AuthenticatedProgressRoute
   '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/skills': typeof AuthenticatedSkillsRoute
+  '/_authenticated/story': typeof AuthenticatedStoryRoute
   '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/vision': typeof AuthenticatedVisionRoute
   '/_authenticated/dev/forge': typeof AuthenticatedDevForgeRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/progress'
     | '/review'
     | '/skills'
+    | '/story'
     | '/today'
     | '/vision'
     | '/dev/forge'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/progress'
     | '/review'
     | '/skills'
+    | '/story'
     | '/today'
     | '/vision'
     | '/dev/forge'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/_authenticated/progress'
     | '/_authenticated/review'
     | '/_authenticated/skills'
+    | '/_authenticated/story'
     | '/_authenticated/today'
     | '/_authenticated/vision'
     | '/_authenticated/dev/forge'
@@ -207,6 +219,13 @@ declare module '@tanstack/react-router' {
       path: '/today'
       fullPath: '/today'
       preLoaderRoute: typeof AuthenticatedTodayRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/story': {
+      id: '/_authenticated/story'
+      path: '/story'
+      fullPath: '/story'
+      preLoaderRoute: typeof AuthenticatedStoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/skills': {
@@ -268,6 +287,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProgressRoute: typeof AuthenticatedProgressRoute
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedSkillsRoute: typeof AuthenticatedSkillsRoute
+  AuthenticatedStoryRoute: typeof AuthenticatedStoryRoute
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedVisionRoute: typeof AuthenticatedVisionRoute
   AuthenticatedDevForgeRoute: typeof AuthenticatedDevForgeRoute
@@ -280,6 +300,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProgressRoute: AuthenticatedProgressRoute,
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedSkillsRoute: AuthenticatedSkillsRoute,
+  AuthenticatedStoryRoute: AuthenticatedStoryRoute,
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedVisionRoute: AuthenticatedVisionRoute,
   AuthenticatedDevForgeRoute: AuthenticatedDevForgeRoute,

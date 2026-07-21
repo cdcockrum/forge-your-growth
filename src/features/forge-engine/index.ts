@@ -29,3 +29,8 @@ export * from "./scoring/healthScore";
 export * from "./coach";
 
 export * from "./forge.types";
+
+export * from "./adaptation/adaptation.types";
+export * from "./adaptation/adaptivePlanner";
+
+export * from "./narrative";

@@ -12,7 +12,7 @@ import type {
 } from "./momentum";
 
 import type {
-  IdentityProgress,
+  IdentityEngineResult,
 } from "./identity";
 
 import type {
@@ -24,6 +24,11 @@ import type {
 } from "./planning-assessment/assessment.types";
 
 import type { Vision } from "@/features/vision";
+
+import type {
+  WeeklyNarrative,
+} from "./narrative";
+
 
 
 export type ForgeState = {
@@ -38,10 +43,12 @@ export type ForgeState = {
 
   momentum: MomentumResult;
 
-  identity: IdentityProgress;
+  identity: IdentityEngineResult;
 
   coach: ForgeCoachResult;
 
   assessment?: WeeklyPlanAssessment;
+
+  narrative: WeeklyNarrative;
 
 };

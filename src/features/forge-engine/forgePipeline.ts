@@ -18,6 +18,14 @@ import type { WeeklyPlanAssessment } from "./planning-assessment/assessment.type
 
 import type { ForgeState } from "./forge.types";
 import type { Vision } from "@/features/vision";
+import {
+  buildWeeklyNarrative,
+} from "./narrative";
+
+import type {
+  AchievementSnapshot,
+  WeeklyReviewSnapshot,
+} from "./narrative";
 
 
 
@@ -31,6 +39,9 @@ type PipelineOptions = {
     lifeAreas: LifeArea[];
 
     assessment?: WeeklyPlanAssessment;
+
+    achievements?: AchievementSnapshot[];
+    review?: WeeklyReviewSnapshot | null;
 };
 
 export function buildForgeState({
@@ -39,6 +50,8 @@ export function buildForgeState({
   skills,
   lifeAreas,
   assessment,
+  achievements = [],
+  review = null,
 }: PipelineOptions): ForgeState {
   const progress = calculateProgress({
     sessions,
@@ -75,14 +88,25 @@ export function buildForgeState({
     assessment,
   });
 
+  const narrative = buildWeeklyNarrative({
+  vision,
+  identity,
+  momentum,
+  progress,
+  coach,
+  achievements,
+  review,
+});
+
   return {
-    vision,
-    progress,
-    momentum,
-    forgeScore,
-    forgeHealth,
-    identity,
-    coach,
-    assessment,
-  };
+  vision,
+  progress,
+  momentum,
+  forgeScore,
+  forgeHealth,
+  identity,
+  coach,
+  narrative,
+  assessment,
+};
 }

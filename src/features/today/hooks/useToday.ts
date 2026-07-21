@@ -13,6 +13,7 @@ import {
 import { buildForgeState } from "@/features/forge-engine";
 import { useVision } from "@/features/vision";
 
+
 export function useTodayDashboard() {
   const today = todayIso();
   const { start, end } = weekBounds();
@@ -37,11 +38,14 @@ export function useTodayDashboard() {
     sessionsInRangeQuery(start, end),
   );
 
+  const { vision } = useVision();
+
   const { data: achievements } = useSuspenseQuery(
     achievementsQuery(),
   );
 
   const forge = buildForgeState({
+    vision,
     sessions: weekSessions,
     skills,
     lifeAreas: areas,

@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Compass, Flame, Calendar, Target, BookOpen, LineChart, LogOut, Sparkles, } from "lucide-react";
+import { LayoutDashboard, Compass, Flame, Calendar, Target, BookOpen, LineChart, LogOut, Sparkles, BookOpenText,} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
@@ -13,6 +13,7 @@ const NAV = [
   { to: "/areas", label: "Areas", icon: Compass },
   { to: "/skills", label: "Skills", icon: Flame },
   { to: "/progress", label: "Progress", icon: LineChart },
+  { to: "/story", label: "Story", icon: BookOpenText },
   { to: "/review", label: "Review", icon: BookOpen },
 ] as const;
 
