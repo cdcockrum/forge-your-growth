@@ -29,6 +29,11 @@ import type {
   WeeklyNarrative,
 } from "./narrative";
 
+import type { ForgeInsight } from "./synthesis";
+
+import type {
+  HistoryResult,
+} from "./history";
 
 
 export type ForgeState = {
@@ -50,5 +55,9 @@ export type ForgeState = {
   assessment?: WeeklyPlanAssessment;
 
   narrative: WeeklyNarrative;
+
+  insight: ForgeInsight;
+
+  history: HistoryResult;
 
 };

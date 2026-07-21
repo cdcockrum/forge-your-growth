@@ -17,6 +17,8 @@ import { MorningGreeting } from "./MorningGreeting";
 import { NorthStarCard } from "./NorthStarCard";
 import { IdentityBanner } from "./IdentityBanner";
 import { ReflectionPrompt } from "./ReflectionPrompt";
+import { TodayInsightCard } from "./TodayInsightCard";
+import { WeeklyStoryTeaser } from "./WeeklyStoryTeaser";
 
 export function TodayContent() {
   const {
@@ -50,6 +52,10 @@ export function TodayContent() {
       <IdentityBanner
           identities={forge.vision?.identities ?? []}
       />
+
+      <TodayInsightCard
+        insight={forge.insight}
+      />
       
       <QuoteCard />
 
@@ -71,6 +77,11 @@ export function TodayContent() {
             )}
 
             <ReflectionPrompt />
+
+            <WeeklyStoryTeaser
+              narrative={forge.narrative}
+            />
+            
           </div>
         }
 

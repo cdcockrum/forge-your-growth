@@ -34,3 +34,6 @@ export * from "./adaptation/adaptation.types";
 export * from "./adaptation/adaptivePlanner";
 
 export * from "./narrative";
+
+export * from "./synthesis";
+export * from "./history";

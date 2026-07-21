@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Compass, Flame, Calendar, Target, BookOpen, LineChart, LogOut, Sparkles, BookOpenText,} from "lucide-react";
+import { LayoutDashboard, Compass, Flame, Calendar, Target, BookOpen, LineChart, LogOut, Sparkles, BookOpenText, History,} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
@@ -15,6 +15,7 @@ const NAV = [
   { to: "/progress", label: "Progress", icon: LineChart },
   { to: "/story", label: "Story", icon: BookOpenText },
   { to: "/review", label: "Review", icon: BookOpen },
+  { to: "/timeline", label: "Timeline", icon: History, },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {

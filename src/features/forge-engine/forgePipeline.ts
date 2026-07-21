@@ -27,6 +27,14 @@ import type {
   WeeklyReviewSnapshot,
 } from "./narrative";
 
+import {
+  buildForgeInsight,
+} from "./synthesis";
+
+import {
+  buildHistory,
+} from "./history";
+
 
 
 type PipelineOptions = {
@@ -98,15 +106,35 @@ export function buildForgeState({
   review,
 });
 
+  const insight =
+   buildForgeInsight({
+     vision,
+     progress,
+     momentum,
+     forgeScore,
+     forgeHealth,
+     identity,
+     coach,
+     narrative,
+  });
+
+  const history = buildHistory({
+  achievements,
+  narrativeTitle: narrative.title,
+  northStar: vision?.north_star,
+});
+
   return {
-  vision,
-  progress,
-  momentum,
-  forgeScore,
-  forgeHealth,
-  identity,
-  coach,
-  narrative,
-  assessment,
-};
+    vision,
+    progress,
+    momentum,
+    forgeScore,
+    forgeHealth,
+    identity,
+    coach,
+    narrative,
+    assessment,
+    insight,
+    history,
+  };
 }

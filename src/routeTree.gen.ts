@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedVisionRouteImport } from './routes/_authenticated/vision'
 import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
+import { Route as AuthenticatedTimelineRouteImport } from './routes/_authenticated/timeline'
 import { Route as AuthenticatedStoryRouteImport } from './routes/_authenticated/story'
 import { Route as AuthenticatedSkillsRouteImport } from './routes/_authenticated/skills'
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
@@ -45,6 +46,11 @@ const AuthenticatedVisionRoute = AuthenticatedVisionRouteImport.update({
 const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
   id: '/today',
   path: '/today',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTimelineRoute = AuthenticatedTimelineRouteImport.update({
+  id: '/timeline',
+  path: '/timeline',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedStoryRoute = AuthenticatedStoryRouteImport.update({
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/review': typeof AuthenticatedReviewRoute
   '/skills': typeof AuthenticatedSkillsRoute
   '/story': typeof AuthenticatedStoryRoute
+  '/timeline': typeof AuthenticatedTimelineRoute
   '/today': typeof AuthenticatedTodayRoute
   '/vision': typeof AuthenticatedVisionRoute
   '/dev/forge': typeof AuthenticatedDevForgeRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/review': typeof AuthenticatedReviewRoute
   '/skills': typeof AuthenticatedSkillsRoute
   '/story': typeof AuthenticatedStoryRoute
+  '/timeline': typeof AuthenticatedTimelineRoute
   '/today': typeof AuthenticatedTodayRoute
   '/vision': typeof AuthenticatedVisionRoute
   '/dev/forge': typeof AuthenticatedDevForgeRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/skills': typeof AuthenticatedSkillsRoute
   '/_authenticated/story': typeof AuthenticatedStoryRoute
+  '/_authenticated/timeline': typeof AuthenticatedTimelineRoute
   '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/vision': typeof AuthenticatedVisionRoute
   '/_authenticated/dev/forge': typeof AuthenticatedDevForgeRoute
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/skills'
     | '/story'
+    | '/timeline'
     | '/today'
     | '/vision'
     | '/dev/forge'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/skills'
     | '/story'
+    | '/timeline'
     | '/today'
     | '/vision'
     | '/dev/forge'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/_authenticated/review'
     | '/_authenticated/skills'
     | '/_authenticated/story'
+    | '/_authenticated/timeline'
     | '/_authenticated/today'
     | '/_authenticated/vision'
     | '/_authenticated/dev/forge'
@@ -219,6 +231,13 @@ declare module '@tanstack/react-router' {
       path: '/today'
       fullPath: '/today'
       preLoaderRoute: typeof AuthenticatedTodayRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/timeline': {
+      id: '/_authenticated/timeline'
+      path: '/timeline'
+      fullPath: '/timeline'
+      preLoaderRoute: typeof AuthenticatedTimelineRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/story': {
@@ -288,6 +307,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedSkillsRoute: typeof AuthenticatedSkillsRoute
   AuthenticatedStoryRoute: typeof AuthenticatedStoryRoute
+  AuthenticatedTimelineRoute: typeof AuthenticatedTimelineRoute
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedVisionRoute: typeof AuthenticatedVisionRoute
   AuthenticatedDevForgeRoute: typeof AuthenticatedDevForgeRoute
@@ -301,6 +321,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedSkillsRoute: AuthenticatedSkillsRoute,
   AuthenticatedStoryRoute: AuthenticatedStoryRoute,
+  AuthenticatedTimelineRoute: AuthenticatedTimelineRoute,
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedVisionRoute: AuthenticatedVisionRoute,
   AuthenticatedDevForgeRoute: AuthenticatedDevForgeRoute,

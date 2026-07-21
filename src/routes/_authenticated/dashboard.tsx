@@ -32,6 +32,8 @@ import {
   useDashboard,
 } from "@/features/dashboard";
 
+import { ForgeInsightCard } from "@/features/dashboard/components/ForgeInsightCard";
+
 export const Route = createFileRoute(
   "/_authenticated/dashboard",
 )({
@@ -102,6 +104,7 @@ function DashboardContent() {
     firstName,
     forgeHealth,
     forgePoints,
+    forge,
   } = useDashboard();
 
   return (
@@ -120,6 +123,13 @@ function DashboardContent() {
       />
 
       <WeeklyStrip sessions={weekSessions} />
+
+      <ForgeInsightCard
+        headline={forge.insight.headline}
+        summary={forge.insight.summary}
+        recommendation={forge.insight.recommendation}
+        confidence={forge.insight.confidence}
+      />
 
       <ForgeSidebarLayout
         className="mt-10"
