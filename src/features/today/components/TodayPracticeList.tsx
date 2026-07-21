@@ -8,11 +8,18 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import {
+  ForgeCard,
+  ForgeEmptyState,
+  ForgeSection,
+} from "@/components/forge";
+
 import type {
   LifeArea,
   PracticeSession,
   Skill,
 } from "@/features/forge/types";
+
 import {
   completeSession,
   restoreSession,
@@ -31,30 +38,32 @@ export function TodayPracticeList({
   skills,
   areas,
 }: TodayPracticeListProps) {
+  const completed = countCompleted(sessions);
+  const included = countIncluded(sessions);
+
   return (
     <section>
-      <div className="mb-4 flex items-end justify-between gap-4">
-        <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-            Today’s practices
-          </p>
-
-          <h2 className="mt-2 text-2xl font-extrabold tracking-tight">
-            What you are forging today.
-          </h2>
-        </div>
-
-        {sessions.length > 0 && (
-          <p className="text-sm font-semibold text-muted-foreground">
-            {countCompleted(sessions)}/{countIncluded(sessions)} complete
-          </p>
-        )}
-      </div>
+      <ForgeSection
+        eyebrow="Today’s practices"
+        title="What you are forging today."
+        action={
+          sessions.length > 0 ? (
+            <p className="text-sm font-semibold text-muted-foreground">
+              {completed}/{included} complete
+            </p>
+          ) : undefined
+        }
+      />
 
       {sessions.length === 0 ? (
-        <EmptyTodayState />
+        <ForgeEmptyState
+          eyebrow="The anvil is clear"
+          title="Nothing is scheduled for today."
+          description="Use the weekly plan to add a practice today or enjoy the recovery time you intentionally created."
+          className="mt-4 py-14"
+        />
       ) : (
-        <div className="space-y-3">
+        <div className="mt-4 space-y-3">
           {sessions.map((session) => {
             const skill = skills.find(
               (item) => item.id === session.skill_id,
@@ -62,7 +71,8 @@ export function TodayPracticeList({
 
             const area = skill
               ? areas.find(
-                  (item) => item.id === skill.life_area_id,
+                  (item) =>
+                    item.id === skill.life_area_id,
                 )
               : undefined;
 
@@ -78,25 +88,6 @@ export function TodayPracticeList({
         </div>
       )}
     </section>
-  );
-}
-
-function EmptyTodayState() {
-  return (
-    <div className="rounded-2xl border border-dashed border-border bg-surface/40 px-6 py-14 text-center">
-      <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-        The anvil is clear
-      </p>
-
-      <h3 className="mt-3 text-xl font-extrabold tracking-tight">
-        Nothing is scheduled for today.
-      </h3>
-
-      <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-        Use the weekly plan to add a practice today or enjoy the
-        recovery time you intentionally created.
-      </p>
-    </div>
   );
 }
 
@@ -116,7 +107,9 @@ function TodayPracticeCard({
 
   const status =
     session.status ??
-    (session.completed ? "completed" : "scheduled");
+    (session.completed
+      ? "completed"
+      : "scheduled");
 
   async function refreshSessions() {
     await queryClient.invalidateQueries({
@@ -130,8 +123,10 @@ function TodayPracticeCard({
   ) {
     try {
       setUpdating(true);
+
       await action();
       await refreshSessions();
+
       toast.success(successMessage);
     } catch (error) {
       toast.error(
@@ -145,16 +140,14 @@ function TodayPracticeCard({
   }
 
   return (
-    <article
-      className={`rounded-2xl border p-5 transition-all ${
-        status === "completed"
-          ? "border-border bg-muted/60"
-          : status === "skipped"
-            ? "border-dashed border-border bg-muted/30"
-            : status === "in_progress"
-              ? "border-accent/40 bg-accent/5 shadow-sm"
-              : "border-border bg-surface"
-      }`}
+    <ForgeCard
+      padding="medium"
+      variant={getCardVariant(status)}
+      className={
+        status === "in_progress"
+          ? "border-accent/40 bg-accent/5 shadow-sm"
+          : ""
+      }
     >
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
@@ -162,7 +155,9 @@ function TodayPracticeCard({
             {area && (
               <span
                 className="size-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: area.color }}
+                style={{
+                  backgroundColor: area.color,
+                }}
               />
             )}
 
@@ -172,17 +167,22 @@ function TodayPracticeCard({
           </div>
 
           <h3
-            className={`mt-2 text-xl font-extrabold tracking-tight ${
+            className={[
+              "mt-2 text-xl font-extrabold tracking-tight",
               status === "completed"
                 ? "text-muted-foreground line-through"
-                : ""
-            }`}
+                : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
           >
             {session.title}
           </h3>
 
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-            <span>{session.duration_minutes} minutes</span>
+            <span>
+              {session.duration_minutes} minutes
+            </span>
 
             {skill && (
               <span>
@@ -216,121 +216,167 @@ function TodayPracticeCard({
           )}
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {status === "scheduled" && (
-            <>
-              <button
-                type="button"
-                disabled={updating}
-                onClick={() =>
-                  runAction(
-                    () => startSession(session.id),
-                    `${session.title} started.`,
-                  )
-                }
-                className="inline-flex h-10 items-center gap-2 rounded-full border border-border px-4 text-xs font-semibold transition hover:bg-muted disabled:opacity-50"
-              >
-                <CirclePlay className="size-4" />
-                Start
-              </button>
-
-              <button
-                type="button"
-                disabled={updating}
-                onClick={() =>
-                  runAction(
-                    () =>
-                      completeSession(session.id, {
-                        durationMinutes:
-                          session.duration_minutes,
-                      }),
-                    `${session.title} completed.`,
-                  )
-                }
-                className="inline-flex h-10 items-center gap-2 rounded-full bg-foreground px-4 text-xs font-semibold text-background transition hover:bg-foreground/90 disabled:opacity-50"
-              >
-                <Check className="size-4" />
-                Complete
-              </button>
-
-              <button
-                type="button"
-                disabled={updating}
-                onClick={() =>
-                  runAction(
-                    () => skipSession(session.id),
-                    `${session.title} skipped.`,
-                  )
-                }
-                className="inline-flex size-10 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50"
-                aria-label={`Skip ${session.title}`}
-                title="Skip"
-              >
-                <SkipForward className="size-4" />
-              </button>
-            </>
-          )}
-
-          {status === "in_progress" && (
-            <>
-              <button
-                type="button"
-                disabled={updating}
-                onClick={() =>
-                  runAction(
-                    () =>
-                      completeSession(session.id, {
-                        durationMinutes:
-                          session.duration_minutes,
-                      }),
-                    `${session.title} completed.`,
-                  )
-                }
-                className="inline-flex h-10 items-center gap-2 rounded-full bg-foreground px-4 text-xs font-semibold text-background transition hover:bg-foreground/90 disabled:opacity-50"
-              >
-                <Check className="size-4" />
-                Finish
-              </button>
-
-              <button
-                type="button"
-                disabled={updating}
-                onClick={() =>
-                  runAction(
-                    () => restoreSession(session.id),
-                    `${session.title} reset.`,
-                  )
-                }
-                className="inline-flex size-10 items-center justify-center rounded-full border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50"
-                aria-label={`Reset ${session.title}`}
-                title="Reset"
-              >
-                <RotateCcw className="size-4" />
-              </button>
-            </>
-          )}
-
-          {(status === "completed" ||
-            status === "skipped") && (
-            <button
-              type="button"
-              disabled={updating}
-              onClick={() =>
-                runAction(
-                  () => restoreSession(session.id),
-                  `${session.title} restored.`,
-                )
-              }
-              className="inline-flex h-10 items-center gap-2 rounded-full border border-border px-4 text-xs font-semibold transition hover:bg-muted disabled:opacity-50"
-            >
-              <RotateCcw className="size-4" />
-              Restore
-            </button>
-          )}
-        </div>
+        <PracticeActions
+          session={session}
+          status={status}
+          updating={updating}
+          runAction={runAction}
+        />
       </div>
-    </article>
+    </ForgeCard>
   );
+}
+
+type PracticeStatus =
+  | "scheduled"
+  | "in_progress"
+  | "completed"
+  | "skipped";
+
+type PracticeActionsProps = {
+  session: PracticeSession;
+  status: PracticeStatus;
+  updating: boolean;
+  runAction: (
+    action: () => Promise<void>,
+    successMessage: string,
+  ) => Promise<void>;
+};
+
+function PracticeActions({
+  session,
+  status,
+  updating,
+  runAction,
+}: PracticeActionsProps) {
+  return (
+    <div className="flex shrink-0 flex-wrap items-center gap-2">
+      {status === "scheduled" && (
+        <>
+          <button
+            type="button"
+            disabled={updating}
+            onClick={() =>
+              runAction(
+                () => startSession(session.id),
+                `${session.title} started.`,
+              )
+            }
+            className="inline-flex h-10 items-center gap-2 rounded-full border border-border px-4 text-xs font-semibold transition hover:bg-muted disabled:opacity-50"
+          >
+            <CirclePlay className="size-4" />
+            Start
+          </button>
+
+          <button
+            type="button"
+            disabled={updating}
+            onClick={() =>
+              runAction(
+                () =>
+                  completeSession(session.id, {
+                    durationMinutes:
+                      session.duration_minutes,
+                  }),
+                `${session.title} completed.`,
+              )
+            }
+            className="inline-flex h-10 items-center gap-2 rounded-full bg-foreground px-4 text-xs font-semibold text-background transition hover:bg-foreground/90 disabled:opacity-50"
+          >
+            <Check className="size-4" />
+            Complete
+          </button>
+
+          <button
+            type="button"
+            disabled={updating}
+            onClick={() =>
+              runAction(
+                () => skipSession(session.id),
+                `${session.title} skipped.`,
+              )
+            }
+            className="inline-flex size-10 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50"
+            aria-label={`Skip ${session.title}`}
+            title="Skip"
+          >
+            <SkipForward className="size-4" />
+          </button>
+        </>
+      )}
+
+      {status === "in_progress" && (
+        <>
+          <button
+            type="button"
+            disabled={updating}
+            onClick={() =>
+              runAction(
+                () =>
+                  completeSession(session.id, {
+                    durationMinutes:
+                      session.duration_minutes,
+                  }),
+                `${session.title} completed.`,
+              )
+            }
+            className="inline-flex h-10 items-center gap-2 rounded-full bg-foreground px-4 text-xs font-semibold text-background transition hover:bg-foreground/90 disabled:opacity-50"
+          >
+            <Check className="size-4" />
+            Finish
+          </button>
+
+          <button
+            type="button"
+            disabled={updating}
+            onClick={() =>
+              runAction(
+                () => restoreSession(session.id),
+                `${session.title} reset.`,
+              )
+            }
+            className="inline-flex size-10 items-center justify-center rounded-full border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50"
+            aria-label={`Reset ${session.title}`}
+            title="Reset"
+          >
+            <RotateCcw className="size-4" />
+          </button>
+        </>
+      )}
+
+      {(status === "completed" ||
+        status === "skipped") && (
+        <button
+          type="button"
+          disabled={updating}
+          onClick={() =>
+            runAction(
+              () => restoreSession(session.id),
+              `${session.title} restored.`,
+            )
+          }
+          className="inline-flex h-10 items-center gap-2 rounded-full border border-border px-4 text-xs font-semibold transition hover:bg-muted disabled:opacity-50"
+        >
+          <RotateCcw className="size-4" />
+          Restore
+        </button>
+      )}
+    </div>
+  );
+}
+
+function getCardVariant(
+  status: PracticeStatus,
+): "default" | "muted" | "dashed" {
+  if (status === "completed") {
+    return "muted";
+  }
+
+  if (status === "skipped") {
+    return "dashed";
+  }
+
+  return "default";
 }
 
 function countCompleted(
