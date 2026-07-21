@@ -1,8 +1,8 @@
 export * from "./types";
 export * from "./scoring/score";
 
-export * from "./progress/progress.types";
-export * from "./progress/progressEngine";
+
+export * from "./progress";
 
 export * from "./insights/insight.types";
 export * from "./insights/insightEngine";
@@ -19,10 +19,12 @@ export * from "./planning-assessment/assessment.types";
 export * from "./planning-assessment/assessmentEngine";
 export * from "./achievements/achievementService";
 
-export * from "./coach/coach.types";
-export * from "./coach/coachEngine";
-
 export * from "./momentum";
 export * from "./forgePipeline";
 
 export * from "./identity";
+
+export * from "./scoring/healthScore";
+
+export * from "./coach";
+

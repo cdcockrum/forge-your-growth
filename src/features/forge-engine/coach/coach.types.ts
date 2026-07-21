@@ -1,7 +1,7 @@
-export type CoachPriority =
-  | "high"
-  | "medium"
-  | "low";
+export type CoachIntensity =
+  | "low"
+  | "moderate"
+  | "high";
 
 export type CoachActionType =
   | "practice"
@@ -13,15 +13,14 @@ export type CoachActionType =
 export type CoachRecommendation = {
   id: string;
   title: string;
-  description: string;
-  priority: CoachPriority;
+  message: string;
   actionType: CoachActionType;
-  skillId?: string;
-  skillName?: string;
+  actionLabel?: string;
 };
 
 export type ForgeCoachResult = {
   headline: string;
-  summary: string;
+  message: string;
+  intensity: CoachIntensity;
   recommendations: CoachRecommendation[];
 };

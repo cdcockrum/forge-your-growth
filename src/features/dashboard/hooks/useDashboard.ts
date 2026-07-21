@@ -9,6 +9,13 @@ import {
   weekBounds,
 } from "@/features/forge/queries";
 
+import {
+  calculateForgeHealthScore,
+  calculateForgeScore,
+  calculateProgress,
+} from "@/features/forge-engine";
+
+
 export function useDashboard() {
   const { data: areas } =
     useSuspenseQuery(lifeAreasQuery());
@@ -34,36 +41,37 @@ export function useDashboard() {
         session.scheduled_date === today,
     );
 
-  const completedThisWeek =
-    weekSessions.filter(
-      (session) => session.completed,
-    ).length;
+  const forgeHealth =
+  calculateForgeHealthScore({
+    sessions: weekSessions,
+    skills,
+    weeklyReviewCompleted: false,
+  });
 
-  const consistency =
-    weekSessions.length > 0
-      ? Math.round(
-          (completedThisWeek /
-            weekSessions.length) *
-            100,
-        )
-      : 0;
+const forgePoints =
+  calculateForgeScore({
+    sessions: weekSessions,
+    skills,
+    weeklyReviewCompleted: false,
+  });
 
-  const completedMinutes =
-    weekSessions
-      .filter(
-        (session) => session.completed,
-      )
-      .reduce(
-        (sum, session) =>
-          sum +
-          session.duration_minutes,
-        0,
-      );
+const progress = calculateProgress({
+  sessions: weekSessions,
+  skills,
+  lifeAreas: areas,
+});
 
-  const totalHours =
-    Math.round(
-      (completedMinutes / 60) * 10,
-    ) / 10;
+
+const completedThisWeek =
+  progress.completedSessions;
+
+const consistency =
+  progress.completionRate;
+
+const totalHours =
+  Math.round(
+    (progress.totalMinutes / 60) * 10,
+  ) / 10;
 
   const currentDate = new Date();
 
@@ -89,16 +97,19 @@ export function useDashboard() {
       ?.split(" ")[0] ?? "there";
 
   return {
-    areas,
-    skills,
-    profile,
-    weekSessions,
-    todaySessions,
-    completedThisWeek,
-    consistency,
-    totalHours,
-    dayName,
-    dateStr,
-    firstName,
-  };
+  areas,
+  skills,
+  profile,
+  weekSessions,
+  todaySessions,
+  completedThisWeek,
+  consistency,
+  totalHours,
+  dayName,
+  dateStr,
+  firstName,
+  progress,
+  forgeHealth,
+  forgePoints,
+};
 }

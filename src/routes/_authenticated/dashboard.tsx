@@ -100,6 +100,8 @@ function DashboardContent() {
     dayName,
     dateStr,
     firstName,
+    forgeHealth,
+    forgePoints,
   } = useDashboard();
 
   return (
@@ -313,6 +315,84 @@ function DashboardContent() {
         }
         sidebar={
           <>
+
+           <div className="rounded-2xl border border-border bg-surface p-5">
+            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+              Forge Score
+            </p>
+
+            <div className="mt-5 flex items-end justify-between gap-4">
+              <p className="text-6xl font-extrabold tracking-tighter">
+                {forgeHealth.score}
+              </p>
+
+              <p className="pb-2 text-sm font-bold text-accent">
+                {forgeHealth.grade}
+              </p>
+            </div>
+
+            <div className="mt-5 h-2 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-foreground transition-all"
+                style={{
+                  width: `${forgeHealth.score}%`,
+                }}
+              />
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <p className="text-muted-foreground">
+                  Completion
+                </p>
+                <p className="mt-1 font-bold">
+                  {forgeHealth.breakdown.completion}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-muted-foreground">
+                  Consistency
+                </p>
+                <p className="mt-1 font-bold">
+                  {forgeHealth.breakdown.consistency}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-muted-foreground">
+                  Balance
+                </p>
+                <p className="mt-1 font-bold">
+                  {forgeHealth.breakdown.balance}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-muted-foreground">
+                  Reflection
+                </p>
+                <p className="mt-1 font-bold">
+                  {forgeHealth.breakdown.reflection}
+                </p>
+              </div>
+            </div>
+          </div>
+
+           <div className="rounded-2xl border border-border bg-surface p-5">
+            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+              Forge Points
+            </p>
+
+            <p className="mt-5 text-4xl font-extrabold tracking-tighter">
+              {forgePoints.score}
+            </p>
+
+            <p className="mt-2 text-xs font-semibold text-muted-foreground">
+              Earned through completed practice, difficulty, duration, reflection, and review.
+            </p>
+           </div>
+
            <div className="rounded-2xl border border-border bg-surface p-5">
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
                 Consistency

@@ -1,6 +1,11 @@
-import type { ProgressSummary } from "../progress/progress.types";
-import type { SkillAdaptation } from "../adaptation/adaptation.types";
-import type { WeeklyPlanAssessment } from "../planning-assessment/assessment.types";
+import type {
+  ProgressSummary,
+} from "../progress";
+
+import type {
+  WeeklyPlanAssessment,
+} from "../planning-assessment/assessment.types";
+
 import type {
   CoachRecommendation,
   ForgeCoachResult,
@@ -8,357 +13,191 @@ import type {
 
 type GenerateForgeCoachOptions = {
   progress: ProgressSummary;
-  adaptations?: SkillAdaptation[];
   assessment?: WeeklyPlanAssessment;
-  weeklyReflectionCompleted?: boolean;
 };
 
 export function generateForgeCoach({
   progress,
-  adaptations = [],
   assessment,
-  weeklyReflectionCompleted = false,
 }: GenerateForgeCoachOptions): ForgeCoachResult {
   const recommendations: CoachRecommendation[] = [];
 
-  addConsistencyRecommendation(
-    recommendations,
-    progress,
-  );
-
-  addNeglectedSkillRecommendation(
-    recommendations,
-    progress,
-  );
-
-  addAdaptiveRecommendation(
-    recommendations,
-    adaptations,
-  );
-
-  addRecoveryRecommendation(
-    recommendations,
-    assessment,
-  );
-
-  addReflectionRecommendation(
-    recommendations,
-    weeklyReflectionCompleted,
-  );
-
-  addMomentumRecommendation(
-    recommendations,
-    progress,
-  );
-
-  const prioritized = recommendations
-    .sort(compareRecommendations)
-    .slice(0, 4);
-
-  return {
-    headline: getCoachHeadline(progress, assessment),
-    summary: getCoachSummary(progress, prioritized),
-    recommendations: prioritized,
-  };
-}
-
-function addConsistencyRecommendation(
-  recommendations: CoachRecommendation[],
-  progress: ProgressSummary,
-) {
-  if (
-    progress.totalSessions >= 4 &&
-    progress.completionRate < 50
-  ) {
+  if (progress.totalSessions === 0) {
     recommendations.push({
-      id: "reduce-plan-load",
-      title: "Make the plan easier to complete.",
-      description:
-        `Your completion rate is ${progress.completionRate}%. ` +
-        "Reduce the frequency or duration of one demanding practice next week.",
-      priority: "high",
+      id: "create-plan",
+      title: "Create your first rhythm",
+      message:
+        "There are no practices scheduled yet. Begin with one manageable commitment.",
       actionType: "adjust_plan",
+      actionLabel: "Plan your week",
     });
-
-    return;
-  }
-
-  if (progress.completionRate >= 85) {
-    recommendations.push({
-      id: "protect-consistency",
-      title: "Protect the rhythm that is working.",
-      description:
-        `You completed ${progress.completionRate}% of your planned practices. ` +
-        "Avoid adding unnecessary volume while this pattern is strong.",
-      priority: "low",
-      actionType: "maintain",
-    });
-  }
-}
-
-function addNeglectedSkillRecommendation(
-  recommendations: CoachRecommendation[],
-  progress: ProgressSummary,
-) {
-  const skill = progress.neglectedSkill;
-
-  if (
-    !skill ||
-    skill.daysSincePracticed === null ||
-    skill.daysSincePracticed < 7
-  ) {
-    return;
-  }
-
-  recommendations.push({
-    id: `resume-${skill.skillId}`,
-    title: `Return to ${skill.name}.`,
-    description:
-      `${skill.daysSincePracticed} days have passed since its last completed practice. ` +
-      "Schedule one short, low-friction session.",
-    priority:
-      skill.daysSincePracticed >= 14
-        ? "high"
-        : "medium",
-    actionType: "practice",
-    skillId: skill.skillId,
-    skillName: skill.name,
-  });
-}
-
-function addAdaptiveRecommendation(
-  recommendations: CoachRecommendation[],
-  adaptations: SkillAdaptation[],
-) {
-  const strongestRecommendation = adaptations
-    .filter(
-      (adaptation) =>
-        adaptation.confidence !== "low" &&
-        !sameDays(
-          adaptation.currentPreferredDays,
-          adaptation.recommendedDays,
-        ),
-    )
-    .sort(
-      (first, second) =>
-        confidenceWeight(second.confidence) -
-        confidenceWeight(first.confidence),
-    )[0];
-
-  if (!strongestRecommendation) {
-    return;
-  }
-
-  recommendations.push({
-    id: `adapt-${strongestRecommendation.skillId}`,
-    title: `Adjust ${strongestRecommendation.skillName}'s practice days.`,
-    description:
-      `Forge has ${strongestRecommendation.confidence} confidence that ` +
-      `${formatDays(
-        strongestRecommendation.recommendedDays,
-      )} will produce better follow-through.`,
-    priority:
-      strongestRecommendation.confidence === "high"
-        ? "high"
-        : "medium",
-    actionType: "adjust_plan",
-    skillId: strongestRecommendation.skillId,
-    skillName: strongestRecommendation.skillName,
-  });
-}
-
-function addRecoveryRecommendation(
-  recommendations: CoachRecommendation[],
-  assessment?: WeeklyPlanAssessment,
-) {
-  if (!assessment) {
-    return;
-  }
-
-  if (assessment.label === "demanding") {
-    recommendations.push({
-      id: "protect-recovery",
-      title: "Protect recovery this week.",
-      description:
-        "The current plan is demanding. Remove, shorten, or separate one high-intensity session.",
-      priority: "high",
-      actionType: "recover",
-    });
-
-    return;
-  }
-
-  const recoveryIssue = assessment.items.some(
-    (item) =>
-      item.id === "recovery-spacing" ||
-      item.id === "daily-overload",
-  );
-
-  if (recoveryIssue) {
-    recommendations.push({
-      id: "improve-recovery-spacing",
-      title: "Create more space between demanding sessions.",
-      description:
-        "Your weekly assessment found concentrated workload. Move one difficult practice to a lighter day.",
-      priority: "medium",
-      actionType: "recover",
-    });
-  }
-}
-
-function addReflectionRecommendation(
-  recommendations: CoachRecommendation[],
-  weeklyReflectionCompleted: boolean,
-) {
-  if (weeklyReflectionCompleted) {
-    return;
-  }
-
-  recommendations.push({
-    id: "complete-reflection",
-    title: "Complete the weekly reflection.",
-    description:
-      "Capture what worked, what created friction, and what next week should emphasize.",
-    priority: "medium",
-    actionType: "reflect",
-  });
-}
-
-function addMomentumRecommendation(
-  recommendations: CoachRecommendation[],
-  progress: ProgressSummary,
-) {
-  if (progress.currentStreak < 5) {
-    return;
-  }
-
-  recommendations.push({
-    id: "maintain-streak",
-    title: `Preserve your ${progress.currentStreak}-day rhythm.`,
-    description:
-      "Choose one manageable practice today rather than increasing intensity.",
-    priority: "low",
-    actionType: "maintain",
-  });
-}
-
-function getCoachHeadline(
-  progress: ProgressSummary,
-  assessment?: WeeklyPlanAssessment,
-): string {
-  if (assessment?.label === "demanding") {
-    return "Progress needs recovery to remain sustainable.";
-  }
-
-  if (progress.completionRate >= 85) {
-    return "Your practice rhythm is working.";
   }
 
   if (
-    progress.totalSessions >= 4 &&
-    progress.completionRate < 50
+    progress.totalSessions > 0 &&
+    progress.completionRate < 40
   ) {
-    return "The plan needs to become easier to follow.";
+    recommendations.push({
+      id: "simplify-plan",
+      title: "Reduce the load",
+      message:
+        "Your current plan may be asking for too much. Protect momentum by making the next step smaller.",
+      actionType: "adjust_plan",
+      actionLabel: "Adjust the plan",
+    });
+  }
+
+  if (
+    progress.totalSessions > 0 &&
+    progress.completionRate >= 40 &&
+    progress.completionRate < 75
+  ) {
+    recommendations.push({
+      id: "complete-one-practice",
+      title: "Make one promise count",
+      message:
+        "Choose one meaningful practice and complete it before adding more.",
+      actionType: "practice",
+      actionLabel: "Open Today",
+    });
   }
 
   if (progress.currentStreak >= 7) {
-    return "Consistency is becoming part of your identity.";
+    recommendations.push({
+      id: "protect-rhythm",
+      title: "Protect the rhythm",
+      message: `You have practiced for ${progress.currentStreak} consecutive days. Keep today simple enough to continue.`,
+      actionType: "maintain",
+      actionLabel: "Continue",
+    });
   }
 
-  return "Keep the next step deliberate and manageable.";
+  if (
+    progress.neglectedSkill &&
+    progress.neglectedSkill.daysSincePracticed !== null &&
+    progress.neglectedSkill.daysSincePracticed >= 7
+  ) {
+    recommendations.push({
+      id: "neglected-skill",
+      title: "Return to a neglected skill",
+      message: `${progress.neglectedSkill.name} has not been practiced for ${progress.neglectedSkill.daysSincePracticed} days.`,
+      actionType: "practice",
+      actionLabel: "Schedule a practice",
+    });
+  }
+
+  if (
+    assessment &&
+    hasAssessmentConcern(assessment)
+  ) {
+    recommendations.push({
+      id: "review-weekly-plan",
+      title: "Review the plan",
+      message:
+        "Your weekly assessment suggests that part of the plan may need adjustment.",
+      actionType: "adjust_plan",
+      actionLabel: "Review the plan",
+    });
+  }
+
+  if (
+    progress.completedSessions > 0 &&
+    progress.completionRate >= 80
+  ) {
+    recommendations.push({
+      id: "reflect-on-progress",
+      title: "Capture what is working",
+      message:
+        "Your practice rhythm is strong. Take a moment to identify what made consistency possible.",
+      actionType: "reflect",
+      actionLabel: "Reflect",
+    });
+  }
+
+  if (recommendations.length === 0) {
+    recommendations.push({
+      id: "maintain-direction",
+      title: "Continue the work",
+      message:
+        "Your current rhythm is sustainable. Complete the next practice with intention.",
+      actionType: "maintain",
+      actionLabel: "Continue",
+    });
+  }
+
+  const intensity = determineIntensity(progress);
+
+  return {
+    headline: getHeadline(intensity),
+    message: getMessage(progress),
+    intensity,
+    recommendations: recommendations.slice(0, 3),
+  };
 }
 
-function getCoachSummary(
+function determineIntensity(
   progress: ProgressSummary,
-  recommendations: CoachRecommendation[],
+): ForgeCoachResult["intensity"] {
+  if (
+    progress.totalSessions > 0 &&
+    progress.completionRate < 40
+  ) {
+    return "high";
+  }
+
+  if (
+    progress.completionRate < 75 ||
+    progress.neglectedSkill !== null
+  ) {
+    return "moderate";
+  }
+
+  return "low";
+}
+
+function getHeadline(
+  intensity: ForgeCoachResult["intensity"],
+): string {
+  if (intensity === "high") {
+    return "Rebuild momentum";
+  }
+
+  if (intensity === "moderate") {
+    return "Refine the rhythm";
+  }
+
+  return "Protect what is working";
+}
+
+function getMessage(
+  progress: ProgressSummary,
 ): string {
   if (progress.totalSessions === 0) {
-    return "Complete a few practices and Forge will begin producing personalized guidance.";
+    return "The forge is ready. Begin with one clear commitment.";
   }
 
-  const highPriorityCount = recommendations.filter(
-    (item) => item.priority === "high",
-  ).length;
-
-  if (highPriorityCount > 0) {
-    return `${highPriorityCount} ${
-      highPriorityCount === 1
-        ? "priority deserves"
-        : "priorities deserve"
-    } attention before adding more practice volume.`;
+  if (progress.completionRate >= 80) {
+    return "You are following through consistently. Keep the next step focused and sustainable.";
   }
 
-  return "Your current data suggests refinement rather than major change.";
-}
-
-function compareRecommendations(
-  first: CoachRecommendation,
-  second: CoachRecommendation,
-): number {
-  return (
-    priorityWeight(second.priority) -
-    priorityWeight(first.priority)
-  );
-}
-
-function priorityWeight(
-  priority: CoachRecommendation["priority"],
-): number {
-  switch (priority) {
-    case "high":
-      return 3;
-    case "medium":
-      return 2;
-    case "low":
-      return 1;
+  if (progress.completionRate >= 50) {
+    return "Progress is forming. A few deliberate completions can strengthen the week.";
   }
+
+  return "Do not chase the entire plan today. Complete one meaningful practice and rebuild from there.";
 }
 
-function confidenceWeight(
-  confidence: SkillAdaptation["confidence"],
-): number {
-  switch (confidence) {
-    case "high":
-      return 3;
-    case "medium":
-      return 2;
-    case "low":
-      return 1;
-  }
-}
-
-function sameDays(
-  first: string[],
-  second: string[],
+function hasAssessmentConcern(
+  assessment: WeeklyPlanAssessment,
 ): boolean {
-  if (first.length !== second.length) {
-    return false;
-  }
+  const value = assessment as unknown as Record<
+    string,
+    unknown
+  >;
 
-  return first.every(
-    (day, index) => day === second[index],
+  return (
+    value.needsAdjustment === true ||
+    value.overloaded === true ||
+    value.requiresAttention === true
   );
-}
-
-function formatDays(days: string[]): string {
-  if (days.length === 0) {
-    return "the recommended days";
-  }
-
-  const formatted = days.map(
-    (day) =>
-      day.charAt(0).toUpperCase() + day.slice(1),
-  );
-
-  if (formatted.length === 1) {
-    return formatted[0];
-  }
-
-  if (formatted.length === 2) {
-    return `${formatted[0]} and ${formatted[1]}`;
-  }
-
-  return `${formatted
-    .slice(0, -1)
-    .join(", ")}, and ${formatted.at(-1)}`;
 }
