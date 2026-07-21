@@ -40,7 +40,7 @@ export function CoachPanel({
       </h2>
 
       <p className="mt-2 text-muted-foreground leading-7">
-        {coach.summary}
+        {coach.message}
       </p>
 
       <div className="mt-8 space-y-3">
@@ -76,7 +76,7 @@ function Recommendation({
           </p>
 
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            {recommendation.description}
+            {recommendation.message}
           </p>
         </div>
 

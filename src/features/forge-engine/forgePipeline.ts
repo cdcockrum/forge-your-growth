@@ -1,10 +1,12 @@
 import {
-  calculateProgress,
-  calculateMomentum,
+  calculateForgeHealthScore,
   calculateForgeScore,
   calculateIdentityProgress,
+  calculateMomentum,
+  calculateProgress,
   generateForgeCoach,
 } from ".";
+
 
 import type {
   PracticeSession,
@@ -14,21 +16,30 @@ import type {
 
 import type { WeeklyPlanAssessment } from "./planning-assessment/assessment.types";
 
+import type { ForgeState } from "./forge.types";
+import type { Vision } from "@/features/vision";
+
 
 
 type PipelineOptions = {
-  sessions: PracticeSession[];
-  skills: Skill[];
-  lifeAreas: LifeArea[];
-  assessment?: WeeklyPlanAssessment;
+    vision: Vision | null;
+
+    sessions: PracticeSession[];
+
+    skills: Skill[];
+
+    lifeAreas: LifeArea[];
+
+    assessment?: WeeklyPlanAssessment;
 };
 
 export function buildForgeState({
+  vision,
   sessions,
   skills,
   lifeAreas,
   assessment,
-}: PipelineOptions) {
+}: PipelineOptions): ForgeState {
   const progress = calculateProgress({
     sessions,
     skills,
@@ -43,12 +54,21 @@ export function buildForgeState({
   const forgeScore = calculateForgeScore({
     sessions,
     skills,
+    weeklyReviewCompleted: false,
   });
 
-  const identity = calculateIdentityProgress({
-  sessions,
-  skills,
-});
+  const forgeHealth =
+    calculateForgeHealthScore({
+      sessions,
+      skills,
+      weeklyReviewCompleted: false,
+    });
+
+  const identity =
+    calculateIdentityProgress({
+      sessions,
+      skills,
+    });
 
   const coach = generateForgeCoach({
     progress,
@@ -56,10 +76,13 @@ export function buildForgeState({
   });
 
   return {
-  progress,
-  momentum,
-  forgeScore,
-  identity,
-  coach,
+    vision,
+    progress,
+    momentum,
+    forgeScore,
+    forgeHealth,
+    identity,
+    coach,
+    assessment,
   };
 }

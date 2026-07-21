@@ -1,8 +1,6 @@
 import { ForgeSidebarLayout } from "@/components/forge";
-
 import { calculateWeekProgress } from "@/features/today/utils";
 import { calculateTodayProgress } from "@/features/today";
-
 import {
   CoachCard,
   ForgeScorePanel,
@@ -12,11 +10,13 @@ import {
   QuoteCard,
   RecentAchievementCard,
   TodayFocusList,
-  TodayHeader,
   TodayPracticeList,
 } from "@/features/today/components";
-
 import { useTodayDashboard } from "@/features/today/hooks/useTodayDashboard";
+import { MorningGreeting } from "./MorningGreeting";
+import { NorthStarCard } from "./NorthStarCard";
+import { IdentityBanner } from "./IdentityBanner";
+import { ReflectionPrompt } from "./ReflectionPrompt";
 
 export function TodayContent() {
   const {
@@ -36,10 +36,21 @@ export function TodayContent() {
   const weekProgress =
     calculateWeekProgress(weekSessions);
 
+  const firstName =
+  profile?.full_name?.split(" ")[0] ?? "Friend";
+
   return (
     <>
-      <TodayHeader profile={profile} />
+      <MorningGreeting firstName={firstName} />
 
+      <NorthStarCard
+        text={forge.vision?.north_star ?? ""}
+      />
+
+      <IdentityBanner
+          identities={forge.vision?.identities ?? []}
+      />
+      
       <QuoteCard />
 
       <CoachCard coach={forge.coach} />
@@ -53,9 +64,16 @@ export function TodayContent() {
               areas={areas}
             />
 
-            <TodayFocusList items={focusItems} />
+            {focusItems.length > 0 && (
+              <TodayFocusList
+                items={focusItems}
+              />
+            )}
+
+            <ReflectionPrompt />
           </div>
         }
+
         sidebar={
           <>
             <MomentumPanel

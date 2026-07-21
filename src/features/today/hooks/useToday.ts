@@ -11,6 +11,7 @@ import {
   weekBounds,
 } from "@/features/forge/queries";
 import { buildForgeState } from "@/features/forge-engine";
+import { useVision } from "@/features/vision";
 
 export function useTodayDashboard() {
   const today = todayIso();

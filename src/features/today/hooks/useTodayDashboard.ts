@@ -12,18 +12,21 @@ import {
 } from "@/features/forge/queries";
 import { focusItemsForDateQuery } from "@/features/focus";
 import { buildForgeState } from "@/features/forge-engine";
+import { useVision } from "@/features/vision";
 
 export function useTodayDashboard() {
   const today = todayIso();
   const { start, end } = weekBounds();
 
   const { data: profile } = useSuspenseQuery(
-    profileQuery(),
+    profileQuery(), 
   );
 
   const { data: skills } = useSuspenseQuery(
     skillsQuery(),
   );
+
+  const { vision } = useVision();
 
   const { data: areas } = useSuspenseQuery(
     lifeAreasQuery(),
@@ -46,6 +49,7 @@ export function useTodayDashboard() {
   );
 
   const forge = buildForgeState({
+    vision,
     sessions: weekSessions,
     skills,
     lifeAreas: areas,

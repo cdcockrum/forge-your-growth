@@ -28,3 +28,4 @@ export * from "./scoring/healthScore";
 
 export * from "./coach";
 
+export * from "./forge.types";

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedVisionRouteImport } from './routes/_authenticated/vision'
 import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
 import { Route as AuthenticatedSkillsRouteImport } from './routes/_authenticated/skills'
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
@@ -19,6 +20,7 @@ import { Route as AuthenticatedProgressRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPlanRouteImport } from './routes/_authenticated/plan'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAreasRouteImport } from './routes/_authenticated/areas'
+import { Route as AuthenticatedDevForgeRouteImport } from './routes/_authenticated/dev/forge'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -33,6 +35,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedVisionRoute = AuthenticatedVisionRouteImport.update({
+  id: '/vision',
+  path: '/vision',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
   id: '/today',
@@ -69,6 +76,11 @@ const AuthenticatedAreasRoute = AuthenticatedAreasRouteImport.update({
   path: '/areas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDevForgeRoute = AuthenticatedDevForgeRouteImport.update({
+  id: '/dev/forge',
+  path: '/dev/forge',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -80,6 +92,8 @@ export interface FileRoutesByFullPath {
   '/review': typeof AuthenticatedReviewRoute
   '/skills': typeof AuthenticatedSkillsRoute
   '/today': typeof AuthenticatedTodayRoute
+  '/vision': typeof AuthenticatedVisionRoute
+  '/dev/forge': typeof AuthenticatedDevForgeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -91,6 +105,8 @@ export interface FileRoutesByTo {
   '/review': typeof AuthenticatedReviewRoute
   '/skills': typeof AuthenticatedSkillsRoute
   '/today': typeof AuthenticatedTodayRoute
+  '/vision': typeof AuthenticatedVisionRoute
+  '/dev/forge': typeof AuthenticatedDevForgeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -104,6 +120,8 @@ export interface FileRoutesById {
   '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/skills': typeof AuthenticatedSkillsRoute
   '/_authenticated/today': typeof AuthenticatedTodayRoute
+  '/_authenticated/vision': typeof AuthenticatedVisionRoute
+  '/_authenticated/dev/forge': typeof AuthenticatedDevForgeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,6 +135,8 @@ export interface FileRouteTypes {
     | '/review'
     | '/skills'
     | '/today'
+    | '/vision'
+    | '/dev/forge'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -128,6 +148,8 @@ export interface FileRouteTypes {
     | '/review'
     | '/skills'
     | '/today'
+    | '/vision'
+    | '/dev/forge'
   id:
     | '__root__'
     | '/'
@@ -140,6 +162,8 @@ export interface FileRouteTypes {
     | '/_authenticated/review'
     | '/_authenticated/skills'
     | '/_authenticated/today'
+    | '/_authenticated/vision'
+    | '/_authenticated/dev/forge'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -170,6 +194,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/vision': {
+      id: '/_authenticated/vision'
+      path: '/vision'
+      fullPath: '/vision'
+      preLoaderRoute: typeof AuthenticatedVisionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/today': {
       id: '/_authenticated/today'
@@ -220,6 +251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAreasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dev/forge': {
+      id: '/_authenticated/dev/forge'
+      path: '/dev/forge'
+      fullPath: '/dev/forge'
+      preLoaderRoute: typeof AuthenticatedDevForgeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -231,6 +269,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedSkillsRoute: typeof AuthenticatedSkillsRoute
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
+  AuthenticatedVisionRoute: typeof AuthenticatedVisionRoute
+  AuthenticatedDevForgeRoute: typeof AuthenticatedDevForgeRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -241,6 +281,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedSkillsRoute: AuthenticatedSkillsRoute,
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
+  AuthenticatedVisionRoute: AuthenticatedVisionRoute,
+  AuthenticatedDevForgeRoute: AuthenticatedDevForgeRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

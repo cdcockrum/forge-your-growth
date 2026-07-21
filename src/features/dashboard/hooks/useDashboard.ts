@@ -10,10 +10,10 @@ import {
 } from "@/features/forge/queries";
 
 import {
-  calculateForgeHealthScore,
-  calculateForgeScore,
-  calculateProgress,
+  buildForgeState,
 } from "@/features/forge-engine";
+
+import { useVision } from "@/features/vision";
 
 
 export function useDashboard() {
@@ -41,21 +41,11 @@ export function useDashboard() {
         session.scheduled_date === today,
     );
 
-  const forgeHealth =
-  calculateForgeHealthScore({
-    sessions: weekSessions,
-    skills,
-    weeklyReviewCompleted: false,
-  });
+  const { vision } = useVision();
 
-const forgePoints =
-  calculateForgeScore({
-    sessions: weekSessions,
-    skills,
-    weeklyReviewCompleted: false,
-  });
+  const forge = buildForgeState({
+  vision,
 
-const progress = calculateProgress({
   sessions: weekSessions,
   skills,
   lifeAreas: areas,
@@ -63,14 +53,14 @@ const progress = calculateProgress({
 
 
 const completedThisWeek =
-  progress.completedSessions;
+  forge.progress.completedSessions;
 
 const consistency =
-  progress.completionRate;
+  forge.progress.completionRate;
 
 const totalHours =
   Math.round(
-    (progress.totalMinutes / 60) * 10,
+    (forge.progress.totalMinutes / 60) * 10,
   ) / 10;
 
   const currentDate = new Date();
@@ -108,8 +98,10 @@ const totalHours =
   dayName,
   dateStr,
   firstName,
-  progress,
-  forgeHealth,
-  forgePoints,
+  forge,
+  progress: forge.progress,
+  forgeHealth: forge.forgeHealth,
+  forgePoints: forge.forgeScore,
+  vision: forge.vision,
 };
 }
