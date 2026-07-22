@@ -35,6 +35,14 @@ import type {
   HistoryResult,
 } from "./history";
 
+import type {
+  MemoryResult,
+} from "./memory";
+
+import type {
+  AdvisorBriefing,
+} from "./advisor";
+
 
 export type ForgeState = {
 
@@ -56,8 +64,12 @@ export type ForgeState = {
 
   narrative: WeeklyNarrative;
 
+  advisor: AdvisorBriefing;
+
   insight: ForgeInsight;
 
   history: HistoryResult;
+
+  memory: MemoryResult;
 
 };

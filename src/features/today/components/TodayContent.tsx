@@ -13,12 +13,11 @@ import {
   TodayPracticeList,
 } from "@/features/today/components";
 import { useTodayDashboard } from "@/features/today/hooks/useTodayDashboard";
-import { MorningGreeting } from "./MorningGreeting";
-import { NorthStarCard } from "./NorthStarCard";
-import { IdentityBanner } from "./IdentityBanner";
+import { MorningHero } from "./MorningHero";
 import { ReflectionPrompt } from "./ReflectionPrompt";
-import { TodayInsightCard } from "./TodayInsightCard";
 import { WeeklyStoryTeaser } from "./WeeklyStoryTeaser";
+import { ForgeMemoryCard } from "./ForgeMemoryCard";
+import { MissionCard } from "./MissionCard";
 
 export function TodayContent() {
   const {
@@ -43,17 +42,9 @@ export function TodayContent() {
 
   return (
     <>
-      <MorningGreeting firstName={firstName} />
-
-      <NorthStarCard
-        text={forge.vision?.north_star ?? ""}
-      />
-
-      <IdentityBanner
-          identities={forge.vision?.identities ?? []}
-      />
-
-      <TodayInsightCard
+      <MorningHero
+        firstName={firstName}
+        advisor={forge.advisor}
         insight={forge.insight}
       />
       
@@ -64,10 +55,8 @@ export function TodayContent() {
       <ForgeSidebarLayout
         main={
           <div className="space-y-6">
-            <TodayPracticeList
+            <MissionCard
               sessions={todaySessions}
-              skills={skills}
-              areas={areas}
             />
 
             {focusItems.length > 0 && (
@@ -81,7 +70,11 @@ export function TodayContent() {
             <WeeklyStoryTeaser
               narrative={forge.narrative}
             />
-            
+
+            <ForgeMemoryCard
+              memories={forge.memory.strongest}
+            />
+
           </div>
         }
 

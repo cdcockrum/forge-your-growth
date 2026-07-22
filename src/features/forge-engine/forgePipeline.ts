@@ -35,6 +35,13 @@ import {
   buildHistory,
 } from "./history";
 
+import {
+  buildMemory,
+} from "./memory";
+
+import {
+  buildAdvisorBriefing,
+} from "./advisor";
 
 
 type PipelineOptions = {
@@ -91,6 +98,12 @@ export function buildForgeState({
       skills,
     });
 
+  const memory = buildMemory({
+    progress,
+    momentum,
+    identity,
+  });
+
   const coach = generateForgeCoach({
     progress,
     assessment,
@@ -124,6 +137,19 @@ export function buildForgeState({
   northStar: vision?.north_star,
 });
 
+const advisor =
+  buildAdvisorBriefing({
+    vision,
+    progress,
+    momentum,
+    identity,
+    coach,
+    insight,
+    memory,
+    narrative,
+    history,
+  });
+
   return {
     vision,
     progress,
@@ -136,5 +162,7 @@ export function buildForgeState({
     assessment,
     insight,
     history,
+    memory,
+    advisor,
   };
 }

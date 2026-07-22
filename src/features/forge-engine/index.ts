@@ -37,3 +37,7 @@ export * from "./narrative";
 
 export * from "./synthesis";
 export * from "./history";
+
+export * from "./advisor";
+
+export * from "./memory";
