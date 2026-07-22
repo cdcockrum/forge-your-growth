@@ -1,7 +1,7 @@
 import type {
+  LifeArea,
   PracticeSession,
   Skill,
-  LifeArea,
 } from "@/features/forge/types";
 
 import type {
@@ -9,36 +9,41 @@ import type {
 } from "@/features/vision";
 
 import {
-  calculateForgeScore,
-} from "../scoring/score";
+  buildAdvisorBriefing,
+} from "../advisor";
 
 import {
-  calculateForgeHealthScore,
-} from "../scoring/healthScore";
+  generateForgeCoach,
+} from "../coach";
 
 import {
-  calculateProgress,
-} from "../progress";
+  buildEvidenceNodes,
+  createEvidenceGraph,
+} from "../evidence";
+
+import type {
+  ForgeState,
+} from "../forge.types";
 
 import {
-  calculateMomentum,
-} from "../momentum";
+  buildHistory,
+} from "../history";
 
 import {
   calculateIdentityProgress,
 } from "../identity";
 
 import {
-  generateForgeCoach,
-} from "../coach";
+  buildIntelligenceConclusion,
+} from "../intelligence";
 
-import type {
-  WeeklyPlanAssessment,
-} from "../planning-assessment/assessment.types";
+import {
+  buildMemory,
+} from "../memory";
 
-import type {
-  ForgeState,
-} from "../forge.types";
+import {
+  calculateMomentum,
+} from "../momentum";
 
 import {
   buildWeeklyNarrative,
@@ -49,45 +54,34 @@ import type {
   WeeklyReviewSnapshot,
 } from "../narrative";
 
+import type {
+  WeeklyPlanAssessment,
+} from "../planning-assessment/assessment.types";
+
+import {
+  calculateProgress,
+} from "../progress";
+
+import {
+  calculateForgeHealthScore,
+} from "../scoring/healthScore";
+
+import {
+  calculateForgeScore,
+} from "../scoring/score";
+
 import {
   buildForgeInsight,
 } from "../synthesis";
 
-import {
-  buildHistory,
-} from "../history";
-
-import {
-  buildMemory,
-} from "../memory";
-
-import {
-  buildAdvisorBriefing,
-} from "../advisor";
-
-import {
-  buildIntelligenceConclusion,
-} from "../intelligence";
-
-import {
-  buildEvidenceNodes,
-  createEvidenceGraph,
-} from "../evidence";
-
-
 type PipelineOptions = {
-    vision: Vision | null;
-
-    sessions: PracticeSession[];
-
-    skills: Skill[];
-
-    lifeAreas: LifeArea[];
-
-    assessment?: WeeklyPlanAssessment;
-
-    achievements?: AchievementSnapshot[];
-    review?: WeeklyReviewSnapshot | null;
+  vision: Vision | null;
+  sessions: PracticeSession[];
+  skills: Skill[];
+  lifeAreas: LifeArea[];
+  assessment?: WeeklyPlanAssessment;
+  achievements?: AchievementSnapshot[];
+  review?: WeeklyReviewSnapshot | null;
 };
 
 export function buildForgeState({
@@ -99,35 +93,42 @@ export function buildForgeState({
   achievements = [],
   review = null,
 }: PipelineOptions): ForgeState {
+  // 1. Core progress and scoring
+
   const progress = calculateProgress({
     sessions,
     skills,
     lifeAreas,
   });
 
-  const momentum = calculateMomentum({
-    progress,
-    assessment,
-  });
-
   const forgeScore = calculateForgeScore({
     sessions,
     skills,
-    weeklyReviewCompleted: false,
+    weeklyReviewCompleted: Boolean(review),
   });
 
   const forgeHealth =
     calculateForgeHealthScore({
       sessions,
       skills,
-      weeklyReviewCompleted: false,
+      weeklyReviewCompleted:
+        Boolean(review),
     });
+
+  // 2. Momentum and identity
+
+  const momentum = calculateMomentum({
+    progress,
+    assessment,
+  });
 
   const identity =
     calculateIdentityProgress({
       sessions,
       skills,
     });
+
+  // 3. Memory and coaching
 
   const memory = buildMemory({
     progress,
@@ -140,68 +141,78 @@ export function buildForgeState({
     assessment,
   });
 
-  const narrative = buildWeeklyNarrative({
-  vision,
-  identity,
-  momentum,
-  progress,
-  coach,
-  achievements,
-  review,
-});
+  // 4. Narrative and synthesis
 
-  const insight =
-   buildForgeInsight({
-     vision,
-     progress,
-     momentum,
-     forgeScore,
-     forgeHealth,
-     identity,
-     coach,
-     narrative,
+  const narrative =
+    buildWeeklyNarrative({
+      vision,
+      identity,
+      momentum,
+      progress,
+      coach,
+      achievements,
+      review,
+    });
+
+  const insight = buildForgeInsight({
+    vision,
+    progress,
+    momentum,
+    forgeScore,
+    forgeHealth,
+    identity,
+    coach,
+    narrative,
   });
+
+  // 5. History and advisor
 
   const history = buildHistory({
-  achievements,
-  narrativeTitle: narrative.title,
-  northStar: vision?.north_star,
-});
-
-const advisor =
-  buildAdvisorBriefing({
-    vision,
-    progress,
-    momentum,
-    identity,
-    coach,
-    insight,
-    memory,
-    narrative,
-    history,
+    achievements,
+    narrativeTitle: narrative.title,
+    northStar:
+      vision?.north_star,
   });
 
-const evidence = createEvidenceGraph(
-  buildEvidenceNodes({
-    progress,
-    identity,
-    advisor,
-  }),
-);
+  const advisor =
+    buildAdvisorBriefing({
+      vision,
+      progress,
+      momentum,
+      identity,
+      coach,
+      insight,
+      memory,
+      narrative,
+      history,
+    });
+
+  // 6. Intelligence and evidence
 
   const intelligence =
-  buildIntelligenceConclusion({
-    vision,
-    progress,
-    momentum,
-    identity,
-    coach,
-    insight,
-    advisor,
-    memory,
-    history,
-    narrative,
-  });
+    buildIntelligenceConclusion({
+      vision,
+      progress,
+      momentum,
+      identity,
+      coach,
+      insight,
+      advisor,
+      memory,
+      history,
+      narrative,
+    });
+
+  const evidence =
+    createEvidenceGraph(
+      buildEvidenceNodes({
+        progress,
+        identity,
+        advisor,
+      }),
+    );
+
+  // 7. Final Forge state
 
   return {
     vision,
