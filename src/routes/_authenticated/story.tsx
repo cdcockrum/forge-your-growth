@@ -1,13 +1,16 @@
 import { Suspense } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 import {
+  ForgeCallout,
   ForgeCard,
   ForgePage,
   ForgeSection,
 } from "@/components/forge";
 
 import {
+  achievementsQuery,
   lifeAreasQuery,
   profileQuery,
   sessionsInRangeQuery,
@@ -15,21 +18,8 @@ import {
   weekBounds,
 } from "@/features/forge/queries";
 
-import {
-  buildForgeState,
-} from "@/features/forge-engine";
-
-import {
-  visionQuery,
-} from "@/features/vision";
-
-import {
-  achievementsQuery,
-} from "@/features/forge/queries";
-
-import {
-  useSuspenseQuery,
-} from "@tanstack/react-query";
+import { buildForgeState } from "@/features/forge-engine";
+import { visionQuery } from "@/features/vision";
 
 export const Route = createFileRoute(
   "/_authenticated/story",
@@ -56,7 +46,6 @@ export const Route = createFileRoute(
       context.queryClient.ensureQueryData(
         achievementsQuery(),
       ),
-      
     ]);
   },
   component: StoryPage,
@@ -106,8 +95,6 @@ function StoryContent() {
   const { data: achievements } =
     useSuspenseQuery(achievementsQuery());
 
-  
-
   const forge = buildForgeState({
     vision,
     sessions,
@@ -127,20 +114,10 @@ function StoryContent() {
     profile?.full_name?.split(" ")[0] ??
     "Friend";
 
-     console.log(
-      "Strongest Identity JSON:",
-      JSON.stringify(forge.identity.strongestIdentity, null, 2),
-    );
-
-    console.log(
-      "Fastest Identity JSON:",
-      JSON.stringify(forge.identity.fastestDevelopingIdentity, null, 2),
-    );
-
   const story = forge.narrative;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <header className="max-w-3xl">
         <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
           This week’s story
@@ -183,11 +160,13 @@ function StoryContent() {
         <ForgeSection
           eyebrow="Coach"
           title="What Forge noticed"
-        />
-
-        <p className="mt-5 text-lg leading-8">
-          {story.coachReflection}
-        </p>
+        >
+          <ForgeCallout title="Observation">
+            <p className="text-base leading-7">
+              {story.coachReflection}
+            </p>
+          </ForgeCallout>
+        </ForgeSection>
       </ForgeCard>
 
       <ForgeCard
@@ -196,12 +175,12 @@ function StoryContent() {
       >
         <ForgeSection
           eyebrow="Next week"
-          title="Your focus"
-        />
-
-        <p className="mt-5 text-2xl font-extrabold leading-snug tracking-tight">
-          {story.nextWeekFocus}
-        </p>
+          title="Where to aim next"
+        >
+          <p className="text-2xl font-extrabold leading-snug tracking-tight">
+            {story.nextWeekFocus}
+          </p>
+        </ForgeSection>
       </ForgeCard>
 
       <blockquote className="border-l-2 border-border pl-6 text-xl font-semibold leading-8 text-muted-foreground">
@@ -227,18 +206,18 @@ function StorySection({
       <ForgeSection
         eyebrow={eyebrow}
         title={title}
-      />
-
-      <div className="mt-5 space-y-3">
-        {items.map((item) => (
-          <p
-            key={item}
-            className="text-base leading-7 text-muted-foreground"
-          >
-            {item}
-          </p>
-        ))}
-      </div>
+      >
+        <div className="space-y-3">
+          {items.map((item) => (
+            <p
+              key={item}
+              className="text-base leading-7 text-muted-foreground"
+            >
+              {item}
+            </p>
+          ))}
+        </div>
+      </ForgeSection>
     </ForgeCard>
   );
 }

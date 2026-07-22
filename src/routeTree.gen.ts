@@ -20,6 +20,7 @@ import { Route as AuthenticatedSkillsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedProgressRouteImport } from './routes/_authenticated/progress'
 import { Route as AuthenticatedPlanRouteImport } from './routes/_authenticated/plan'
+import { Route as AuthenticatedJourneyRouteImport } from './routes/_authenticated/journey'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAreasRouteImport } from './routes/_authenticated/areas'
 import { Route as AuthenticatedDevForgeRouteImport } from './routes/_authenticated/dev/forge'
@@ -78,6 +79,11 @@ const AuthenticatedPlanRoute = AuthenticatedPlanRouteImport.update({
   path: '/plan',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedJourneyRoute = AuthenticatedJourneyRouteImport.update({
+  id: '/journey',
+  path: '/journey',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/areas': typeof AuthenticatedAreasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/journey': typeof AuthenticatedJourneyRoute
   '/plan': typeof AuthenticatedPlanRoute
   '/progress': typeof AuthenticatedProgressRoute
   '/review': typeof AuthenticatedReviewRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/areas': typeof AuthenticatedAreasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/journey': typeof AuthenticatedJourneyRoute
   '/plan': typeof AuthenticatedPlanRoute
   '/progress': typeof AuthenticatedProgressRoute
   '/review': typeof AuthenticatedReviewRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/areas': typeof AuthenticatedAreasRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/journey': typeof AuthenticatedJourneyRoute
   '/_authenticated/plan': typeof AuthenticatedPlanRoute
   '/_authenticated/progress': typeof AuthenticatedProgressRoute
   '/_authenticated/review': typeof AuthenticatedReviewRoute
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/areas'
     | '/dashboard'
+    | '/journey'
     | '/plan'
     | '/progress'
     | '/review'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/areas'
     | '/dashboard'
+    | '/journey'
     | '/plan'
     | '/progress'
     | '/review'
@@ -179,6 +190,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/areas'
     | '/_authenticated/dashboard'
+    | '/_authenticated/journey'
     | '/_authenticated/plan'
     | '/_authenticated/progress'
     | '/_authenticated/review'
@@ -275,6 +287,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlanRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/journey': {
+      id: '/_authenticated/journey'
+      path: '/journey'
+      fullPath: '/journey'
+      preLoaderRoute: typeof AuthenticatedJourneyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -302,6 +321,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAreasRoute: typeof AuthenticatedAreasRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedJourneyRoute: typeof AuthenticatedJourneyRoute
   AuthenticatedPlanRoute: typeof AuthenticatedPlanRoute
   AuthenticatedProgressRoute: typeof AuthenticatedProgressRoute
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
@@ -316,6 +336,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAreasRoute: AuthenticatedAreasRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedJourneyRoute: AuthenticatedJourneyRoute,
   AuthenticatedPlanRoute: AuthenticatedPlanRoute,
   AuthenticatedProgressRoute: AuthenticatedProgressRoute,
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,

@@ -55,6 +55,12 @@ import {
   AchievementsOverview,
 } from "@/features/achievements";
 
+import {
+  ForgePage,
+  ForgeSection,
+  ForgeStatCard,
+} from "@/components/forge";
+
 
 export const Route = createFileRoute(
   "/_authenticated/progress",
@@ -239,56 +245,48 @@ function ProgressContent() {
         }
       />
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          label="Time invested"
-          value={formatMinutes(
-            progress.totalMinutes,
-          )}
-          note={`${progress.completedSessions} completed practices`}
-          icon={Clock3}
-        />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <ForgeStatCard
+        label="Completion"
+        value={`${progress.completionRate}%`}
+        description={`${progress.completedSessions} of ${progress.totalSessions} sessions completed`}
+      />
 
-        <MetricCard
-          label="Consistency"
-          value={`${progress.completionRate}%`}
-          note={`${progress.scheduledSessions} still scheduled`}
-          icon={Target}
-        />
+      <ForgeStatCard
+        label="Practice time"
+        value={`${Math.round(
+          progress.totalMinutes / 60,
+        )}h`}
+        description={`${progress.totalMinutes} total minutes`}
+      />
 
-        <MetricCard
-          label="Current streak"
-          value={`${progress.currentStreak}d`}
-          note={`Longest: ${progress.longestStreak} days`}
-          icon={Flame}
-          dark
-        />
+      <ForgeStatCard
+        label="Current streak"
+        value={progress.currentStreak}
+        description="Consecutive practice days"
+      />
 
-        <MetricCard
-          label="Completed"
-          value={String(
-            progress.completedSessions,
-          )}
-          note={`${progress.skippedSessions} skipped`}
-          icon={Trophy}
-        />
-      </section>
+      <ForgeStatCard
+        label="Longest streak"
+        value={progress.longestStreak}
+        description="Best recorded rhythm"
+      />
+    </div>
+          <ForgeNotices insights={insights} />
 
-      <ForgeNotices insights={insights} />
+          <div className="mt-6">
+            <IdentityOverview
+              result={identity}
+              skills={skills}
+            />
+          </div>
 
-      <div className="mt-6">
-        <IdentityOverview
-          result={identity}
-          skills={skills}
-        />
-      </div>
-
-      <div className="mt-6">
-        <AchievementsOverview
-          evaluated={achievementProgress}
-          earned={earnedAchievements}
-        />
-      </div>
+          <div className="mt-6">
+            <AchievementsOverview
+              evaluated={achievementProgress}
+              earned={earnedAchievements}
+            />
+          </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.7fr)]">
         <WeeklyPracticeChart data={weeklyData} />
@@ -322,24 +320,20 @@ function ProgressContent() {
         )}
       </section>
 
-      <section className="mt-6 rounded-2xl border border-border bg-surface p-6">
-        <SectionHeading
-          eyebrow="Skill record"
-          title="The practices shaping you."
-          description="Completion, time invested, and recency across your active skills."
-        />
-
+      <ForgeSection
+        eyebrow="Skill Record"
+        title="The practices shaping you."
+        description="Completion, time invested, and recency across your active skills."
+      >
         {progress.skills.length > 0 ? (
-          <SkillRecord
-            skills={progress.skills}
-          />
+          <SkillRecord skills={progress.skills} />
         ) : (
           <EmptyPanel message="Add a skill to begin tracking meaningful progress." />
         )}
-      </section>
-    </>
-  );
-}
+      </ForgeSection>
+          </>
+        );
+      }
 
 type MetricCardProps = {
   label: string;
