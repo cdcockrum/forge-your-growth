@@ -2,11 +2,10 @@ import type { ReactNode } from "react";
 
 type ForgeSectionProps = {
   eyebrow?: string;
-  title: ReactNode;
-  description?: ReactNode;
+  title?: string;
+  description?: string;
   action?: ReactNode;
-  children?: ReactNode;
-  className?: string;
+  children: ReactNode;
 };
 
 export function ForgeSection({
@@ -15,41 +14,40 @@ export function ForgeSection({
   description,
   action,
   children,
-  className = "",
-}: ForgeSectionProps) {
+}: ForgeSectionProps): React.ReactElement {
   return (
-    <section className={className}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          {eyebrow && (
-            <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
-              {eyebrow}
-            </p>
-          )}
+    <section className="space-y-5">
+      {(eyebrow || title || description || action) && (
+        <header className="flex items-start justify-between gap-6">
+          <div className="min-w-0">
+            {eyebrow && (
+              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+                {eyebrow}
+              </p>
+            )}
 
-          <h2 className="mt-2 text-xl font-extrabold tracking-tight">
-            {title}
-          </h2>
+            {title && (
+              <h2 className="mt-2 text-3xl font-black tracking-tight">
+                {title}
+              </h2>
+            )}
 
-          {description && (
-            <div className="mt-2 text-sm leading-6 text-muted-foreground">
-              {description}
+            {description && (
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                {description}
+              </p>
+            )}
+          </div>
+
+          {action && (
+            <div className="shrink-0">
+              {action}
             </div>
           )}
-        </div>
-
-        {action && (
-          <div className="shrink-0">
-            {action}
-          </div>
-        )}
-      </div>
-
-      {children && (
-        <div className="mt-5">
-          {children}
-        </div>
+        </header>
       )}
+
+      {children}
     </section>
   );
 }
