@@ -1,56 +1,78 @@
-import {
-  calculateForgeHealthScore,
-  calculateForgeScore,
-  calculateIdentityProgress,
-  calculateMomentum,
-  calculateProgress,
-  generateForgeCoach,
-} from ".";
-
-
 import type {
   PracticeSession,
   Skill,
   LifeArea,
 } from "@/features/forge/types";
 
-import type { WeeklyPlanAssessment } from "./planning-assessment/assessment.types";
+import type {
+  Vision,
+} from "@/features/vision";
 
-import type { ForgeState } from "./forge.types";
-import type { Vision } from "@/features/vision";
+import {
+  calculateForgeScore,
+} from "../scoring/score";
+
+import {
+  calculateForgeHealthScore,
+} from "../scoring/healthScore";
+
+import {
+  calculateProgress,
+} from "../progress";
+
+import {
+  calculateMomentum,
+} from "../momentum";
+
+import {
+  calculateIdentityProgress,
+} from "../identity";
+
+import {
+  generateForgeCoach,
+} from "../coach";
+
+import type {
+  WeeklyPlanAssessment,
+} from "../planning-assessment/assessment.types";
+
+import type {
+  ForgeState,
+} from "../forge.types";
+
 import {
   buildWeeklyNarrative,
-} from "./narrative";
+} from "../narrative";
 
 import type {
   AchievementSnapshot,
   WeeklyReviewSnapshot,
-} from "./narrative";
+} from "../narrative";
 
 import {
   buildForgeInsight,
-} from "./synthesis";
+} from "../synthesis";
 
 import {
   buildHistory,
-} from "./history";
+} from "../history";
 
 import {
   buildMemory,
-} from "./memory";
+} from "../memory";
 
 import {
   buildAdvisorBriefing,
-} from "./advisor";
+} from "../advisor";
 
 import {
   buildIntelligenceConclusion,
-} from "./intelligence";
+} from "../intelligence";
 
 import {
   buildEvidenceNodes,
   createEvidenceGraph,
-} from "./evidence";
+} from "../evidence";
 
 
 type PipelineOptions = {
