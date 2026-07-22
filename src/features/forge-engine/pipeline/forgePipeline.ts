@@ -29,7 +29,15 @@ import {
   buildReasoningStage,
 } from "./stages";
 
-type PipelineOptions = {
+import type {
+  ContextStage,
+  ExplanationStage,
+  FoundationStage,
+  InterpretationStage,
+  ReasoningStage,
+} from "./stages";
+
+export type ForgePipelineOptions = {
   vision: Vision | null;
   sessions: PracticeSession[];
   skills: Skill[];
@@ -39,7 +47,15 @@ type PipelineOptions = {
   review?: WeeklyReviewSnapshot | null;
 };
 
-export function buildForgeState({
+export type ForgePipelineSnapshot = {
+  observation: FoundationStage;
+  interpretation: InterpretationStage;
+  context: ContextStage;
+  reasoning: ReasoningStage;
+  explanation: ExplanationStage;
+};
+
+export function buildForgePipelineSnapshot({
   vision,
   sessions,
   skills,
@@ -47,7 +63,7 @@ export function buildForgeState({
   assessment,
   achievements = [],
   review = null,
-}: PipelineOptions): ForgeState {
+}: ForgePipelineOptions): ForgePipelineSnapshot {
   const observation = buildFoundationStage({
     sessions,
     skills,
@@ -87,7 +103,27 @@ export function buildForgeState({
     });
 
   return {
-    vision,
+    observation,
+    interpretation,
+    context,
+    reasoning,
+    explanation,
+  };
+}
+
+export function buildForgeState(
+  options: ForgePipelineOptions,
+): ForgeState {
+  const {
+    observation,
+    interpretation,
+    context,
+    reasoning,
+    explanation,
+  } = buildForgePipelineSnapshot(options);
+
+  return {
+    vision: options.vision,
     progress: observation.progress,
     momentum: interpretation.momentum,
     forgeScore: observation.forgeScore,
@@ -95,7 +131,7 @@ export function buildForgeState({
     identity: interpretation.identity,
     coach: context.coach,
     narrative: context.narrative,
-    assessment,
+    assessment: options.assessment,
     insight: reasoning.insight,
     history: context.history,
     memory: context.memory,

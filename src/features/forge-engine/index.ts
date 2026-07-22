@@ -32,3 +32,5 @@ export * from "./memory";
 export * from "./advisor";
 export * from "./intelligence";
 export * from "./evidence";
+export * from "./reflection";
+export * from "./patterns";
