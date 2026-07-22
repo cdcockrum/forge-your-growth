@@ -1,4 +1,6 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import {
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 
 import {
   achievementsQuery,
@@ -10,59 +12,89 @@ import {
   todayIso,
   weekBounds,
 } from "@/features/forge/queries";
-import { focusItemsForDateQuery } from "@/features/focus";
-import { buildForgeState } from "@/features/forge-engine";
-import { useVision } from "@/features/vision";
+
+import {
+  buildForgeState,
+} from "@/features/forge-engine";
+
+import {
+  focusItemsForDateQuery,
+} from "@/features/focus";
+
+import {
+  buildTodayViewModel,
+} from "@/features/today/services";
+
+import {
+  useVision,
+} from "@/features/vision";
 
 export function useTodayDashboard() {
   const today = todayIso();
   const { start, end } = weekBounds();
 
-  const { data: profile } = useSuspenseQuery(
-    profileQuery(), 
-  );
+  const { data: profile } =
+    useSuspenseQuery(profileQuery());
 
-  const { data: skills } = useSuspenseQuery(
-    skillsQuery(),
-  );
+  const { data: skills } =
+    useSuspenseQuery(skillsQuery());
 
   const { vision } = useVision();
 
-  const { data: areas } = useSuspenseQuery(
-    lifeAreasQuery(),
-  );
+  const { data: areas } =
+    useSuspenseQuery(lifeAreasQuery());
 
-  const { data: todaySessions } = useSuspenseQuery(
-    sessionsForDateQuery(today),
-  );
+  const { data: todaySessions } =
+    useSuspenseQuery(
+      sessionsForDateQuery(today),
+    );
 
-  const { data: weekSessions } = useSuspenseQuery(
-    sessionsInRangeQuery(start, end),
-  );
+  const { data: weekSessions } =
+    useSuspenseQuery(
+      sessionsInRangeQuery(start, end),
+    );
 
-  const { data: achievements } = useSuspenseQuery(
-    achievementsQuery(),
-  );
+  const { data: achievements } =
+    useSuspenseQuery(
+      achievementsQuery(),
+    );
 
-  const { data: focusItems } = useSuspenseQuery(
-    focusItemsForDateQuery(today),
-  );
+  const { data: focusItems } =
+    useSuspenseQuery(
+      focusItemsForDateQuery(today),
+    );
 
   const forge = buildForgeState({
     vision,
     sessions: weekSessions,
     skills,
     lifeAreas: areas,
+
+    achievements: achievements.map(
+      (achievement) => ({
+        id: achievement.id,
+        title: achievement.title,
+        earned_at:
+          achievement.earned_at,
+      }),
+    ),
+
+    review: null,
   });
 
-  return {
+  const model = buildTodayViewModel({
     profile,
-    skills,
-    areas,
     todaySessions,
     weekSessions,
     achievements,
-    focusItems,
     forge,
+  });
+
+  return {
+    skills,
+    areas,
+    todaySessions,
+    focusItems,
+    model,
   };
 }
