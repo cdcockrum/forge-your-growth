@@ -43,6 +43,15 @@ import {
   buildAdvisorBriefing,
 } from "./advisor";
 
+import {
+  buildIntelligenceConclusion,
+} from "./intelligence";
+
+import {
+  buildEvidenceNodes,
+  createEvidenceGraph,
+} from "./evidence";
+
 
 type PipelineOptions = {
     vision: Vision | null;
@@ -150,6 +159,28 @@ const advisor =
     history,
   });
 
+const evidence = createEvidenceGraph(
+  buildEvidenceNodes({
+    progress,
+    identity,
+    advisor,
+  }),
+);
+
+  const intelligence =
+  buildIntelligenceConclusion({
+    vision,
+    progress,
+    momentum,
+    identity,
+    coach,
+    insight,
+    advisor,
+    memory,
+    history,
+    narrative,
+  });
+
   return {
     vision,
     progress,
@@ -164,5 +195,7 @@ const advisor =
     history,
     memory,
     advisor,
+    intelligence,
+    evidence,
   };
 }

@@ -41,3 +41,6 @@ export * from "./history";
 export * from "./advisor";
 
 export * from "./memory";
+
+export * from "./intelligence";
+export * from "./evidence";

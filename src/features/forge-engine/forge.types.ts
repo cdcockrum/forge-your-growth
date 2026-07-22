@@ -43,6 +43,14 @@ import type {
   AdvisorBriefing,
 } from "./advisor";
 
+import type {
+  IntelligenceConclusion,
+} from "./intelligence";
+
+import type {
+  EvidenceGraph,
+} from "./evidence";
+
 
 export type ForgeState = {
 
@@ -71,5 +79,9 @@ export type ForgeState = {
   history: HistoryResult;
 
   memory: MemoryResult;
+
+  intelligence: IntelligenceConclusion;
+
+  evidence: EvidenceGraph;
 
 };

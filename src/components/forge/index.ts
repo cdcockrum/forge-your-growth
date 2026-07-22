@@ -18,3 +18,4 @@ export * from "./ForgeInsight";
 export * from "./ForgeInsight";
 export * from "./ForgeStatCard";
 export * from "./ForgeNavigation";
+export * from "./ForgeCommandPalette";

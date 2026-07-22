@@ -2,15 +2,19 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { LayoutDashboard, Compass, Flame, Calendar, Target, BookOpen, LineChart, LogOut, Sparkles, BookOpenText, History,} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import type { ReactNode } from "react";
-
+import { useEffect, useState, type ReactNode, } from "react";
+import { ForgeCommandPalette, } from "@/components/forge";
 
 const NAV = [
   { to: "/today", label: "Today", icon: Target, },
   { to: "/plan", label: "Practice", icon: Calendar, },
   { to: "/story", label: "Journey", icon: Compass, },
-  { to: "/dashboard", label: "Intelligence", icon: Sparkles, },
+  { to: "/intelligence", label: "Intelligence", icon: Sparkles, },
   { to: "/vision", label: "Profile", icon: LayoutDashboard, },
+
+  // Workspace 
+
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, },
   { to: "/progress", label: "Progress", icon: LineChart, },
   { to: "/skills", label: "Skills", icon: Flame, },
   { to: "/journey", label: "Journey", icon: Compass, },
@@ -24,6 +28,40 @@ export function AppShell({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const primary = NAV.slice(0, 5);
   const workspace = NAV.slice(5);
+  const [ commandOpen, setCommandOpen, ] = useState(false);
+
+  useEffect(() => {
+    function handleCommandShortcut(
+      event: KeyboardEvent,
+    ) {
+      const commandKey =
+        event.metaKey ||
+        event.ctrlKey;
+
+      if (
+        commandKey &&
+        event.key.toLowerCase() === "k"
+      ) {
+        event.preventDefault();
+
+        setCommandOpen(
+          (current) => !current,
+        );
+      }
+    }
+
+    window.addEventListener(
+      "keydown",
+      handleCommandShortcut,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleCommandShortcut,
+      );
+    };
+  }, []);
 
   async function handleSignOut() {
     await qc.cancelQueries();
@@ -33,7 +71,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex">
+     <div className="flex min-h-screen bg-background text-foreground">
+      <ForgeCommandPalette
+        open={commandOpen}
+        onOpenChange={setCommandOpen}
+      />
       {/* Sidebar (desktop) */}
       <aside className="hidden md:flex flex-col w-60 border-r border-border bg-surface sticky top-0 h-screen">
         <div className="border-b border-border px-5 py-6">
