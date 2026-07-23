@@ -36,9 +36,11 @@ import {
 } from "@/features/forge/types";
 import {
   assessWeeklyPlan,
-  type PlanAssessmentItem,
-  type WeeklyPlanAssessment,
 } from "@/features/forge-engine";
+import {
+  WeekAssessment,
+} from "@/features/plan/components/WeekAssessment";
+
 import {
   createFocusItem,
   deleteFocusItem,
@@ -255,9 +257,7 @@ function PlanContent() {
         }
       />
 
-      <WeekAssessment
-        assessment={assessment}
-      />
+      <WeekAssessment assessment={assessment} />
 
       <WeeklyFocus
         items={focusItems}
@@ -547,282 +547,167 @@ function WeeklyFocus({
 
   return (
     <ForgeCard className="mb-6">
-      <ForgeSection
-      eyebrow="Focus"
-      title="What must happen this week?"
-      description={
-        <>
-          Responsibilities and commitments outside your
-          deliberate practice.
-        </>
-      }
-      action={
-        items.length > 0 ? (
-          <p className="text-xs font-semibold text-muted-foreground">
-            {completedCount} of {items.length} complete
-          </p>
-        ) : undefined
-      }
-    />
+  <ForgeSection
+    eyebrow="Focus"
+    title="What must happen this week?"
+    description="Responsibilities and commitments outside your deliberate practice."
+    action={
+      items.length > 0 ? (
+        <p className="text-xs font-semibold text-muted-foreground">
+          {completedCount} of {items.length} complete
+        </p>
+      ) : undefined
+    }
+  >
+    <form
+      onSubmit={addItem}
+      className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px_auto]"
+    >
+      <input
+        type="text"
+        value={title}
+        onChange={(event) =>
+          setTitle(event.target.value)
+        }
+        placeholder="Add something that needs to happen..."
+        className="h-11 rounded-xl border border-border bg-background px-4 text-sm outline-none transition focus:border-foreground/30 focus:ring-2 focus:ring-accent/20"
+      />
 
-      <form
-        onSubmit={addItem}
-        className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px_auto]"
+      <select
+        value={scheduledDate}
+        onChange={(event) =>
+          setScheduledDate(
+            event.target.value,
+          )
+        }
+        className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none transition focus:border-foreground/30 focus:ring-2 focus:ring-accent/20"
       >
-        <input
-          type="text"
-          value={title}
-          onChange={(event) =>
-            setTitle(event.target.value)
-          }
-          placeholder="Add something that needs to happen..."
-          className="h-11 rounded-xl border border-border bg-background px-4 text-sm outline-none transition focus:border-foreground/30 focus:ring-2 focus:ring-accent/20"
-        />
+        {weekDates.map(
+          ({ date, value }) => (
+            <option
+              key={value}
+              value={value}
+            >
+              {date.toLocaleDateString(
+                "en-US",
+                {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                },
+              )}
+            </option>
+          ),
+        )}
+      </select>
 
-        <select
-          value={scheduledDate}
-          onChange={(event) =>
-            setScheduledDate(
-              event.target.value,
-            )
-          }
-          className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none transition focus:border-foreground/30 focus:ring-2 focus:ring-accent/20"
-        >
-          {weekDates.map(
-            ({ date, value }) => (
-              <option
-                key={value}
-                value={value}
+      <ForgeButton
+        type="submit"
+        size="large"
+        disabled={
+          adding ||
+          !title.trim()
+        }
+      >
+        {adding
+          ? "Adding..."
+          : "Add"}
+      </ForgeButton>
+    </form>
+
+    {items.length === 0 ? (
+      <ForgeEmptyState
+        title="Nothing has been added yet."
+        description="Use Focus as a simple weekly checklist, with or without a guided practice plan."
+        className="mt-5 py-8"
+      />
+    ) : (
+      <div className="mt-5 divide-y divide-border">
+        {items.map((item) => {
+          const updating =
+            updatingId === item.id;
+
+          return (
+            <div
+              key={item.id}
+              className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+            >
+              <button
+                type="button"
+                disabled={updating}
+                onClick={() =>
+                  toggleItem(item)
+                }
+                aria-label={
+                  item.completed
+                    ? `Mark ${item.title} incomplete`
+                    : `Complete ${item.title}`
+                }
+                className={`flex size-6 shrink-0 items-center justify-center rounded-md border text-xs font-bold transition disabled:opacity-50 ${
+                  item.completed
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border bg-background hover:border-foreground/40"
+                }`}
               >
-                {date.toLocaleDateString(
-                  "en-US",
-                  {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                  },
-                )}
-              </option>
-            ),
-          )}
-        </select>
+                {item.completed
+                  ? "✓"
+                  : ""}
+              </button>
 
-        <ForgeButton
-          type="submit"
-          size="large"
-          disabled={adding || !title.trim()}
-        >
-          {adding ? "Adding..." : "Add"}
-        </ForgeButton>
-      </form>
-
-      {items.length === 0 ? (
-        <ForgeEmptyState
-          title="Nothing has been added yet."
-          description={
-            <>
-              Use Focus as a simple weekly checklist, with or
-              without a guided practice plan.
-            </>
-          }
-          className="mt-5 py-8"
-        />
-      ) : (
-        <div className="mt-5 divide-y divide-border">
-          {items.map((item) => {
-            const updating =
-              updatingId === item.id;
-
-            return (
-              <div
-                key={item.id}
-                className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
-              >
+              <div className="min-w-0 flex-1">
                 <button
                   type="button"
                   disabled={updating}
                   onClick={() =>
                     toggleItem(item)
                   }
-                  aria-label={
+                  className={`block w-full text-left text-sm font-semibold transition disabled:opacity-50 ${
                     item.completed
-                      ? `Mark ${item.title} incomplete`
-                      : `Complete ${item.title}`
-                  }
-                  className={`flex size-6 shrink-0 items-center justify-center rounded-md border text-xs font-bold transition disabled:opacity-50 ${
-                    item.completed
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border bg-background hover:border-foreground/40"
+                      ? "text-muted-foreground line-through"
+                      : "text-foreground"
                   }`}
                 >
-                  {item.completed
-                    ? "✓"
-                    : ""}
+                  {item.title}
                 </button>
 
-                <div className="min-w-0 flex-1">
-                  <button
-                    type="button"
-                    disabled={updating}
-                    onClick={() =>
-                      toggleItem(item)
-                    }
-                    className={`block w-full text-left text-sm font-semibold transition disabled:opacity-50 ${
-                      item.completed
-                        ? "text-muted-foreground line-through"
-                        : "text-foreground"
-                    }`}
-                  >
-                    {item.title}
-                  </button>
-
-                  {item.scheduled_date && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {new Date(
-                        `${item.scheduled_date}T00:00:00`,
-                      ).toLocaleDateString(
-                        "en-US",
-                        {
-                          weekday: "long",
-                        },
-                      )}
-                    </p>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  disabled={updating}
-                  onClick={() =>
-                    removeItem(item)
-                  }
-                  className="shrink-0 px-2 py-1 text-xs font-semibold text-muted-foreground transition hover:text-destructive disabled:opacity-50"
-                >
-                  Remove
-                </button>
+                {item.scheduled_date ? (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {new Date(
+                      `${item.scheduled_date}T00:00:00`,
+                    ).toLocaleDateString(
+                      "en-US",
+                      {
+                        weekday:
+                          "long",
+                      },
+                    )}
+                  </p>
+                ) : null}
               </div>
-            );
-          })}
-        </div>
-      )}
-    </ForgeCard>
-  );
-}
 
-type WeekAssessmentProps = {
-  assessment: WeeklyPlanAssessment;
-};
-
-function WeekAssessment({
-  assessment,
-}: WeekAssessmentProps) {
-  return (
-    <section className="mb-6 rounded-2xl border border-border bg-surface p-6">
-      <div className="grid gap-6 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
-        <div className="rounded-xl bg-foreground p-5 text-background">
-          <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-background/55">
-            Plan quality
-          </p>
-
-          <p className="mt-3 text-5xl font-extrabold tracking-tight">
-            {assessment.score}
-          </p>
-
-          <p className="mt-2 text-sm font-semibold">
-            {getAssessmentLabel(
-              assessment.label,
-            )}
-          </p>
-
-          <p className="mt-2 text-xs leading-5 text-background/60">
-            {assessment.totalSessions}{" "}
-            {assessment.totalSessions === 1
-              ? "session"
-              : "sessions"}{" "}
-            ·{" "}
-            {formatAssessmentMinutes(
-              assessment.totalMinutes,
-            )}
-          </p>
-        </div>
-
-        <div>
-          <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
-            Week assessment
-          </p>
-
-          <h2 className="mt-2 text-xl font-extrabold tracking-tight">
-            {getAssessmentHeadline(
-              assessment.label,
-            )}
-          </h2>
-
-          {assessment.items.length > 0 && (
-            <div className="mt-4 grid gap-3 lg:grid-cols-2">
-              {assessment.items.map(
-                (item) => (
-                  <AssessmentItem
-                    key={item.id}
-                    item={item}
-                  />
-                ),
-              )}
+              <button
+                type="button"
+                disabled={updating}
+                onClick={() =>
+                  removeItem(item)
+                }
+                className="shrink-0 px-2 py-1 text-xs font-semibold text-muted-foreground transition hover:text-destructive disabled:opacity-50"
+              >
+                Remove
+              </button>
             </div>
-          )}
-        </div>
+          );
+        })}
       </div>
-    </section>
+    )}
+  </ForgeSection>
+</ForgeCard>
   );
 }
 
-function AssessmentItem({
-  item,
-}: {
-  item: PlanAssessmentItem;
-}) {
-  const toneStyles = {
-    positive: {
-      marker: "bg-emerald-500",
-      label: "Strong",
-    },
-    attention: {
-      marker: "bg-amber-500",
-      label: "Review",
-    },
-    neutral: {
-      marker:
-        "bg-muted-foreground",
-      label: "Note",
-    },
-  } as const;
 
-  const style =
-    toneStyles[item.tone];
 
-  return (
-    <article className="flex items-start gap-3 rounded-xl border border-border bg-background p-4">
-      <span
-        className={`mt-1.5 size-2.5 shrink-0 rounded-full ${style.marker}`}
-      />
-
-      <div>
-        <p className="font-mono text-[8px] uppercase tracking-[0.2em] text-muted-foreground">
-          {style.label}
-        </p>
-
-        <h3 className="mt-1 text-sm font-bold tracking-tight">
-          {item.title}
-        </h3>
-
-        <p className="mt-1 text-xs leading-5 text-muted-foreground">
-          {item.description}
-        </p>
-      </div>
-    </article>
-  );
-}
-
-function EmptyPlanState() {
+ function EmptyPlanState() {
   return (
     <ForgeEmptyState
       eyebrow="Your growth system begins here"
@@ -1277,55 +1162,9 @@ function AddSlot({
   );
 }
 
-function getAssessmentLabel(
-  label: WeeklyPlanAssessment["label"],
-): string {
-  switch (label) {
-    case "balanced":
-      return "Balanced week";
 
-    case "demanding":
-      return "Demanding week";
 
-    case "light":
-      return "Light week";
 
-    case "unplanned":
-      return "Not planned";
-  }
-}
-
-function getAssessmentHeadline(
-  label: WeeklyPlanAssessment["label"],
-): string {
-  switch (label) {
-    case "balanced":
-      return "The week looks sustainable and intentional.";
-
-    case "demanding":
-      return "The week may need more recovery or fewer commitments.";
-
-    case "light":
-      return "The week leaves room for recovery or additional focus.";
-
-    case "unplanned":
-      return "Generate the week to evaluate its balance.";
-  }
-}
-
-function formatAssessmentMinutes(
-  minutes: number,
-): string {
-  if (minutes < 60) {
-    return `${minutes}m`;
-  }
-
-  const hours = minutes / 60;
-
-  return Number.isInteger(hours)
-    ? `${hours}h`
-    : `${hours.toFixed(1)}h`;
-}
 
 function getErrorMessage(
   error: unknown,

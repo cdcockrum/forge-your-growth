@@ -1,4 +1,10 @@
 import {
+  useNavigate,
+} from "@tanstack/react-router";
+
+import {
+  ForgePage,
+  ForgeSection,
   ForgeSidebarLayout,
 } from "@/components/forge";
 
@@ -7,6 +13,7 @@ import {
   ForgeScorePanel,
   IdentityCard,
   MomentumPanel,
+  NextActionCard,
   ProgressPanel,
   QuoteCard,
   RecentAchievementCard,
@@ -22,10 +29,6 @@ import {
 } from "./ForgeMemoryCard";
 
 import {
-  MissionCard,
-} from "./MissionCard";
-
-import {
   MorningHero,
 } from "./MorningHero";
 
@@ -38,18 +41,40 @@ import {
 } from "./WeeklyStoryTeaser";
 
 export function TodayContent() {
+  const navigate = useNavigate();
+
   const {
     todaySessions,
     focusItems,
     model,
   } = useTodayDashboard();
 
+  const nextSession =
+    todaySessions.find(
+      (session) =>
+        session.completed !== true &&
+        session.status !== "completed" &&
+        session.status !== "skipped",
+    ) ?? null;
+
+  function handleNextAction() {
+    void navigate({
+      to: "/plan",
+    });
+  }
+
   return (
-    <>
+    <ForgePage>
       <MorningHero
-        firstName={model.hero.firstName}
-        advisor={model.hero.advisor}
-        insight={model.hero.insight}
+        firstName={
+          model.hero.firstName
+        }
+        advisor={
+          model.hero.advisor
+        }
+        insight={
+          model.hero.insight
+        }
       />
 
       <QuoteCard />
@@ -60,34 +85,90 @@ export function TodayContent() {
 
       <ForgeSidebarLayout
         main={
-          <div className="space-y-6">
-            <MissionCard
-              sessions={todaySessions}
-            />
+          <div className="space-y-12">
+            <ForgeSection
+              eyebrow="Today"
+              title="Take the next meaningful step"
+              description="Keep the plan small, deliberate, and achievable."
+            >
+              <div className="space-y-6">
+                {nextSession ? (
+                  <NextActionCard
+                    title={
+                      nextSession.title
+                    }
+                    duration={
+                      nextSession.duration_minutes
+                    }
+                    description={
+                      nextSession.notes?.trim() ||
+                      "Complete one deliberate practice and add meaningful evidence to the person you are becoming."
+                    }
+                    actionLabel="Begin Practice"
+                    onAction={
+                      handleNextAction
+                    }
+                  />
+                ) : (
+                  <NextActionCard
+                    title="Choose one meaningful practice"
+                    description="Nothing remains scheduled for today. Review your plan and choose one small action you can complete reliably."
+                    actionLabel="Plan Today"
+                    onAction={
+                      handleNextAction
+                    }
+                  />
+                )}
 
-            {focusItems.length > 0 && (
-              <TodayFocusList
-                items={focusItems}
-              />
-            )}
+                {focusItems.length > 0 ? (
+                  <TodayFocusList
+                    items={focusItems}
+                  />
+                ) : null}
+              </div>
+            </ForgeSection>
 
-            <ReflectionPrompt />
+            <ForgeSection
+              eyebrow="Understanding"
+              title="What Forge is learning"
+              description="Your recent actions are beginning to form a clearer story about your direction and identity."
+            >
+              <div className="space-y-6">
+                <WeeklyStoryTeaser
+                  narrative={
+                    model.story.narrative
+                  }
+                />
 
-            <WeeklyStoryTeaser
-              narrative={
-                model.story.narrative
-              }
-            />
+                <ForgeMemoryCard
+                  memories={
+                    model.memory.memories
+                  }
+                />
+              </div>
+            </ForgeSection>
 
-            <ForgeMemoryCard
-              memories={
-                model.memory.memories
-              }
-            />
+            <ForgeSection
+              eyebrow="Reflection"
+              title="Close the loop"
+              description="Capture what mattered so Forge can learn from today’s experience."
+            >
+              <ReflectionPrompt />
+            </ForgeSection>
           </div>
         }
         sidebar={
-          <>
+          <div className="space-y-6">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
+                Intelligence
+              </p>
+
+              <h2 className="mt-2 text-2xl font-bold tracking-tight">
+                Your current state
+              </h2>
+            </div>
+
             <MomentumPanel
               score={
                 model.momentum.score
@@ -112,6 +193,12 @@ export function TodayContent() {
               }
             />
 
+            <IdentityCard
+              identity={
+                model.identity.identity
+              }
+            />
+
             <ForgeScorePanel
               score={
                 model.forgeScore.score
@@ -123,40 +210,30 @@ export function TodayContent() {
 
             <ProgressPanel
               todayCompleted={
-                model.progress
-                  .todayCompleted
+                model.progress.todayCompleted
               }
               todayTotal={
                 model.progress.todayTotal
               }
               todayPercentage={
-                model.progress
-                  .todayPercentage
+                model.progress.todayPercentage
               }
               weekCompleted={
-                model.progress
-                  .weekCompleted
+                model.progress.weekCompleted
               }
               weekTotal={
                 model.progress.weekTotal
               }
             />
 
-            <IdentityCard
-              identity={
-                model.identity.identity
-              }
-            />
-
             <RecentAchievementCard
               achievement={
-                model.achievement
-                  .achievement
+                model.achievement.achievement
               }
             />
-          </>
+          </div>
         }
       />
-    </>
+    </ForgePage>
   );
 }
