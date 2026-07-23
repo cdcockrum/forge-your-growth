@@ -159,6 +159,66 @@ export type Database = {
         }
         Relationships: []
       }
+      forge_snapshots: {
+        Row: {
+          completed_sessions: number
+          completion_rate: number | null
+          created_at: string
+          energy: string | null
+          focus: string | null
+          forge_score: number | null
+          id: string
+          identity_snapshot: Json
+          momentum_score: number | null
+          momentum_snapshot: Json
+          pattern_snapshot: Json
+          planned_sessions: number
+          progress_snapshot: Json
+          snapshot_date: string
+          stress: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_sessions?: number
+          completion_rate?: number | null
+          created_at?: string
+          energy?: string | null
+          focus?: string | null
+          forge_score?: number | null
+          id?: string
+          identity_snapshot?: Json
+          momentum_score?: number | null
+          momentum_snapshot?: Json
+          pattern_snapshot?: Json
+          planned_sessions?: number
+          progress_snapshot?: Json
+          snapshot_date: string
+          stress?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_sessions?: number
+          completion_rate?: number | null
+          created_at?: string
+          energy?: string | null
+          focus?: string | null
+          forge_score?: number | null
+          id?: string
+          identity_snapshot?: Json
+          momentum_score?: number | null
+          momentum_snapshot?: Json
+          pattern_snapshot?: Json
+          planned_sessions?: number
+          progress_snapshot?: Json
+          snapshot_date?: string
+          stress?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       life_areas: {
         Row: {
           archived: boolean

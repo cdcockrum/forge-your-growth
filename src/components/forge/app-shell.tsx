@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Compass, Flame, Calendar, Target, BookOpen, LineChart, LogOut, Sparkles, BookOpenText, History,} from "lucide-react";
+import { LayoutDashboard, Compass, Flame, Calendar, Target, BookOpen, LineChart, LogOut, Sparkles, History, Telescope, } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode, } from "react";
@@ -8,7 +8,7 @@ import { ForgeCommandPalette, } from "@/components/forge";
 const NAV = [
   { to: "/today", label: "Today", icon: Target, },
   { to: "/plan", label: "Practice", icon: Calendar, },
-  { to: "/story", label: "Journey", icon: Compass, },
+  { to: "/observatory", label: "Observatory", icon: Telescope },
   { to: "/intelligence", label: "Intelligence", icon: Sparkles, },
   { to: "/vision", label: "Profile", icon: LayoutDashboard, },
 

@@ -51,6 +51,10 @@ import type {
   EvidenceGraph,
 } from "./evidence";
 
+import type {
+  TraitEngineResult,
+} from "./traits";
+
 
 export type ForgeState = {
 
@@ -83,5 +87,7 @@ export type ForgeState = {
   intelligence: IntelligenceConclusion;
 
   evidence: EvidenceGraph;
+
+  traits: TraitEngineResult;
 
 };

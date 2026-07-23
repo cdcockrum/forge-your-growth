@@ -14,12 +14,21 @@ import type {
   FoundationStage,
 } from "./foundation";
 
+import {
+  buildTraitEngine,
+} from "../../traits";
+
 export type InterpretationStage = {
   identity: ReturnType<
     typeof calculateIdentityProgress
   >;
+
   momentum: ReturnType<
     typeof calculateMomentum
+  >;
+
+  traits: ReturnType<
+    typeof buildTraitEngine
   >;
 };
 
@@ -51,8 +60,14 @@ export function buildInterpretationStage({
     assessment,
   });
 
+  const traits = buildTraitEngine({
+  sessions,
+  skills,
+});
+
   return {
     identity,
     momentum,
+    traits,
   };
 }

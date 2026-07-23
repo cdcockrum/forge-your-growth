@@ -37,6 +37,8 @@ import type {
   ReasoningStage,
 } from "./stages";
 
+
+
 export type ForgePipelineOptions = {
   vision: Vision | null;
   sessions: PracticeSession[];
@@ -138,5 +140,6 @@ export function buildForgeState(
     advisor: reasoning.advisor,
     intelligence: reasoning.intelligence,
     evidence: explanation.evidence,
+    traits: interpretation.traits,
   };
 }

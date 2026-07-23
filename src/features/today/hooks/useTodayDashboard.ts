@@ -1,4 +1,8 @@
 import {
+  useMemo,
+} from "react";
+
+import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 
@@ -18,8 +22,25 @@ import {
 } from "@/features/forge-engine";
 
 import {
+  buildPatternSummary,
+} from "@/features/forge-engine/patterns";
+
+import {
   focusItemsForDateQuery,
 } from "@/features/focus";
+
+import {
+  useForgeSnapshotRecorder,
+} from "@/features/observatory/hooks/useForgeSnapshotRecorder";
+
+import {
+  mapReflectionRow,
+} from "@/features/reflection/types";
+
+import {
+  useReflectionByDate,
+  useReflections,
+} from "@/features/reflection/hooks";
 
 import {
   buildTodayViewModel,
@@ -34,15 +55,22 @@ export function useTodayDashboard() {
   const { start, end } = weekBounds();
 
   const { data: profile } =
-    useSuspenseQuery(profileQuery());
+    useSuspenseQuery(
+      profileQuery(),
+    );
 
   const { data: skills } =
-    useSuspenseQuery(skillsQuery());
+    useSuspenseQuery(
+      skillsQuery(),
+    );
 
-  const { vision } = useVision();
+  const { vision } =
+    useVision();
 
   const { data: areas } =
-    useSuspenseQuery(lifeAreasQuery());
+    useSuspenseQuery(
+      lifeAreasQuery(),
+    );
 
   const { data: todaySessions } =
     useSuspenseQuery(
@@ -51,7 +79,10 @@ export function useTodayDashboard() {
 
   const { data: weekSessions } =
     useSuspenseQuery(
-      sessionsInRangeQuery(start, end),
+      sessionsInRangeQuery(
+        start,
+        end,
+      ),
     );
 
   const { data: achievements } =
@@ -64,37 +95,127 @@ export function useTodayDashboard() {
       focusItemsForDateQuery(today),
     );
 
-  const forge = buildForgeState({
-    vision,
-    sessions: weekSessions,
-    skills,
-    lifeAreas: areas,
+  const todayReflectionQuery =
+    useReflectionByDate(today);
 
-    achievements: achievements.map(
-      (achievement) => ({
-        id: achievement.id,
-        title: achievement.title,
-        earned_at:
-          achievement.earned_at,
+  const reflectionHistoryQuery =
+    useReflections();
+
+  const reflection = useMemo(() => {
+    if (!todayReflectionQuery.data) {
+      return null;
+    }
+
+    return mapReflectionRow(
+      todayReflectionQuery.data,
+    );
+  }, [todayReflectionQuery.data]);
+
+  const reflectionEntries =
+    useMemo(
+      () =>
+        (
+          reflectionHistoryQuery.data ??
+          []
+        ).map(mapReflectionRow),
+      [reflectionHistoryQuery.data],
+    );
+
+  const patterns = useMemo(
+    () =>
+      buildPatternSummary(
+        reflectionEntries,
+        weekSessions,
+      ),
+    [
+      reflectionEntries,
+      weekSessions,
+    ],
+  );
+
+  const forge = useMemo(
+    () =>
+      buildForgeState({
+        vision,
+        sessions: weekSessions,
+        skills,
+        lifeAreas: areas,
+
+        achievements:
+          achievements.map(
+            (achievement) => ({
+              id: achievement.id,
+              title:
+                achievement.title,
+              earned_at:
+                achievement.earned_at,
+            }),
+          ),
+
+        review: null,
       }),
-    ),
+    [
+      vision,
+      weekSessions,
+      skills,
+      areas,
+      achievements,
+    ],
+  );
 
-    review: null,
-  });
+  const snapshotRecorder =
+    useForgeSnapshotRecorder({
+      snapshotDate: today,
+      forge,
+      reflection,
+      patterns,
 
-  const model = buildTodayViewModel({
-    profile,
-    todaySessions,
-    weekSessions,
-    achievements,
-    forge,
-  });
+      // Wait until reflection data has loaded so
+      // today's snapshot includes the complete
+      // available context on its first write.
+      enabled:
+        !todayReflectionQuery.isLoading &&
+        !reflectionHistoryQuery.isLoading,
+    });
+
+  const model = useMemo(
+    () =>
+      buildTodayViewModel({
+        profile,
+        todaySessions,
+        weekSessions,
+        achievements,
+        forge,
+      }),
+    [
+      profile,
+      todaySessions,
+      weekSessions,
+      achievements,
+      forge,
+    ],
+  );
 
   return {
+    profile,
+    vision,
+
     skills,
     areas,
+
     todaySessions,
+    weekSessions,
+
+    achievements,
     focusItems,
+
+    reflection,
+    reflectionEntries,
+    patterns,
+
+    forge,
     model,
+
+    snapshotRecorder,
   };
 }
