@@ -1,241 +1,713 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
-import { Suspense, useState } from "react";
-import { lifeAreasQuery } from "@/features/forge/queries";
-import { PageHeader } from "@/components/forge/app-shell";
-import { LIFE_AREA_COLORS } from "@/features/forge/types";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Plus, Trash2, X } from "lucide-react";
+import {
+  Suspense,
+  useState,
+} from "react";
 
-export const Route = createFileRoute("/_authenticated/areas")({
+import {
+  createFileRoute,
+  useNavigate,
+} from "@tanstack/react-router";
+
+import {
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
+
+import {
+  ArrowRight,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
+
+import {
+  toast,
+} from "sonner";
+
+import {
+  ForgeButton,
+  ForgeCard,
+  ForgeEmptyState,
+  ForgePage,
+} from "@/components/forge";
+
+import {
+  PageHeader,
+} from "@/components/forge/app-shell";
+
+import {
+  lifeAreasQuery,
+} from "@/features/forge/queries";
+
+import {
+  LIFE_AREA_COLORS,
+  type LifeArea,
+} from "@/features/forge/types";
+
+import {
+  SetupProgress,
+} from "@/features/onboarding";
+
+import {
+  supabase,
+} from "@/integrations/supabase/client";
+
+export const Route = createFileRoute(
+  "/_authenticated/areas",
+)({
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(lifeAreasQuery());
+    await context.queryClient.ensureQueryData(
+      lifeAreasQuery(),
+    );
   },
+
   component: AreasPage,
 });
 
 function AreasPage() {
   return (
-    <div className="px-5 md:px-10 pt-8 md:pt-12 max-w-4xl mx-auto">
-      <Suspense fallback={null}>
+    <ForgePage>
+      <Suspense
+        fallback={
+          <AreasLoadingState />
+        }
+      >
         <AreasContent />
       </Suspense>
+    </ForgePage>
+  );
+}
+
+function AreasLoadingState() {
+  return (
+    <div className="space-y-6">
+      <div className="h-36 animate-pulse rounded-2xl bg-muted" />
+      <div className="h-24 animate-pulse rounded-2xl bg-muted" />
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="h-52 animate-pulse rounded-2xl bg-muted" />
+        <div className="h-52 animate-pulse rounded-2xl bg-muted" />
+      </div>
     </div>
   );
 }
 
 function AreasContent() {
-  const { data: areas } = useSuspenseQuery(lifeAreasQuery());
-  const [creating, setCreating] = useState(false);
+  const navigate = useNavigate();
+
+  const {
+    data: areas,
+  } = useSuspenseQuery(
+    lifeAreasQuery(),
+  );
+
+  const [creating, setCreating] =
+    useState(false);
+
+  function continueToSkills() {
+    if (areas.length === 0) {
+      toast.error(
+        "Add at least one life area before continuing.",
+      );
+
+      return;
+    }
+
+    void navigate({
+      to: "/skills",
+    });
+  }
 
   return (
-    <>
+    <div className="space-y-8">
+      <SetupProgress
+        currentStep={2}
+      />
+
       <PageHeader
         eyebrow="Life Areas"
         title={
           <>
-            Who are you <span className="text-accent">becoming</span>?
+            Where do you want to{" "}
+            <span className="text-accent">
+              grow
+            </span>
+            ?
           </>
         }
         action={
-          <button
-            onClick={() => setCreating(true)}
-            className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background hover:bg-foreground/90"
+          <ForgeButton
+            type="button"
+            onClick={() =>
+              setCreating(true)
+            }
+            className="gap-2"
           >
-            <Plus className="size-3.5" />
+            <Plus className="size-4" />
+
             New area
-          </button>
+          </ForgeButton>
         }
       />
 
-      {areas.length === 0 && !creating && (
-        <div className="p-12 bg-surface border border-dashed border-border rounded-2xl text-center">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
-            Start here
-          </p>
-          <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
-            Life areas are the domains you want to grow in: Career, Health, Creativity, Languages, Finance, Relationships, Spirituality, Adventure.
-          </p>
-          <button
-            onClick={() => setCreating(true)}
-            className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2 text-xs font-semibold text-background hover:bg-foreground/90"
-          >
-            Add your first area
-          </button>
-        </div>
-      )}
+      <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
+        Life Areas organize the parts
+        of your life that matter.
+        Choose a few broad domains;
+        you will add specific skills
+        next.
+      </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {creating && <AreaForm onClose={() => setCreating(false)} />}
-        {areas.map((a) => (
-          <AreaCard key={a.id} area={a} />
+      {areas.length === 0 &&
+      !creating ? (
+        <ForgeEmptyState
+          title="Choose your first life area."
+          description="Start with one or two meaningful areas, such as Creativity, Health, Career, Languages, Relationships, or Spirituality."
+          action={
+            <ForgeButton
+              type="button"
+              onClick={() =>
+                setCreating(true)
+              }
+            >
+              Add your first area
+            </ForgeButton>
+          }
+        />
+      ) : null}
+
+      <div className="grid gap-3 md:grid-cols-2">
+        {creating ? (
+          <AreaForm
+            onClose={() =>
+              setCreating(false)
+            }
+          />
+        ) : null}
+
+        {areas.map((area) => (
+          <AreaCard
+            key={area.id}
+            area={area}
+          />
         ))}
       </div>
 
-      {areas.length > 0 && (
-        <SuggestedAreas existing={areas.map((a) => a.name.toLowerCase())} />
-      )}
-    </>
-  );
-}
+      {areas.length > 0 ? (
+        <SuggestedAreas
+          existing={areas.map(
+            (area) =>
+              area.name.toLowerCase(),
+          )}
+        />
+      ) : null}
 
-function AreaCard({ area }: { area: { id: string; name: string; color: string; vision: string | null; priority: number } }) {
-  const qc = useQueryClient();
-  async function remove() {
-    if (!confirm(`Archive "${area.name}"?`)) return;
-    await supabase.from("life_areas").update({ archived: true }).eq("id", area.id);
-    qc.invalidateQueries({ queryKey: ["life_areas"] });
-  }
-  return (
-    <div className="p-5 bg-surface border border-border rounded-2xl group">
-      <div className="flex items-start justify-between mb-4">
-        <div className="size-10 rounded-lg" style={{ backgroundColor: area.color }} />
-        <button
-          onClick={remove}
-          className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+      <div className="flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-muted-foreground">
+          {areas.length === 0
+            ? "Add at least one area to continue."
+            : `${areas.length} ${
+                areas.length === 1
+                  ? "area"
+                  : "areas"
+              } selected.`}
+        </p>
+
+        <ForgeButton
+          type="button"
+          disabled={
+            areas.length === 0
+          }
+          onClick={
+            continueToSkills
+          }
+          className="gap-2"
         >
-          <Trash2 className="size-4" />
-        </button>
+          Continue to skills
+
+          <ArrowRight className="size-4" />
+        </ForgeButton>
       </div>
-      <h3 className="text-lg font-bold tracking-tight">{area.name}</h3>
-      {area.vision && (
-        <p className="mt-2 text-sm text-muted-foreground leading-relaxed line-clamp-3">{area.vision}</p>
-      )}
-      <p className="mt-4 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-        Priority {area.priority}
-      </p>
     </div>
   );
 }
 
-function AreaForm({ onClose }: { onClose: () => void }) {
-  const qc = useQueryClient();
-  const [name, setName] = useState("");
-  const [vision, setVision] = useState("");
-  const [color, setColor] = useState<string>(LIFE_AREA_COLORS[0]);
-  const [priority, setPriority] = useState(3);
-  const [loading, setLoading] = useState(false);
+function AreaCard({
+  area,
+}: {
+  area: LifeArea;
+}) {
+  const queryClient =
+    useQueryClient();
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) return;
-    setLoading(true);
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) return;
-    const { error } = await supabase.from("life_areas").insert({
-      user_id: u.user.id,
-      name: name.trim(),
-      vision: vision.trim() || null,
-      color,
-      priority,
-    });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message);
+  async function remove() {
+    const confirmed =
+      window.confirm(
+        `Archive "${area.name}"?`,
+      );
+
+    if (!confirmed) {
       return;
     }
-    qc.invalidateQueries({ queryKey: ["life_areas"] });
-    onClose();
+
+    const { error } =
+      await supabase
+        .from("life_areas")
+        .update({
+          archived: true,
+        })
+        .eq("id", area.id);
+
+    if (error) {
+      toast.error(
+        error.message,
+      );
+
+      return;
+    }
+
+    await queryClient.invalidateQueries({
+      queryKey: ["life_areas"],
+    });
+
+    toast.success(
+      `${area.name} archived.`,
+    );
   }
 
   return (
-    <form onSubmit={submit} className="p-5 bg-surface border-2 border-foreground rounded-2xl md:col-span-2">
-      <div className="flex items-center justify-between mb-4">
-        <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">New life area</p>
-        <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground">
+    <ForgeCard className="group p-5">
+      <div className="mb-4 flex items-start justify-between">
+        <div
+          className="size-10 rounded-xl"
+          style={{
+            backgroundColor:
+              area.color,
+          }}
+        />
+
+        <button
+          type="button"
+          onClick={remove}
+          className="rounded-lg p-2 text-muted-foreground opacity-100 transition hover:bg-destructive/10 hover:text-destructive md:opacity-0 md:group-hover:opacity-100"
+          aria-label={`Archive ${area.name}`}
+        >
+          <Trash2 className="size-4" />
+        </button>
+      </div>
+
+      <h3 className="text-lg font-bold tracking-tight">
+        {area.name}
+      </h3>
+
+      {area.vision ? (
+        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+          {area.vision}
+        </p>
+      ) : (
+        <p className="mt-2 text-sm text-muted-foreground">
+          A broad domain for your
+          future skills and practices.
+        </p>
+      )}
+
+      <p className="mt-4 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        Priority {area.priority}
+      </p>
+    </ForgeCard>
+  );
+}
+
+function AreaForm({
+  onClose,
+}: {
+  onClose: () => void;
+}) {
+  const queryClient =
+    useQueryClient();
+
+  const [name, setName] =
+    useState("");
+
+  const [vision, setVision] =
+    useState("");
+
+  const [color, setColor] =
+    useState<string>(
+      LIFE_AREA_COLORS[0],
+    );
+
+  const [priority, setPriority] =
+    useState(3);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  async function submit(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    if (!name.trim()) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const {
+        data,
+        error: userError,
+      } =
+        await supabase.auth.getUser();
+
+      if (userError) {
+        throw userError;
+      }
+
+      if (!data.user) {
+        throw new Error(
+          "User not authenticated.",
+        );
+      }
+
+      const { error } =
+        await supabase
+          .from("life_areas")
+          .insert({
+            user_id: data.user.id,
+            name: name.trim(),
+            vision:
+              vision.trim() ||
+              null,
+            color,
+            priority,
+          });
+
+      if (error) {
+        throw error;
+      }
+
+      await queryClient.invalidateQueries({
+        queryKey: [
+          "life_areas",
+        ],
+      });
+
+      toast.success(
+        `${name.trim()} added.`,
+      );
+
+      onClose();
+    } catch (error) {
+      toast.error(
+        getErrorMessage(
+          error,
+          "Life area could not be created.",
+        ),
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={submit}
+      className="rounded-2xl border-2 border-foreground bg-card p-5 md:col-span-2"
+    >
+      <div className="mb-4 flex items-center justify-between">
+        <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          New life area
+        </p>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          aria-label="Close new area form"
+        >
           <X className="size-4" />
         </button>
       </div>
+
       <input
         autoFocus
         placeholder="e.g. Career, Health, Creativity"
         value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="w-full text-2xl font-extrabold tracking-tight bg-transparent outline-none placeholder:text-muted-foreground/40"
+        onChange={(event) =>
+          setName(
+            event.target.value,
+          )
+        }
+        className="w-full bg-transparent text-2xl font-extrabold tracking-tight outline-none placeholder:text-muted-foreground/40"
       />
+
       <textarea
-        placeholder="Long-term vision — who do you want to become in this area?"
+        placeholder="Who do you want to become in this area?"
         value={vision}
-        onChange={(e) => setVision(e.target.value)}
+        onChange={(event) =>
+          setVision(
+            event.target.value,
+          )
+        }
         rows={2}
-        className="mt-3 w-full text-sm bg-transparent outline-none resize-none text-muted-foreground placeholder:text-muted-foreground/40"
+        className="mt-3 w-full resize-none bg-transparent text-sm text-muted-foreground outline-none placeholder:text-muted-foreground/40"
       />
-      <div className="mt-4 flex items-center gap-4 flex-wrap">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Color</span>
-          <div className="flex gap-1.5">
-            {LIFE_AREA_COLORS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setColor(c)}
-                className={`size-6 rounded-md transition-all ${color === c ? "ring-2 ring-offset-2 ring-foreground" : ""}`}
-                style={{ backgroundColor: c }}
-              />
-            ))}
+
+      <div className="mt-5 flex flex-col gap-5">
+        <div>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            Color
+          </span>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {LIFE_AREA_COLORS.map(
+              (option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() =>
+                    setColor(option)
+                  }
+                  className={[
+                    "size-8 rounded-lg transition-all",
+                    color === option
+                      ? "ring-2 ring-foreground ring-offset-2 ring-offset-background"
+                      : "",
+                  ].join(" ")}
+                  style={{
+                    backgroundColor:
+                      option,
+                  }}
+                  aria-label={`Select color ${option}`}
+                />
+              ),
+            )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Priority</span>
-          <select
-            value={priority}
-            onChange={(e) => setPriority(Number(e.target.value))}
-            className="text-sm px-2 py-1 rounded-md border border-border bg-surface"
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <label>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              Priority
+            </span>
+
+            <select
+              value={priority}
+              onChange={(event) =>
+                setPriority(
+                  Number(
+                    event.target
+                      .value,
+                  ),
+                )
+              }
+              className="mt-2 block h-11 rounded-xl border border-border bg-background px-3 text-sm"
+            >
+              {[1, 2, 3, 4, 5].map(
+                (option) => (
+                  <option
+                    key={option}
+                    value={option}
+                  >
+                    {option}
+                  </option>
+                ),
+              )}
+            </select>
+          </label>
+
+          <ForgeButton
+            type="submit"
+            disabled={
+              loading ||
+              !name.trim()
+            }
           >
-            {[1, 2, 3, 4, 5].map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
+            {loading
+              ? "Creating..."
+              : "Create area"}
+          </ForgeButton>
         </div>
-        <button
-          type="submit"
-          disabled={loading || !name.trim()}
-          className="ml-auto inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2 text-xs font-semibold text-background hover:bg-foreground/90 disabled:opacity-50"
-        >
-          Create
-        </button>
       </div>
     </form>
   );
 }
 
 const SUGGESTIONS = [
-  { name: "Career", color: "#0369a1" },
-  { name: "Health", color: "#166534" },
-  { name: "Creativity", color: "#c2410c" },
-  { name: "Languages", color: "#4338ca" },
-  { name: "Finance", color: "#a16207" },
-  { name: "Relationships", color: "#be185d" },
-  { name: "Spirituality", color: "#7c3aed" },
-  { name: "Adventure", color: "#0891b2" },
+  {
+    name: "Career",
+    color: "#0369a1",
+  },
+  {
+    name: "Health",
+    color: "#166534",
+  },
+  {
+    name: "Creativity",
+    color: "#c2410c",
+  },
+  {
+    name: "Languages",
+    color: "#4338ca",
+  },
+  {
+    name: "Finance",
+    color: "#a16207",
+  },
+  {
+    name: "Relationships",
+    color: "#be185d",
+  },
+  {
+    name: "Spirituality",
+    color: "#7c3aed",
+  },
+  {
+    name: "Adventure",
+    color: "#0891b2",
+  },
 ];
 
-function SuggestedAreas({ existing }: { existing: string[] }) {
-  const qc = useQueryClient();
-  const remaining = SUGGESTIONS.filter((s) => !existing.includes(s.name.toLowerCase()));
-  if (remaining.length === 0) return null;
-  async function add(s: { name: string; color: string }) {
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) return;
-    await supabase.from("life_areas").insert({ user_id: u.user.id, name: s.name, color: s.color });
-    qc.invalidateQueries({ queryKey: ["life_areas"] });
+function SuggestedAreas({
+  existing,
+}: {
+  existing: string[];
+}) {
+  const queryClient =
+    useQueryClient();
+
+  const remaining =
+    SUGGESTIONS.filter(
+      (suggestion) =>
+        !existing.includes(
+          suggestion.name.toLowerCase(),
+        ),
+    );
+
+  if (remaining.length === 0) {
+    return null;
   }
+
+  async function add(
+    suggestion: {
+      name: string;
+      color: string;
+    },
+  ) {
+    try {
+      const {
+        data,
+        error: userError,
+      } =
+        await supabase.auth.getUser();
+
+      if (userError) {
+        throw userError;
+      }
+
+      if (!data.user) {
+        throw new Error(
+          "User not authenticated.",
+        );
+      }
+
+      const { error } =
+        await supabase
+          .from("life_areas")
+          .insert({
+            user_id: data.user.id,
+            name: suggestion.name,
+            color:
+              suggestion.color,
+          });
+
+      if (error) {
+        throw error;
+      }
+
+      await queryClient.invalidateQueries({
+        queryKey: [
+          "life_areas",
+        ],
+      });
+
+      toast.success(
+        `${suggestion.name} added.`,
+      );
+    } catch (error) {
+      toast.error(
+        getErrorMessage(
+          error,
+          "Suggested area could not be added.",
+        ),
+      );
+    }
+  }
+
   return (
-    <section className="mt-12">
-      <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Suggested</p>
-      <div className="flex flex-wrap gap-2">
-        {remaining.map((s) => (
-          <button
-            key={s.name}
-            onClick={() => add(s)}
-            className="inline-flex items-center gap-2 px-3 py-1.5 border border-border rounded-full text-xs font-medium hover:border-foreground/30 transition-colors"
-          >
-            <span className="size-2 rounded-full" style={{ backgroundColor: s.color }} />
-            {s.name}
-          </button>
-        ))}
+    <section>
+      <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        Suggested areas
+      </p>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {remaining.map(
+          (suggestion) => (
+            <button
+              key={
+                suggestion.name
+              }
+              type="button"
+              onClick={() =>
+                add(suggestion)
+              }
+              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-medium transition hover:border-foreground/30 hover:bg-muted"
+            >
+              <span
+                className="size-2 rounded-full"
+                style={{
+                  backgroundColor:
+                    suggestion.color,
+                }}
+              />
+
+              {suggestion.name}
+            </button>
+          ),
+        )}
       </div>
     </section>
   );
+}
+
+function getErrorMessage(
+  error: unknown,
+  fallback: string,
+): string {
+  if (
+    error instanceof Error
+  ) {
+    return error.message;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (
+      error as {
+        message?: unknown;
+      }
+    ).message === "string"
+  ) {
+    return (
+      error as {
+        message: string;
+      }
+    ).message;
+  }
+
+  return fallback;
 }

@@ -1,10 +1,6 @@
-import {
-  useState,
-} from "react";
+import { useState } from "react";
 
-import {
-  useNavigate,
-} from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 
 import {
   ArrowLeft,
@@ -16,17 +12,11 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import {
-  ForgeButton,
-} from "@/components/forge";
+import { ForgeButton } from "@/components/forge";
 
-import {
-  OnboardingProgress,
-} from "../components";
+import { OnboardingProgress } from "../components";
 
-import {
-  completeOnboarding,
-} from "../services";
+import { completeOnboarding } from "../services";
 
 type OnboardingStep = {
   eyebrow: string;
@@ -39,8 +29,7 @@ type OnboardingStep = {
 const STEPS: OnboardingStep[] = [
   {
     eyebrow: "Welcome to Forge",
-    title:
-      "Understand who you are becoming.",
+    title: "Understand who you are becoming.",
     description:
       "Forge transforms deliberate practice, reflection, and consistency into evidence about your growth.",
     supportingText:
@@ -49,8 +38,7 @@ const STEPS: OnboardingStep[] = [
   },
   {
     eyebrow: "The Forge Loop",
-    title:
-      "Plan. Practice. Reflect. Understand.",
+    title: "Plan. Practice. Reflect. Understand.",
     description:
       "Forge begins with a vision, turns it into weekly practices, and learns from what actually happens.",
     supportingText:
@@ -59,8 +47,7 @@ const STEPS: OnboardingStep[] = [
   },
   {
     eyebrow: "Identity through evidence",
-    title:
-      "Actions become evidence.",
+    title: "Actions become evidence.",
     description:
       "Each deliberate practice supports an identity: Artist, Athlete, Scholar, Engineer, and others.",
     supportingText:
@@ -69,8 +56,7 @@ const STEPS: OnboardingStep[] = [
   },
   {
     eyebrow: "The First Strike",
-    title:
-      "Begin with one sustainable rhythm.",
+    title: "Begin with one sustainable rhythm.",
     description:
       "Steel is not shaped by one blow. It is shaped by many intentional ones.",
     supportingText:
@@ -82,19 +68,13 @@ const STEPS: OnboardingStep[] = [
 export function OnboardingPage() {
   const navigate = useNavigate();
 
-  const [stepIndex, setStepIndex] =
-    useState(0);
+  const [stepIndex, setStepIndex] = useState(0);
 
   const step = STEPS[stepIndex];
-
   const Icon = step.icon;
 
-  const isFirst =
-    stepIndex === 0;
-
-  const isLast =
-    stepIndex ===
-    STEPS.length - 1;
+  const isFirst = stepIndex === 0;
+  const isLast = stepIndex === STEPS.length - 1;
 
   function goBack() {
     setStepIndex((current) =>
@@ -104,18 +84,12 @@ export function OnboardingPage() {
 
   function goForward() {
     if (!isLast) {
-      setStepIndex(
-        (current) =>
-          Math.min(
-            STEPS.length - 1,
-            current + 1,
-          ),
+      setStepIndex((current) =>
+        Math.min(STEPS.length - 1, current + 1),
       );
 
       return;
     }
-
-    completeOnboarding();
 
     void navigate({
       to: "/vision",
@@ -166,12 +140,8 @@ export function OnboardingPage() {
 
         <div className="mt-8">
           <OnboardingProgress
-            currentStep={
-              stepIndex + 1
-            }
-            totalSteps={
-              STEPS.length
-            }
+            currentStep={stepIndex + 1}
+            totalSteps={STEPS.length}
           />
         </div>
 
@@ -214,8 +184,7 @@ export function OnboardingPage() {
                   </p>
 
                   <p className="mt-3 font-semibold">
-                    Describe who you want
-                    to become.
+                    Describe who you want to become.
                   </p>
                 </div>
               ) : null}
@@ -230,7 +199,10 @@ export function OnboardingPage() {
             disabled={isFirst}
             className="inline-flex min-h-11 items-center gap-2 rounded-xl px-4 font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-0"
           >
-            <ArrowLeft className="size-4" />
+            <ArrowLeft
+              aria-hidden="true"
+              className="size-4"
+            />
 
             Back
           </button>
@@ -245,7 +217,10 @@ export function OnboardingPage() {
               ? "Begin the first strike"
               : "Continue"}
 
-            <ArrowRight className="size-4" />
+            <ArrowRight
+              aria-hidden="true"
+              className="size-4"
+            />
           </ForgeButton>
         </footer>
       </div>

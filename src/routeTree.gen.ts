@@ -20,6 +20,7 @@ import { Route as AuthenticatedStoryRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedSkillsRouteImport } from './routes/_authenticated/skills'
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedProgressRouteImport } from './routes/_authenticated/progress'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPlanRouteImport } from './routes/_authenticated/plan'
 import { Route as AuthenticatedObservatoryRouteImport } from './routes/_authenticated/observatory'
 import { Route as AuthenticatedJourneyRouteImport } from './routes/_authenticated/journey'
@@ -83,6 +84,11 @@ const AuthenticatedProgressRoute = AuthenticatedProgressRouteImport.update({
   path: '/progress',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPlanRoute = AuthenticatedPlanRouteImport.update({
   id: '/plan',
   path: '/plan',
@@ -137,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/journey': typeof AuthenticatedJourneyRoute
   '/observatory': typeof AuthenticatedObservatoryRoute
   '/plan': typeof AuthenticatedPlanRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/progress': typeof AuthenticatedProgressRoute
   '/review': typeof AuthenticatedReviewRoute
   '/skills': typeof AuthenticatedSkillsRoute
@@ -157,6 +164,7 @@ export interface FileRoutesByTo {
   '/journey': typeof AuthenticatedJourneyRoute
   '/observatory': typeof AuthenticatedObservatoryRoute
   '/plan': typeof AuthenticatedPlanRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/progress': typeof AuthenticatedProgressRoute
   '/review': typeof AuthenticatedReviewRoute
   '/skills': typeof AuthenticatedSkillsRoute
@@ -179,6 +187,7 @@ export interface FileRoutesById {
   '/_authenticated/journey': typeof AuthenticatedJourneyRoute
   '/_authenticated/observatory': typeof AuthenticatedObservatoryRoute
   '/_authenticated/plan': typeof AuthenticatedPlanRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/progress': typeof AuthenticatedProgressRoute
   '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/skills': typeof AuthenticatedSkillsRoute
@@ -201,6 +210,7 @@ export interface FileRouteTypes {
     | '/journey'
     | '/observatory'
     | '/plan'
+    | '/profile'
     | '/progress'
     | '/review'
     | '/skills'
@@ -221,6 +231,7 @@ export interface FileRouteTypes {
     | '/journey'
     | '/observatory'
     | '/plan'
+    | '/profile'
     | '/progress'
     | '/review'
     | '/skills'
@@ -242,6 +253,7 @@ export interface FileRouteTypes {
     | '/_authenticated/journey'
     | '/_authenticated/observatory'
     | '/_authenticated/plan'
+    | '/_authenticated/profile'
     | '/_authenticated/progress'
     | '/_authenticated/review'
     | '/_authenticated/skills'
@@ -338,6 +350,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProgressRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/plan': {
       id: '/_authenticated/plan'
       path: '/plan'
@@ -405,6 +424,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedJourneyRoute: typeof AuthenticatedJourneyRoute
   AuthenticatedObservatoryRoute: typeof AuthenticatedObservatoryRoute
   AuthenticatedPlanRoute: typeof AuthenticatedPlanRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedProgressRoute: typeof AuthenticatedProgressRoute
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedSkillsRoute: typeof AuthenticatedSkillsRoute
@@ -423,6 +443,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedJourneyRoute: AuthenticatedJourneyRoute,
   AuthenticatedObservatoryRoute: AuthenticatedObservatoryRoute,
   AuthenticatedPlanRoute: AuthenticatedPlanRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedProgressRoute: AuthenticatedProgressRoute,
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedSkillsRoute: AuthenticatedSkillsRoute,

@@ -5,7 +5,6 @@ import {
 
 import {
   OnboardingPage,
-  hasCompletedOnboarding,
 } from "@/features/onboarding";
 
 import {
@@ -23,14 +22,6 @@ export const Route =
       if (!data.session) {
         throw redirect({
           to: "/auth",
-        });
-      }
-
-      if (
-        hasCompletedOnboarding()
-      ) {
-        throw redirect({
-          to: "/today",
         });
       }
     },

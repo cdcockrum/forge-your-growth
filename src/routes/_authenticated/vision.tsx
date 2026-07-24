@@ -6,9 +6,16 @@ import {
 
 import {
   createFileRoute,
+  useNavigate,
 } from "@tanstack/react-router";
 
-import { toast } from "sonner";
+import {
+  toast,
+} from "sonner";
+
+import {
+  ArrowRight,
+} from "lucide-react";
 
 import {
   ForgeButton,
@@ -19,13 +26,13 @@ import {
 } from "@/components/forge";
 
 import {
+  SetupProgress,
+} from "@/features/onboarding";
+
+import {
   useVision,
   visionQuery,
 } from "@/features/vision";
-
-import {
-  useNavigate,
-} from "@tanstack/react-router";
 
 export const Route = createFileRoute(
   "/_authenticated/vision",
@@ -35,13 +42,18 @@ export const Route = createFileRoute(
       visionQuery(),
     );
   },
+
   component: VisionPage,
 });
 
 function VisionPage() {
   return (
     <ForgePage>
-      <Suspense fallback={<VisionLoadingState />}>
+      <Suspense
+        fallback={
+          <VisionLoadingState />
+        }
+      >
         <VisionContent />
       </Suspense>
     </ForgePage>
@@ -62,6 +74,8 @@ function VisionLoadingState() {
 }
 
 function VisionContent() {
+  const navigate = useNavigate();
+
   const {
     vision,
     saveVision,
@@ -74,11 +88,15 @@ function VisionContent() {
   const [northStar, setNorthStar] =
     useState("");
 
-  const [coreValues, setCoreValues] =
-    useState<string[]>([]);
+  const [
+    coreValues,
+    setCoreValues,
+  ] = useState<string[]>([]);
 
-  const [identities, setIdentities] =
-    useState<string[]>([]);
+  const [
+    identities,
+    setIdentities,
+  ] = useState<string[]>([]);
 
   const [themes, setThemes] =
     useState<string[]>([]);
@@ -115,7 +133,13 @@ function VisionContent() {
         themes,
       });
 
-      toast.success("Vision saved.");
+      toast.success(
+        "Vision saved. Next, choose your life areas.",
+      );
+
+      await navigate({
+        to: "/areas",
+      });
     } catch (error) {
       console.error(
         "Vision save error:",
@@ -133,20 +157,27 @@ function VisionContent() {
 
   return (
     <div className="space-y-8">
+      <SetupProgress
+        currentStep={1}
+      />
+
       <header>
         <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
           My Vision
         </p>
 
         <h1 className="mt-3 max-w-3xl text-4xl font-extrabold tracking-tight md:text-6xl">
-          Who are you intentionally becoming?
+          Who are you intentionally
+          becoming?
         </h1>
 
         <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
-          Give Forge the context behind your
-          practices. Your mission, North Star,
-          values, future identities, and life themes
-          will guide planning and coaching.
+          Give Forge the context behind
+          your practices. Your mission,
+          North Star, values, future
+          identities, and life themes
+          will guide planning and
+          coaching.
         </p>
       </header>
 
@@ -159,7 +190,9 @@ function VisionContent() {
         <textarea
           value={mission}
           onChange={(event) =>
-            setMission(event.target.value)
+            setMission(
+              event.target.value,
+            )
           }
           rows={6}
           placeholder="I want to become..."
@@ -167,8 +200,9 @@ function VisionContent() {
         />
 
         <p className="mt-3 text-xs leading-5 text-muted-foreground">
-          Keep it honest and broad enough to outlast
-          a single project or season.
+          Keep it honest and broad
+          enough to outlast a single
+          project or season.
         </p>
       </ForgeCard>
 
@@ -181,14 +215,18 @@ function VisionContent() {
         <input
           value={northStar}
           onChange={(event) =>
-            setNorthStar(event.target.value)
+            setNorthStar(
+              event.target.value,
+            )
           }
           placeholder="Leave every place better than you found it."
           className="mt-5 h-12 w-full rounded-2xl border border-border bg-background px-4 text-base outline-none transition focus:border-foreground/40"
         />
 
         <p className="mt-3 text-xs leading-5 text-muted-foreground">
-          When you feel uncertain, Forge will remind you of this sentence.
+          When you feel uncertain,
+          Forge will remind you of this
+          sentence.
         </p>
       </ForgeCard>
 
@@ -251,10 +289,15 @@ function VisionContent() {
           type="button"
           disabled={saving}
           onClick={handleSave}
+          className="gap-2"
         >
           {saving
             ? "Saving..."
-            : "Save Vision"}
+            : "Save and continue"}
+
+          {!saving ? (
+            <ArrowRight className="size-4" />
+          ) : null}
         </ForgeButton>
       </div>
     </div>
@@ -267,7 +310,9 @@ type EditableListCardProps = {
   placeholder: string;
   items: string[];
   suggestions: string[];
-  onChange: (items: string[]) => void;
+  onChange: (
+    items: string[],
+  ) => void;
 };
 
 function EditableListCard({
@@ -281,7 +326,9 @@ function EditableListCard({
   const [draft, setDraft] =
     useState("");
 
-  function addItem(value: string) {
+  function addItem(
+    value: string,
+  ) {
     const normalized =
       value.trim();
 
@@ -289,11 +336,12 @@ function EditableListCard({
       return;
     }
 
-    const alreadyExists = items.some(
-      (item) =>
-        item.toLowerCase() ===
-        normalized.toLowerCase(),
-    );
+    const alreadyExists =
+      items.some(
+        (item) =>
+          item.toLowerCase() ===
+          normalized.toLowerCase(),
+      );
 
     if (alreadyExists) {
       setDraft("");
@@ -313,7 +361,8 @@ function EditableListCard({
   ) {
     onChange(
       items.filter(
-        (item) => item !== value,
+        (item) =>
+          item !== value,
       ),
     );
   }
@@ -339,10 +388,14 @@ function EditableListCard({
         <input
           value={draft}
           onChange={(event) =>
-            setDraft(event.target.value)
+            setDraft(
+              event.target.value,
+            )
           }
           onKeyDown={(event) => {
-            if (event.key === "Enter") {
+            if (
+              event.key === "Enter"
+            ) {
               event.preventDefault();
               addItem(draft);
             }
@@ -387,7 +440,8 @@ function EditableListCard({
         </div>
       )}
 
-      {unusedSuggestions.length > 0 && (
+      {unusedSuggestions.length >
+      0 ? (
         <div className="mt-6 border-t border-border pt-5">
           <p className="text-xs font-semibold text-muted-foreground">
             Suggestions
@@ -400,7 +454,9 @@ function EditableListCard({
                   key={suggestion}
                   type="button"
                   onClick={() =>
-                    addItem(suggestion)
+                    addItem(
+                      suggestion,
+                    )
                   }
                   className="rounded-full border border-dashed border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-foreground/30 hover:text-foreground"
                 >
@@ -410,7 +466,7 @@ function EditableListCard({
             )}
           </div>
         </div>
-      )}
+      ) : null}
     </ForgeCard>
   );
 }
@@ -419,7 +475,9 @@ function getErrorMessage(
   error: unknown,
   fallback: string,
 ): string {
-  if (error instanceof Error) {
+  if (
+    error instanceof Error
+  ) {
     return error.message;
   }
 
