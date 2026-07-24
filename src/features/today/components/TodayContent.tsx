@@ -3,7 +3,6 @@ import {
 } from "@tanstack/react-router";
 
 import {
-  ForgePage,
   ForgeSection,
   ForgeSidebarLayout,
 } from "@/components/forge";
@@ -64,18 +63,20 @@ export function TodayContent() {
   }
 
   return (
-    <ForgePage>
-      <MorningHero
-        firstName={
-          model.hero.firstName
-        }
-        advisor={
-          model.hero.advisor
-        }
-        insight={
-          model.hero.insight
-        }
-      />
+    <div className="space-y-8">
+      <div id="today-hero">
+        <MorningHero
+          firstName={
+            model.hero.firstName
+          }
+          advisor={
+            model.hero.advisor
+          }
+          insight={
+            model.hero.insight
+          }
+        />
+      </div>
 
       <QuoteCard />
 
@@ -86,47 +87,64 @@ export function TodayContent() {
       <ForgeSidebarLayout
         main={
           <div className="space-y-12">
-            <ForgeSection
-              eyebrow="Today"
-              title="Take the next meaningful step"
-              description="Keep the plan small, deliberate, and achievable."
-            >
-              <div className="space-y-6">
-                {nextSession ? (
-                  <NextActionCard
-                    title={
-                      nextSession.title
-                    }
-                    duration={
-                      nextSession.duration_minutes
-                    }
-                    description={
-                      nextSession.notes?.trim() ||
-                      "Complete one deliberate practice and add meaningful evidence to the person you are becoming."
-                    }
-                    actionLabel="Begin Practice"
-                    onAction={
-                      handleNextAction
-                    }
-                  />
-                ) : (
-                  <NextActionCard
-                    title="Choose one meaningful practice"
-                    description="Nothing remains scheduled for today. Review your plan and choose one small action you can complete reliably."
-                    actionLabel="Plan Today"
-                    onAction={
-                      handleNextAction
-                    }
-                  />
-                )}
+            <section id="mission-card">
+              <ForgeSection
+                eyebrow="Today"
+                title="Take the next meaningful step"
+                description="Keep the plan small, deliberate, and achievable."
+              >
+                <div className="space-y-6">
+                  {nextSession ? (
+                    <NextActionCard
+                      title={
+                        nextSession.title
+                      }
+                      duration={
+                        nextSession.duration_minutes
+                      }
+                      description={
+                        nextSession.notes?.trim() ||
+                        "Complete one deliberate practice and add meaningful evidence to the person you are becoming."
+                      }
+                      actionLabel="Begin Practice"
+                      onAction={
+                        handleNextAction
+                      }
+                    />
+                  ) : (
+                    <NextActionCard
+                      title="Choose one meaningful practice"
+                      description="Nothing remains scheduled for today. Review your plan and choose one small action you can complete reliably."
+                      actionLabel="Plan Today"
+                      onAction={
+                        handleNextAction
+                      }
+                    />
+                  )}
 
-                {focusItems.length > 0 ? (
-                  <TodayFocusList
-                    items={focusItems}
-                  />
-                ) : null}
-              </div>
-            </ForgeSection>
+                  {focusItems.length > 0 ? (
+                    <div id="focus-list">
+                      <TodayFocusList
+                        items={focusItems}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      id="focus-list"
+                      className="rounded-2xl border border-dashed border-border bg-surface/40 px-5 py-6"
+                    >
+                      <p className="text-sm font-semibold">
+                        Today’s Focus
+                      </p>
+
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                        Important commitments that are not deliberate practice will appear here.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </ForgeSection>
+            </section>
 
             <ForgeSection
               eyebrow="Understanding"
@@ -148,13 +166,15 @@ export function TodayContent() {
               </div>
             </ForgeSection>
 
-            <ForgeSection
-              eyebrow="Reflection"
-              title="Close the loop"
-              description="Capture what mattered so Forge can learn from today’s experience."
-            >
-              <ReflectionPrompt />
-            </ForgeSection>
+            <section id="reflection">
+              <ForgeSection
+                eyebrow="Reflection"
+                title="Close the loop"
+                description="Capture what mattered so Forge can learn from today’s experience."
+              >
+                <ReflectionPrompt />
+              </ForgeSection>
+            </section>
           </div>
         }
         sidebar={
@@ -169,29 +189,31 @@ export function TodayContent() {
               </h2>
             </div>
 
-            <MomentumPanel
-              score={
-                model.momentum.score
-              }
-              direction={
-                model.momentum.direction
-              }
-              consistency={
-                model.momentum.consistency
-              }
-              recovery={
-                model.momentum.recovery
-              }
-              adherence={
-                model.momentum.adherence
-              }
-              burnoutRisk={
-                model.momentum.burnoutRisk
-              }
-              message={
-                model.momentum.message
-              }
-            />
+            <div id="momentum">
+              <MomentumPanel
+                score={
+                  model.momentum.score
+                }
+                direction={
+                  model.momentum.direction
+                }
+                consistency={
+                  model.momentum.consistency
+                }
+                recovery={
+                  model.momentum.recovery
+                }
+                adherence={
+                  model.momentum.adherence
+                }
+                burnoutRisk={
+                  model.momentum.burnoutRisk
+                }
+                message={
+                  model.momentum.message
+                }
+              />
+            </div>
 
             <IdentityCard
               identity={
@@ -234,6 +256,6 @@ export function TodayContent() {
           </div>
         }
       />
-    </ForgePage>
+    </div>
   );
 }

@@ -1,13 +1,21 @@
-import { Suspense, useState } from "react";
+import {
+  Suspense,
+  useState,
+} from "react";
+
 import {
   createFileRoute,
   Link,
+  useNavigate,
 } from "@tanstack/react-router";
+
 import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
+
 import {
+  ArrowRight,
   Check,
   CirclePlay,
   Plus,
@@ -16,9 +24,24 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { toast } from "sonner";
 
-import { PageHeader } from "@/components/forge/app-shell";
+import {
+  toast,
+} from "sonner";
+
+import {
+  ForgeButton,
+  ForgeCard,
+  ForgeEmptyState,
+  ForgePage,
+  ForgeSection,
+  ForgeStat,
+} from "@/components/forge";
+
+import {
+  PageHeader,
+} from "@/components/forge/app-shell";
+
 import {
   iso,
   lifeAreasQuery,
@@ -27,6 +50,7 @@ import {
   todayIso,
   weekBounds,
 } from "@/features/forge/queries";
+
 import {
   DAYS,
   DAY_LABELS,
@@ -34,9 +58,24 @@ import {
   type PracticeSession,
   type Skill,
 } from "@/features/forge/types";
+
 import {
   assessWeeklyPlan,
 } from "@/features/forge-engine";
+
+import {
+  SetupProgress,
+  completeOnboarding,
+} from "@/features/onboarding";
+
+import {
+  resetTour,
+} from "@/features/tour";
+
+import {
+  EmptyPlanState,
+} from "@/features/plan/components/EmptyPlanState";
+
 import {
   WeekAssessment,
 } from "@/features/plan/components/WeekAssessment";
@@ -48,7 +87,11 @@ import {
   toggleFocusComplete,
   type FocusItem,
 } from "@/features/focus";
-import { generateCurrentWeek } from "@/features/focus/services/planningService";
+
+import {
+  generateCurrentWeek,
+} from "@/features/focus/services/planningService";
+
 import {
   completeSession,
   removeSession,
@@ -56,48 +99,53 @@ import {
   skipSession,
   startSession,
 } from "@/features/focus/services/sessionService";
-import { supabase } from "@/integrations/supabase/client";
-import {
-  ForgeButton,
-  ForgeCard,
-  ForgeEmptyState,
-  ForgePage,
-  ForgeSection,
-  ForgeStat,
-} from "@/components/forge";
 
 import {
-  EmptyPlanState,
-} from "@/features/plan/components/EmptyPlanState";
+  supabase,
+} from "@/integrations/supabase/client";
 
 export const Route = createFileRoute(
   "/_authenticated/plan",
 )({
   loader: async ({ context }) => {
-    const { start, end } = weekBounds();
+    const {
+      start,
+      end,
+    } = weekBounds();
 
     await Promise.all([
       context.queryClient.ensureQueryData(
         skillsQuery(),
       ),
+
       context.queryClient.ensureQueryData(
         lifeAreasQuery(),
       ),
+
       context.queryClient.ensureQueryData(
         focusItemsQuery(),
       ),
+
       context.queryClient.ensureQueryData(
-        sessionsInRangeQuery(start, end),
+        sessionsInRangeQuery(
+          start,
+          end,
+        ),
       ),
     ]);
   },
+
   component: PlanPage,
 });
 
 function PlanPage() {
   return (
     <ForgePage>
-      <Suspense fallback={<PlanLoadingState />}>
+      <Suspense
+        fallback={
+          <PlanLoadingState />
+        }
+      >
         <PlanContent />
       </Suspense>
     </ForgePage>
@@ -107,6 +155,8 @@ function PlanPage() {
 function PlanLoadingState() {
   return (
     <div className="space-y-6">
+      <div className="h-36 animate-pulse rounded-3xl bg-muted" />
+
       <div className="h-28 animate-pulse rounded-2xl bg-muted" />
 
       <div className="h-52 animate-pulse rounded-2xl bg-muted" />
@@ -114,92 +164,140 @@ function PlanLoadingState() {
       <div className="h-64 animate-pulse rounded-2xl bg-muted" />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-7">
-        {Array.from({ length: 7 }, (_, index) => (
-          <div
-            key={index}
-            className="h-44 animate-pulse rounded-xl border border-border bg-surface/50"
-          />
-        ))}
+        {Array.from(
+          {
+            length: 7,
+          },
+          (_, index) => (
+            <div
+              key={index}
+              className="h-44 animate-pulse rounded-xl border border-border bg-surface/50"
+            />
+          ),
+        )}
       </div>
     </div>
   );
 }
 
 function PlanContent() {
-  const queryClient = useQueryClient();
-  const { start, end, monday } = weekBounds();
+  const navigate =
+    useNavigate();
 
-  const { data: skills } = useSuspenseQuery(
+  const queryClient =
+    useQueryClient();
+
+  const {
+    start,
+    end,
+    monday,
+  } = weekBounds();
+
+  const {
+    data: skills,
+  } = useSuspenseQuery(
     skillsQuery(),
   );
 
-  const { data: areas } = useSuspenseQuery(
+  const {
+    data: areas,
+  } = useSuspenseQuery(
     lifeAreasQuery(),
   );
 
-  const { data: sessions } = useSuspenseQuery(
-    sessionsInRangeQuery(start, end),
+  const {
+    data: sessions,
+  } = useSuspenseQuery(
+    sessionsInRangeQuery(
+      start,
+      end,
+    ),
   );
 
-  const { data: allFocusItems } =
-    useSuspenseQuery(focusItemsQuery());
-
-  const focusItems = allFocusItems.filter(
-    (item) =>
-      item.scheduled_date !== null &&
-      item.scheduled_date >= start &&
-      item.scheduled_date <= end,
+  const {
+    data: allFocusItems,
+  } = useSuspenseQuery(
+    focusItemsQuery(),
   );
 
-  const [generating, setGenerating] =
-    useState(false);
+  const focusItems =
+    allFocusItems.filter(
+      (item) =>
+        item.scheduled_date !==
+          null &&
+        item.scheduled_date >=
+          start &&
+        item.scheduled_date <=
+          end,
+    );
 
-  const assessment = assessWeeklyPlan({
-    sessions,
-    skills,
-    lifeAreas: areas,
-  });
+  const [
+    generating,
+    setGenerating,
+  ] = useState(false);
 
-  const dayList = Array.from(
-    { length: 7 },
-    (_, index) => {
-      const date = new Date(monday);
+  const assessment =
+    assessWeeklyPlan({
+      sessions,
+      skills,
+      lifeAreas: areas,
+    });
 
-      date.setDate(
-        monday.getDate() + index,
-      );
+  const dayList =
+    Array.from(
+      {
+        length: 7,
+      },
+      (_, index) => {
+        const date =
+          new Date(monday);
 
-      return {
-        date,
-        iso: iso(date),
-        key: DAYS[index],
-      };
-    },
-  );
+        date.setDate(
+          monday.getDate() +
+            index,
+        );
+
+        return {
+          date,
+          iso: iso(date),
+          key: DAYS[index],
+        };
+      },
+    );
 
   async function generateWeek() {
-    if (skills.length === 0) {
+    if (
+      skills.length === 0
+    ) {
       toast.error(
         "Add at least one skill before generating a week.",
       );
+
       return;
     }
 
     try {
-      setGenerating(true);
+      setGenerating(
+        true,
+      );
 
       const result =
         await generateCurrentWeek();
 
-      if (result.created === 0) {
+      if (
+        result.created === 0
+      ) {
         toast.info(
           "This week is already fully planned.",
         );
+
         return;
       }
 
       await queryClient.invalidateQueries({
-        queryKey: ["sessions"],
+        queryKey: [
+          "sessions",
+        ],
       });
 
       toast.success(
@@ -222,12 +320,40 @@ function PlanContent() {
         ),
       );
     } finally {
-      setGenerating(false);
+      setGenerating(
+        false,
+      );
     }
   }
 
+  function enterForge() {
+  if (sessions.length === 0) {
+    toast.error(
+      "Generate at least one practice session before entering Forge.",
+    );
+
+    return;
+  }
+
+  completeOnboarding();
+
+  // Ensure the first Today visit launches the guided tour.
+  resetTour("today");
+
+  toast.success(
+    "Your Forge is ready.",
+  );
+
+  void navigate({
+    to: "/today",
+  });
+}
   return (
-    <>
+    <div className="space-y-8">
+      <SetupProgress
+        currentStep={4}
+      />
+
       <PageHeader
         eyebrow={`Week of ${monday.toLocaleDateString(
           "en-US",
@@ -238,145 +364,274 @@ function PlanContent() {
         )}`}
         title={
           <>
-            The{" "}
+            Forge your{" "}
             <span className="text-accent">
-              week ahead
+              first week
             </span>
             .
           </>
         }
         action={
-          <button
+          <ForgeButton
             type="button"
-            onClick={generateWeek}
-            disabled={generating}
-            className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background transition hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={
+              generateWeek
+            }
+            disabled={
+              generating
+            }
+            className="gap-2"
           >
-            <Sparkles className="size-3.5" />
+            <Sparkles className="size-4" />
 
             {generating
               ? "Forging..."
               : "Generate week"}
-          </button>
+          </ForgeButton>
         }
       />
 
-      <WeekAssessment assessment={assessment} />
+      <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
+        Your Vision established
+        direction. Your Life Areas
+        defined where growth should
+        happen. Your Skills identified
+        what you will practice. Now
+        Forge turns those intentions
+        into a sustainable weekly
+        rhythm.
+      </p>
+
+      <WeekAssessment
+        assessment={
+          assessment
+        }
+      />
 
       <WeeklyFocus
-        items={focusItems}
-        weekStart={start}
+        items={
+          focusItems
+        }
+        weekStart={
+          start
+        }
       />
 
       {skills.length === 0 ? (
         <EmptyPlanState />
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-7">
-          {dayList.map((day) => {
-            const daySessions =
-              sessions.filter(
-                (session) =>
-                  session.scheduled_date ===
-                  day.iso,
-              );
+          {dayList.map(
+            (day) => {
+              const daySessions =
+                sessions.filter(
+                  (
+                    session,
+                  ) =>
+                    session.scheduled_date ===
+                    day.iso,
+                );
 
-            const isToday =
-              day.iso === todayIso();
+              const isToday =
+                day.iso ===
+                todayIso();
 
-            return (
-              <section
-                key={day.iso}
-                className={`rounded-xl border p-3 ${
-                  isToday
-                    ? "border-foreground bg-surface"
-                    : "border-border bg-surface/50"
-                }`}
-              >
-                <div className="mb-3 flex items-baseline justify-between">
-                  <span
-                    className={`font-mono text-[10px] uppercase tracking-widest ${
-                      isToday
-                        ? "font-bold text-accent"
-                        : "text-muted-foreground"
-                    }`}
-                  >
-                    {DAY_LABELS[day.key]}
-                  </span>
-
-                  <span className="text-lg font-extrabold tracking-tight">
-                    {day.date.getDate()}
-                  </span>
-                </div>
-
-                <div className="min-h-[80px] space-y-2">
-                  {daySessions.map(
-                    (session) => {
-                      const skill =
-                        skills.find(
-                          (item) =>
-                            item.id ===
-                            session.skill_id,
-                        );
-
-                      const area = skill
-                        ? areas.find(
-                            (item) =>
-                              item.id ===
-                              skill.life_area_id,
-                          )
-                        : undefined;
-
-                      return (
-                        <PlanSlot
-                          key={session.id}
-                          session={session}
-                          area={area}
-                        />
-                      );
-                    },
+              return (
+                <section
+                  key={
+                    day.iso
+                  }
+                  className={[
+                    "rounded-xl border p-3",
+                    isToday
+                      ? "border-foreground bg-surface"
+                      : "border-border bg-surface/50",
+                  ].join(
+                    " ",
                   )}
+                >
+                  <div className="mb-3 flex items-baseline justify-between">
+                    <span
+                      className={[
+                        "font-mono text-[10px] uppercase tracking-widest",
+                        isToday
+                          ? "font-bold text-accent"
+                          : "text-muted-foreground",
+                      ].join(
+                        " ",
+                      )}
+                    >
+                      {
+                        DAY_LABELS[
+                          day.key
+                        ]
+                      }
+                    </span>
 
-                  <AddSlot
-                    date={day.iso}
-                    skills={skills}
-                    existingSessions={
-                      daySessions
-                    }
-                  />
-                </div>
-              </section>
-            );
-          })}
+                    <span className="text-lg font-extrabold tracking-tight">
+                      {
+                        day.date.getDate()
+                      }
+                    </span>
+                  </div>
+
+                  <div className="min-h-[80px] space-y-2">
+                    {daySessions.map(
+                      (
+                        session,
+                      ) => {
+                        const skill =
+                          skills.find(
+                            (
+                              item,
+                            ) =>
+                              item.id ===
+                              session.skill_id,
+                          );
+
+                        const area =
+                          skill
+                            ? areas.find(
+                                (
+                                  item,
+                                ) =>
+                                  item.id ===
+                                  skill.life_area_id,
+                              )
+                            : undefined;
+
+                        return (
+                          <PlanSlot
+                            key={
+                              session.id
+                            }
+                            session={
+                              session
+                            }
+                            area={
+                              area
+                            }
+                          />
+                        );
+                      },
+                    )}
+
+                    <AddSlot
+                      date={
+                        day.iso
+                      }
+                      skills={
+                        skills
+                      }
+                      existingSessions={
+                        daySessions
+                      }
+                    />
+                  </div>
+                </section>
+              );
+            },
+          )}
         </div>
       )}
 
-    <div className="mt-8 grid gap-4 md:grid-cols-4">
-      <ForgeStat
-        label="Practice"
-        value={sessions.length}
-        subtitle="Sessions this week"
-      />
+      <div className="grid gap-4 md:grid-cols-4">
+        <ForgeStat
+          label="Practice"
+          value={
+            sessions.length
+          }
+          subtitle="Sessions this week"
+        />
 
-      <ForgeStat
-        label="Focus"
-        value={focusItems.length}
-        subtitle="Weekly focus items"
-      />
+        <ForgeStat
+          label="Focus"
+          value={
+            focusItems.length
+          }
+          subtitle="Weekly focus items"
+        />
 
-      <ForgeStat
-        label="Skills"
-        value={skills.length}
-        subtitle="Skills being trained"
-      />
+        <ForgeStat
+          label="Skills"
+          value={
+            skills.length
+          }
+          subtitle="Skills being trained"
+        />
 
-      <ForgeStat
-        label="Score"
-        value={assessment.score}
-        subtitle={assessment.label}
-      />
+        <ForgeStat
+          label="Score"
+          value={
+            assessment.score
+          }
+          subtitle={
+            assessment.label
+          }
+        />
+      </div>
+
+      <ForgeCard className="overflow-hidden">
+        <div className="grid gap-6 p-6 sm:p-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.26em] text-muted-foreground">
+              Welcome to your Forge
+            </p>
+
+            <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
+              Your first rhythm is
+              ready.
+            </h2>
+
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
+              Your Vision gave Forge
+              direction. Your Life Areas
+              defined where growth will
+              happen. Your Skills
+              identified what you will
+              practice. This week turns
+              those intentions into
+              evidence.
+            </p>
+
+            {sessions.length ===
+            0 ? (
+              <p className="mt-4 text-sm font-semibold text-muted-foreground">
+                Generate your first
+                week above to complete
+                setup.
+              </p>
+            ) : (
+              <p className="mt-4 text-sm font-semibold">
+                {sessions.length}{" "}
+                {sessions.length ===
+                1
+                  ? "practice session is"
+                  : "practice sessions are"}{" "}
+                ready.
+              </p>
+            )}
+          </div>
+
+          <ForgeButton
+            type="button"
+            size="large"
+            disabled={
+              sessions.length ===
+              0
+            }
+            onClick={
+              enterForge
+            }
+            className="gap-2"
+          >
+            Enter your Forge
+
+            <ArrowRight className="size-4" />
+          </ForgeButton>
+        </div>
+      </ForgeCard>
     </div>
-
-    </>
   );
 }
 
@@ -389,45 +644,67 @@ function WeeklyFocus({
   items,
   weekStart,
 }: WeeklyFocusProps) {
-  const queryClient = useQueryClient();
+  const queryClient =
+    useQueryClient();
 
-  const [title, setTitle] =
-    useState("");
+  const [
+    title,
+    setTitle,
+  ] = useState("");
 
-  const [scheduledDate, setScheduledDate] =
-    useState(weekStart);
-
-  const [adding, setAdding] =
-    useState(false);
-
-  const [updatingId, setUpdatingId] =
-    useState<string | null>(null);
-
-  const completedCount = items.filter(
-    (item) => item.completed,
-  ).length;
-
-  const weekDates = Array.from(
-    { length: 7 },
-    (_, index) => {
-      const date = new Date(
-        `${weekStart}T00:00:00`,
-      );
-
-      date.setDate(
-        date.getDate() + index,
-      );
-
-      return {
-        date,
-        value: iso(date),
-      };
-    },
+  const [
+    scheduledDate,
+    setScheduledDate,
+  ] = useState(
+    weekStart,
   );
+
+  const [
+    adding,
+    setAdding,
+  ] = useState(false);
+
+  const [
+    updatingId,
+    setUpdatingId,
+  ] = useState<
+    string | null
+  >(null);
+
+  const completedCount =
+    items.filter(
+      (item) =>
+        item.completed,
+    ).length;
+
+  const weekDates =
+    Array.from(
+      {
+        length: 7,
+      },
+      (_, index) => {
+        const date =
+          new Date(
+            `${weekStart}T00:00:00`,
+          );
+
+        date.setDate(
+          date.getDate() +
+            index,
+        );
+
+        return {
+          date,
+          value: iso(date),
+        };
+      },
+    );
 
   async function refreshFocus() {
     await queryClient.invalidateQueries({
-      queryKey: ["focus-items"],
+      queryKey: [
+        "focus-items",
+      ],
     });
   }
 
@@ -436,16 +713,24 @@ function WeeklyFocus({
   ) {
     event.preventDefault();
 
-    const trimmedTitle = title.trim();
+    const trimmedTitle =
+      title.trim();
 
-    if (!trimmedTitle) {
+    if (
+      !trimmedTitle
+    ) {
       return;
     }
 
     try {
-      setAdding(true);
+      setAdding(
+        true,
+      );
 
-      const { data, error } =
+      const {
+        data,
+        error,
+      } =
         await supabase.auth.getUser();
 
       if (error) {
@@ -459,14 +744,19 @@ function WeeklyFocus({
       }
 
       await createFocusItem({
-        user_id: data.user.id,
-        title: trimmedTitle,
+        user_id:
+          data.user.id,
+        title:
+          trimmedTitle,
         notes: null,
-        scheduled_date: scheduledDate,
+        scheduled_date:
+          scheduledDate,
         completed: false,
-        completed_at: null,
+        completed_at:
+          null,
         priority: 2,
-        sort_order: items.length,
+        sort_order:
+          items.length,
         chronicle: false,
         category: null,
       });
@@ -491,7 +781,9 @@ function WeeklyFocus({
         ),
       );
     } finally {
-      setAdding(false);
+      setAdding(
+        false,
+      );
     }
   }
 
@@ -499,9 +791,14 @@ function WeeklyFocus({
     item: FocusItem,
   ) {
     try {
-      setUpdatingId(item.id);
+      setUpdatingId(
+        item.id,
+      );
 
-      await toggleFocusComplete(item);
+      await toggleFocusComplete(
+        item,
+      );
+
       await refreshFocus();
     } catch (error) {
       console.error(
@@ -516,7 +813,9 @@ function WeeklyFocus({
         ),
       );
     } finally {
-      setUpdatingId(null);
+      setUpdatingId(
+        null,
+      );
     }
   }
 
@@ -524,9 +823,14 @@ function WeeklyFocus({
     item: FocusItem,
   ) {
     try {
-      setUpdatingId(item.id);
+      setUpdatingId(
+        item.id,
+      );
 
-      await deleteFocusItem(item.id);
+      await deleteFocusItem(
+        item.id,
+      );
+
       await refreshFocus();
 
       toast.success(
@@ -545,173 +849,225 @@ function WeeklyFocus({
         ),
       );
     } finally {
-      setUpdatingId(null);
+      setUpdatingId(
+        null,
+      );
     }
   }
 
   return (
-    <ForgeCard className="mb-6">
-  <ForgeSection
-    eyebrow="Focus"
-    title="What must happen this week?"
-    description="Responsibilities and commitments outside your deliberate practice."
-    action={
-      items.length > 0 ? (
-        <p className="text-xs font-semibold text-muted-foreground">
-          {completedCount} of {items.length} complete
-        </p>
-      ) : undefined
-    }
-  >
-    <form
-      onSubmit={addItem}
-      className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px_auto]"
-    >
-      <input
-        type="text"
-        value={title}
-        onChange={(event) =>
-          setTitle(event.target.value)
-        }
-        placeholder="Add something that needs to happen..."
-        className="h-11 rounded-xl border border-border bg-background px-4 text-sm outline-none transition focus:border-foreground/30 focus:ring-2 focus:ring-accent/20"
-      />
-
-      <select
-        value={scheduledDate}
-        onChange={(event) =>
-          setScheduledDate(
-            event.target.value,
-          )
-        }
-        className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none transition focus:border-foreground/30 focus:ring-2 focus:ring-accent/20"
-      >
-        {weekDates.map(
-          ({ date, value }) => (
-            <option
-              key={value}
-              value={value}
-            >
-              {date.toLocaleDateString(
-                "en-US",
-                {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                },
-              )}
-            </option>
-          ),
-        )}
-      </select>
-
-      <ForgeButton
-        type="submit"
-        size="large"
-        disabled={
-          adding ||
-          !title.trim()
+    <ForgeCard>
+      <ForgeSection
+        eyebrow="Focus"
+        title="What must happen this week?"
+        description="Responsibilities and commitments outside your deliberate practice."
+        action={
+          items.length > 0 ? (
+            <p className="text-xs font-semibold text-muted-foreground">
+              {completedCount}{" "}
+              of{" "}
+              {items.length}{" "}
+              complete
+            </p>
+          ) : undefined
         }
       >
-        {adding
-          ? "Adding..."
-          : "Add"}
-      </ForgeButton>
-    </form>
+        <form
+          onSubmit={
+            addItem
+          }
+          className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px_auto]"
+        >
+          <input
+            type="text"
+            value={
+              title
+            }
+            onChange={(
+              event,
+            ) =>
+              setTitle(
+                event.target
+                  .value,
+              )
+            }
+            placeholder="Add something that needs to happen..."
+            className="h-11 rounded-xl border border-border bg-background px-4 text-sm outline-none transition focus:border-foreground/30 focus:ring-2 focus:ring-accent/20"
+          />
 
-    {items.length === 0 ? (
-      <ForgeEmptyState
-        title="Nothing has been added yet."
-        description="Use Focus as a simple weekly checklist, with or without a guided practice plan."
-        className="mt-5 py-8"
-      />
-    ) : (
-      <div className="mt-5 divide-y divide-border">
-        {items.map((item) => {
-          const updating =
-            updatingId === item.id;
-
-          return (
-            <div
-              key={item.id}
-              className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
-            >
-              <button
-                type="button"
-                disabled={updating}
-                onClick={() =>
-                  toggleItem(item)
-                }
-                aria-label={
-                  item.completed
-                    ? `Mark ${item.title} incomplete`
-                    : `Complete ${item.title}`
-                }
-                className={`flex size-6 shrink-0 items-center justify-center rounded-md border text-xs font-bold transition disabled:opacity-50 ${
-                  item.completed
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-border bg-background hover:border-foreground/40"
-                }`}
-              >
-                {item.completed
-                  ? "✓"
-                  : ""}
-              </button>
-
-              <div className="min-w-0 flex-1">
-                <button
-                  type="button"
-                  disabled={updating}
-                  onClick={() =>
-                    toggleItem(item)
+          <select
+            value={
+              scheduledDate
+            }
+            onChange={(
+              event,
+            ) =>
+              setScheduledDate(
+                event.target
+                  .value,
+              )
+            }
+            className="h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none transition focus:border-foreground/30 focus:ring-2 focus:ring-accent/20"
+          >
+            {weekDates.map(
+              ({
+                date,
+                value,
+              }) => (
+                <option
+                  key={
+                    value
                   }
-                  className={`block w-full text-left text-sm font-semibold transition disabled:opacity-50 ${
-                    item.completed
-                      ? "text-muted-foreground line-through"
-                      : "text-foreground"
-                  }`}
+                  value={
+                    value
+                  }
                 >
-                  {item.title}
-                </button>
+                  {date.toLocaleDateString(
+                    "en-US",
+                    {
+                      weekday:
+                        "short",
+                      month:
+                        "short",
+                      day:
+                        "numeric",
+                    },
+                  )}
+                </option>
+              ),
+            )}
+          </select>
 
-                {item.scheduled_date ? (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {new Date(
-                      `${item.scheduled_date}T00:00:00`,
-                    ).toLocaleDateString(
-                      "en-US",
-                      {
-                        weekday:
-                          "long",
-                      },
-                    )}
-                  </p>
-                ) : null}
-              </div>
+          <ForgeButton
+            type="submit"
+            size="large"
+            disabled={
+              adding ||
+              !title.trim()
+            }
+          >
+            {adding
+              ? "Adding..."
+              : "Add"}
+          </ForgeButton>
+        </form>
 
-              <button
-                type="button"
-                disabled={updating}
-                onClick={() =>
-                  removeItem(item)
-                }
-                className="shrink-0 px-2 py-1 text-xs font-semibold text-muted-foreground transition hover:text-destructive disabled:opacity-50"
-              >
-                Remove
-              </button>
-            </div>
-          );
-        })}
-      </div>
-    )}
-  </ForgeSection>
-</ForgeCard>
+        {items.length ===
+        0 ? (
+          <ForgeEmptyState
+            title="Nothing has been added yet."
+            description="Use Focus as a simple weekly checklist, with or without a guided practice plan."
+            className="mt-5 py-8"
+          />
+        ) : (
+          <div className="mt-5 divide-y divide-border">
+            {items.map(
+              (item) => {
+                const updating =
+                  updatingId ===
+                  item.id;
+
+                return (
+                  <div
+                    key={
+                      item.id
+                    }
+                    className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+                  >
+                    <button
+                      type="button"
+                      disabled={
+                        updating
+                      }
+                      onClick={() =>
+                        toggleItem(
+                          item,
+                        )
+                      }
+                      aria-label={
+                        item.completed
+                          ? `Mark ${item.title} incomplete`
+                          : `Complete ${item.title}`
+                      }
+                      className={[
+                        "flex size-6 shrink-0 items-center justify-center rounded-md border text-xs font-bold transition disabled:opacity-50",
+                        item.completed
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-border bg-background hover:border-foreground/40",
+                      ].join(
+                        " ",
+                      )}
+                    >
+                      {item.completed
+                        ? "✓"
+                        : ""}
+                    </button>
+
+                    <div className="min-w-0 flex-1">
+                      <button
+                        type="button"
+                        disabled={
+                          updating
+                        }
+                        onClick={() =>
+                          toggleItem(
+                            item,
+                          )
+                        }
+                        className={[
+                          "block w-full text-left text-sm font-semibold transition disabled:opacity-50",
+                          item.completed
+                            ? "text-muted-foreground line-through"
+                            : "text-foreground",
+                        ].join(
+                          " ",
+                        )}
+                      >
+                        {
+                          item.title
+                        }
+                      </button>
+
+                      {item.scheduled_date ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {new Date(
+                            `${item.scheduled_date}T00:00:00`,
+                          ).toLocaleDateString(
+                            "en-US",
+                            {
+                              weekday:
+                                "long",
+                            },
+                          )}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={
+                        updating
+                      }
+                      onClick={() =>
+                        removeItem(
+                          item,
+                        )
+                      }
+                      className="shrink-0 px-2 py-1 text-xs font-semibold text-muted-foreground transition hover:text-destructive disabled:opacity-50"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                );
+              },
+            )}
+          </div>
+        )}
+      </ForgeSection>
+    </ForgeCard>
   );
 }
 
-
-
- 
 type PlanSlotProps = {
   session: PracticeSession;
   area?: LifeArea;
@@ -721,10 +1077,13 @@ function PlanSlot({
   session,
   area,
 }: PlanSlotProps) {
-  const queryClient = useQueryClient();
+  const queryClient =
+    useQueryClient();
 
-  const [updating, setUpdating] =
-    useState(false);
+  const [
+    updating,
+    setUpdating,
+  ] = useState(false);
 
   const status =
     session.status ??
@@ -734,7 +1093,9 @@ function PlanSlot({
 
   async function refreshSessions() {
     await queryClient.invalidateQueries({
-      queryKey: ["sessions"],
+      queryKey: [
+        "sessions",
+      ],
     });
   }
 
@@ -743,13 +1104,20 @@ function PlanSlot({
     successMessage?: string,
   ) {
     try {
-      setUpdating(true);
+      setUpdating(
+        true,
+      );
 
       await action();
+
       await refreshSessions();
 
-      if (successMessage) {
-        toast.success(successMessage);
+      if (
+        successMessage
+      ) {
+        toast.success(
+          successMessage,
+        );
       }
     } catch (error) {
       console.error(
@@ -764,75 +1132,95 @@ function PlanSlot({
         ),
       );
     } finally {
-      setUpdating(false);
+      setUpdating(
+        false,
+      );
     }
   }
 
   return (
     <article
-      className={`group rounded-lg border p-2.5 transition-all ${
-        status === "completed"
+      className={[
+        "group rounded-lg border p-2.5 transition-all",
+        status ===
+        "completed"
           ? "bg-muted opacity-60"
-          : status === "skipped"
+          : status ===
+              "skipped"
             ? "border-dashed bg-muted/40 opacity-60"
-            : status === "in_progress"
+            : status ===
+                "in_progress"
               ? "bg-accent/5"
-              : "bg-background"
-      }`}
+              : "bg-background",
+      ].join(" ")}
       style={{
         borderColor:
-          status === "scheduled" &&
+          status ===
+            "scheduled" &&
           area?.color
             ? `${area.color}33`
             : undefined,
       }}
     >
-      {area && (
+      {area ? (
         <p
           className="truncate font-mono text-[9px] uppercase tracking-widest"
           style={{
-            color: area.color,
+            color:
+              area.color,
           }}
         >
           {area.name}
         </p>
-      )}
+      ) : null}
 
       <div className="mt-0.5 flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <p
-            className={`truncate text-xs font-bold ${
-              status === "completed"
+            className={[
+              "truncate text-xs font-bold",
+              status ===
+              "completed"
                 ? "line-through"
-                : ""
-            }`}
+                : "",
+            ].join(" ")}
           >
             {session.title}
           </p>
 
           <p className="text-[10px] text-muted-foreground">
-            {session.duration_minutes}m
+            {
+              session.duration_minutes
+            }
+            m
 
             {status ===
-              "in_progress" &&
-              " · In progress"}
+            "in_progress"
+              ? " · In progress"
+              : ""}
 
-            {status === "skipped" &&
-              " · Skipped"}
+            {status ===
+            "skipped"
+              ? " · Skipped"
+              : ""}
           </p>
         </div>
 
-        {status === "completed" && (
+        {status ===
+        "completed" ? (
           <Check className="size-3.5 shrink-0 text-accent" />
-        )}
+        ) : null}
       </div>
 
       <div className="mt-2 flex items-center gap-1">
-        {status === "scheduled" && (
+        {status ===
+        "scheduled" ? (
           <>
             <button
               type="button"
-              disabled={updating}
+              disabled={
+                updating
+              }
               onClick={() =>
                 runAction(
                   () =>
@@ -845,12 +1233,15 @@ function PlanSlot({
               className="inline-flex items-center gap-1 rounded-md border border-border px-1.5 py-1 text-[9px] font-semibold transition hover:bg-muted disabled:cursor-wait disabled:opacity-50"
             >
               <CirclePlay className="size-3" />
+
               Start
             </button>
 
             <button
               type="button"
-              disabled={updating}
+              disabled={
+                updating
+              }
               onClick={() =>
                 runAction(
                   () =>
@@ -867,12 +1258,15 @@ function PlanSlot({
               className="inline-flex items-center gap-1 rounded-md bg-foreground px-1.5 py-1 text-[9px] font-semibold text-background transition hover:bg-foreground/90 disabled:cursor-wait disabled:opacity-50"
             >
               <Check className="size-3" />
+
               Done
             </button>
 
             <button
               type="button"
-              disabled={updating}
+              disabled={
+                updating
+              }
               onClick={() =>
                 runAction(
                   () =>
@@ -889,14 +1283,16 @@ function PlanSlot({
               <SkipForward className="size-3" />
             </button>
           </>
-        )}
+        ) : null}
 
         {status ===
-          "in_progress" && (
+        "in_progress" ? (
           <>
             <button
               type="button"
-              disabled={updating}
+              disabled={
+                updating
+              }
               onClick={() =>
                 runAction(
                   () =>
@@ -913,12 +1309,15 @@ function PlanSlot({
               className="inline-flex items-center gap-1 rounded-md bg-foreground px-1.5 py-1 text-[9px] font-semibold text-background transition hover:bg-foreground/90 disabled:cursor-wait disabled:opacity-50"
             >
               <Check className="size-3" />
+
               Complete
             </button>
 
             <button
               type="button"
-              disabled={updating}
+              disabled={
+                updating
+              }
               onClick={() =>
                 runAction(
                   () =>
@@ -935,13 +1334,17 @@ function PlanSlot({
               <RotateCcw className="size-3" />
             </button>
           </>
-        )}
+        ) : null}
 
-        {(status === "completed" ||
-          status === "skipped") && (
+        {status ===
+          "completed" ||
+        status ===
+          "skipped" ? (
           <button
             type="button"
-            disabled={updating}
+            disabled={
+              updating
+            }
             onClick={() =>
               runAction(
                 () =>
@@ -954,13 +1357,16 @@ function PlanSlot({
             className="inline-flex items-center gap-1 rounded-md border border-border px-1.5 py-1 text-[9px] font-semibold transition hover:bg-muted disabled:cursor-wait disabled:opacity-50"
           >
             <RotateCcw className="size-3" />
+
             Restore
           </button>
-        )}
+        ) : null}
 
         <button
           type="button"
-          disabled={updating}
+          disabled={
+            updating
+          }
           onClick={() =>
             runAction(
               () =>
@@ -992,32 +1398,47 @@ function AddSlot({
   skills,
   existingSessions,
 }: AddSlotProps) {
-  const queryClient = useQueryClient();
+  const queryClient =
+    useQueryClient();
 
-  const [open, setOpen] =
-    useState(false);
+  const [
+    open,
+    setOpen,
+  ] = useState(false);
 
   const [
     addingSkillId,
     setAddingSkillId,
-  ] = useState<string | null>(null);
+  ] = useState<
+    string | null
+  >(null);
 
-  const availableSkills = skills.filter(
-    (skill) =>
-      !existingSessions.some(
-        (session) =>
-          session.skill_id === skill.id,
-      ),
-  );
+  const availableSkills =
+    skills.filter(
+      (skill) =>
+        !existingSessions.some(
+          (
+            session,
+          ) =>
+            session.skill_id ===
+            skill.id,
+        ),
+    );
 
-  async function add(skill: Skill) {
+  async function add(
+    skill: Skill,
+  ) {
     try {
-      setAddingSkillId(skill.id);
+      setAddingSkillId(
+        skill.id,
+      );
 
       const {
         data,
-        error: userError,
-      } = await supabase.auth.getUser();
+        error:
+          userError,
+      } =
+        await supabase.auth.getUser();
 
       if (userError) {
         throw userError;
@@ -1030,41 +1451,63 @@ function AddSlot({
       }
 
       const {
-        error: insertError,
-      } = await supabase
-        .from("practice_sessions")
-        .insert({
-          user_id: data.user.id,
-          skill_id: skill.id,
-          scheduled_date: date,
-          scheduled_time: null,
-          duration_minutes:
-            skill.session_minutes,
-          title: skill.name,
-          notes: skill.notes,
-          status: "scheduled",
-          completed: false,
-          completed_at: null,
-          reflection: null,
-          intensity:
-            skill.difficulty >= 4
-              ? "high"
-              : skill.difficulty <= 1
-                ? "recovery"
-                : "deliberate",
-          sort_order:
-            existingSessions.length,
-        });
+        error:
+          insertError,
+      } =
+        await supabase
+          .from(
+            "practice_sessions",
+          )
+          .insert({
+            user_id:
+              data.user.id,
+            skill_id:
+              skill.id,
+            scheduled_date:
+              date,
+            scheduled_time:
+              null,
+            duration_minutes:
+              skill.session_minutes,
+            title:
+              skill.name,
+            notes:
+              skill.notes,
+            status:
+              "scheduled",
+            completed:
+              false,
+            completed_at:
+              null,
+            reflection:
+              null,
+            intensity:
+              skill.difficulty >=
+              4
+                ? "high"
+                : skill.difficulty <=
+                    1
+                  ? "recovery"
+                  : "deliberate",
+            sort_order:
+              existingSessions.length,
+          });
 
-      if (insertError) {
+      if (
+        insertError
+      ) {
         throw insertError;
       }
 
       await queryClient.invalidateQueries({
-        queryKey: ["sessions"],
+        queryKey: [
+          "sessions",
+        ],
       });
 
-      setOpen(false);
+      setOpen(
+        false,
+      );
 
       toast.success(
         `${skill.name} added.`,
@@ -1082,11 +1525,15 @@ function AddSlot({
         ),
       );
     } finally {
-      setAddingSkillId(null);
+      setAddingSkillId(
+        null,
+      );
     }
   }
 
-  if (skills.length === 0) {
+  if (
+    skills.length === 0
+  ) {
     return null;
   }
 
@@ -1096,17 +1543,20 @@ function AddSlot({
         type="button"
         onClick={() =>
           setOpen(
-            (current) => !current,
+            (current) =>
+              !current,
           )
         }
         className="flex w-full items-center justify-center rounded-lg border border-dashed border-border py-1.5 text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
         aria-label="Add practice session"
-        aria-expanded={open}
+        aria-expanded={
+          open
+        }
       >
         <Plus className="size-3.5" />
       </button>
 
-      {open && (
+      {open ? (
         <div className="absolute z-20 mt-1 max-h-60 w-48 overflow-auto rounded-lg border border-border bg-surface p-1 shadow-xl">
           {availableSkills.length ===
           0 ? (
@@ -1116,12 +1566,18 @@ function AddSlot({
             </p>
           ) : (
             availableSkills.map(
-              (skill) => (
+              (
+                skill,
+              ) => (
                 <button
                   type="button"
-                  key={skill.id}
+                  key={
+                    skill.id
+                  }
                   onClick={() =>
-                    add(skill)
+                    add(
+                      skill,
+                    )
                   }
                   disabled={
                     addingSkillId !==
@@ -1138,30 +1594,39 @@ function AddSlot({
             )
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
-
-
-
-
 
 function getErrorMessage(
   error: unknown,
   fallback: string,
 ): string {
-  if (error instanceof Error) {
+  if (
+    error instanceof Error
+  ) {
     return error.message;
   }
 
   if (
-    typeof error === "object" &&
+    typeof error ===
+      "object" &&
     error !== null &&
-    "message" in error &&
-    typeof error.message === "string"
+    "message" in
+      error &&
+    typeof (
+      error as {
+        message?: unknown;
+      }
+    ).message ===
+      "string"
   ) {
-    return error.message;
+    return (
+      error as {
+        message: string;
+      }
+    ).message;
   }
 
   return fallback;
