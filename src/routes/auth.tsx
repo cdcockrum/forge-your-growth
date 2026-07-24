@@ -17,7 +17,7 @@ export const Route = createFileRoute("/auth")({
     const { data } = await supabase.auth.getSession();
 
     if (data.session) {
-      throw redirect({ to: "/dashboard" });
+      throw redirect({ to: "/today" });
     }
   },
   component: AuthPage,
@@ -43,7 +43,7 @@ function AuthPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: `${window.location.origin}/today`,
         },
       });
 
@@ -77,7 +77,7 @@ function AuthPage() {
             data: {
               full_name: name.trim(),
             },
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: `${window.location.origin}/today`,
           },
         });
 
@@ -87,7 +87,7 @@ function AuthPage() {
 
         if (data.session) {
           toast.success("Your Forge account has been created.");
-          await navigate({ to: "/dashboard" });
+          await navigate({ to: "/today" });
           return;
         }
 
@@ -106,7 +106,7 @@ function AuthPage() {
       }
 
       toast.success("Welcome back.");
-      await navigate({ to: "/dashboard" });
+      await navigate({ to: "/today" });
     } catch (caughtError) {
       const message =
         caughtError instanceof Error
