@@ -23,6 +23,10 @@ import {
   visionQuery,
 } from "@/features/vision";
 
+import {
+  useNavigate,
+} from "@tanstack/react-router";
+
 export const Route = createFileRoute(
   "/_authenticated/vision",
 )({
