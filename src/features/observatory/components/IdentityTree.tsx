@@ -236,14 +236,15 @@ export function IdentityTree({
         </div>
       </header>
 
-      <div className="mt-6 overflow-x-auto">
-        <div className="min-w-[760px]">
-          <svg
-            viewBox="0 0 800 680"
-            role="img"
-            aria-label="Identity tree showing selectable trait branches and supporting skills"
-            className="h-auto w-full"
-          >
+      <div className="mt-6 overflow-hidden">
+        <div className="flex justify-center">
+          <div className="w-full max-w-[760px]">
+            <svg
+              viewBox="0 0 800 680"
+              role="img"
+              aria-label="Identity tree showing selectable trait branches and supporting skills"
+              className="h-auto w-full"
+            >
             <defs>
               <linearGradient
                 id="forge-tree-trunk"
@@ -573,8 +574,9 @@ export function IdentityTree({
               },
             )}
           </svg>
-        </div>
-      </div>
+    </div>
+  </div>
+</div>
 
       {selectedBranch ? (
         <div

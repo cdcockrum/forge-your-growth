@@ -66,6 +66,10 @@ import {
   ForgeStat,
 } from "@/components/forge";
 
+import {
+  EmptyPlanState,
+} from "@/features/plan/components/EmptyPlanState";
+
 export const Route = createFileRoute(
   "/_authenticated/plan",
 )({
@@ -707,30 +711,7 @@ function WeeklyFocus({
 
 
 
- function EmptyPlanState() {
-  return (
-    <ForgeEmptyState
-      eyebrow="Your growth system begins here"
-      title="Add a skill to generate your first week."
-      description={
-        <>
-          Define what you want to practice, how often you
-          want to practice it, and your preferred days.
-          Forge will build and assess the weekly plan.
-        </>
-      }
-      action={
-        <Link to="/skills">
-          <ForgeButton size="large">
-            <Plus className="size-4" />
-            Add your first skill
-          </ForgeButton>
-        </Link>
-      }
-    />
-  );
-}
-
+ 
 type PlanSlotProps = {
   session: PracticeSession;
   area?: LifeArea;

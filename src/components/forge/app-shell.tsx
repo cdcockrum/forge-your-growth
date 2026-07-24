@@ -9,7 +9,7 @@ const NAV = [
   { to: "/today", label: "Today", icon: Target, },
   { to: "/plan", label: "Practice", icon: Calendar, },
   { to: "/observatory", label: "Observatory", icon: Telescope },
-  { to: "/intelligence", label: "Intelligence", icon: Sparkles, },
+  { to: "/intelligence", label: "Insights", icon: Sparkles, },
   { to: "/vision", label: "Profile", icon: LayoutDashboard, },
 
   // Workspace 
@@ -206,7 +206,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <item.icon className="size-4.5" />
                 </span>
 
-                <span className="max-w-full truncate text-[9px] font-extrabold uppercase tracking-tight">
+                <span className="max-w-full truncate text-[8px] font-extrabold uppercase tracking-[-0.02em] sm:text-[9px]">
                   {item.label}
                 </span>
               </Link>
