@@ -1,11 +1,13 @@
-import type { ReactNode } from "react";
+import type {
+  ReactNode,
+} from "react";
 
 type ForgeSectionProps = {
   eyebrow?: string;
-  title?: string;
+  title: string;
   description?: string;
   action?: ReactNode;
-  children: ReactNode;
+  children?: ReactNode;
 };
 
 export function ForgeSection({
@@ -14,38 +16,30 @@ export function ForgeSection({
   description,
   action,
   children,
-}: ForgeSectionProps): React.ReactElement {
+}: ForgeSectionProps) {
   return (
-    <section className="space-y-5">
-      {(eyebrow || title || description || action) && (
-        <header className="flex items-start justify-between gap-6">
-          <div className="min-w-0">
-            {eyebrow && (
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-                {eyebrow}
-              </p>
-            )}
-
-            {title && (
-              <h2 className="mt-2 text-3xl font-black tracking-tight">
-                {title}
-              </h2>
-            )}
-
-            {description && (
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                {description}
-              </p>
-            )}
-          </div>
-
-          {action && (
-            <div className="shrink-0">
-              {action}
-            </div>
+    <section className="space-y-6">
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          {eyebrow && (
+            <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
+              {eyebrow}
+            </p>
           )}
-        </header>
-      )}
+
+          <h2 className="mt-2 text-2xl font-bold tracking-tight">
+            {title}
+          </h2>
+
+          {description && (
+            <p className="mt-2 max-w-3xl text-muted-foreground">
+              {description}
+            </p>
+          )}
+        </div>
+
+        {action}
+      </header>
 
       {children}
     </section>
