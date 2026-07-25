@@ -349,8 +349,9 @@ function AreaForm({
     event.preventDefault();
 
     if (!name.trim()) {
+      toast.error("Enter a name for your life area.");
       return;
-    }
+      }
 
     try {
       setLoading(true);
@@ -520,20 +521,17 @@ function AreaForm({
 
           <ForgeButton
             type="submit"
-            disabled={
-              loading ||
-              !name.trim()
-            }
+            disabled={loading}
           >
             {loading
               ? "Creating..."
               : "Create area"}
           </ForgeButton>
-        </div>
-      </div>
-    </form>
-  );
-}
+                  </div>
+                </div>
+              </form>
+            );
+          }
 
 const SUGGESTIONS = [
   {
