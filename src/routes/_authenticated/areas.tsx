@@ -1,6 +1,7 @@
 import {
   Suspense,
   useState,
+  type FormEvent,
 } from "react";
 
 import {
@@ -20,9 +21,7 @@ import {
   X,
 } from "lucide-react";
 
-import {
-  toast,
-} from "sonner";
+import { toast } from "sonner";
 
 import {
   ForgeButton,
@@ -31,26 +30,18 @@ import {
   ForgePage,
 } from "@/components/forge";
 
-import {
-  PageHeader,
-} from "@/components/forge/app-shell";
+import { PageHeader } from "@/components/forge/app-shell";
 
-import {
-  lifeAreasQuery,
-} from "@/features/forge/queries";
+import { lifeAreasQuery } from "@/features/forge/queries";
 
 import {
   LIFE_AREA_COLORS,
   type LifeArea,
 } from "@/features/forge/types";
 
-import {
-  SetupProgress,
-} from "@/features/onboarding";
+import { SetupProgress } from "@/features/onboarding";
 
-import {
-  supabase,
-} from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute(
   "/_authenticated/areas",
@@ -67,11 +58,7 @@ export const Route = createFileRoute(
 function AreasPage() {
   return (
     <ForgePage>
-      <Suspense
-        fallback={
-          <AreasLoadingState />
-        }
-      >
+      <Suspense fallback={<AreasLoadingState />}>
         <AreasContent />
       </Suspense>
     </ForgePage>
@@ -94,55 +81,56 @@ function AreasLoadingState() {
 
 function AreasContent() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
-  const {
-    data: areas,
-  } = useSuspenseQuery(
+  const { data: areas } = useSuspenseQuery(
     lifeAreasQuery(),
   );
 
-  const [creating, setCreating] =
-    useState(false);
+  const [creating, setCreating] = useState(false);
+  const [continuing, setContinuing] = useState(false);
 
   async function continueToSkills() {
-  try {
-    const refreshedAreas =
-      await queryClient.fetchQuery(
-        lifeAreasQuery(),
-      );
+    try {
+      setContinuing(true);
 
-    if (refreshedAreas.length === 0) {
-      toast.error(
-        "Add at least one life area before continuing.",
-      );
+      const refreshedAreas =
+        await queryClient.fetchQuery({
+          ...lifeAreasQuery(),
+          staleTime: 0,
+        });
 
-      return;
-    }
+      if (refreshedAreas.length === 0) {
+        toast.error(
+          "Add at least one life area before continuing.",
+        );
 
-    await navigate({
-      to: "/skills",
-    });
-  } catch (error) {
-    console.error(
-      "Continue to skills error:",
-      error,
-    );
+        return;
+      }
 
-    toast.error(
-      getErrorMessage(
+      await navigate({
+        to: "/skills",
+      });
+    } catch (error) {
+      console.error(
+        "Continue to skills error:",
         error,
-        "Could not continue to skills.",
-      ),
-    );
+      );
+
+      toast.error(
+        getErrorMessage(
+          error,
+          "Could not continue to skills.",
+        ),
+      );
+    } finally {
+      setContinuing(false);
+    }
   }
-}
 
   return (
     <div className="space-y-8">
-      <SetupProgress
-        currentStep={2}
-      />
+      <SetupProgress currentStep={2} />
 
       <PageHeader
         eyebrow="Life Areas"
@@ -158,9 +146,7 @@ function AreasContent() {
         action={
           <ForgeButton
             type="button"
-            onClick={() => {
-              void continueToSkills();
-            }}
+            onClick={() => setCreating(true)}
             className="gap-2"
           >
             <Plus className="size-4" />
@@ -171,24 +157,19 @@ function AreasContent() {
       />
 
       <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
-        Life Areas organize the parts
-        of your life that matter.
-        Choose a few broad domains;
-        you will add specific skills
-        next.
+        Life Areas organize the parts of your life that
+        matter. Choose a few broad domains; you will add
+        specific skills next.
       </p>
 
-      {areas.length === 0 &&
-      !creating ? (
+      {areas.length === 0 && !creating ? (
         <ForgeEmptyState
           title="Choose your first life area."
           description="Start with one or two meaningful areas, such as Creativity, Health, Career, Languages, Relationships, or Spirituality."
           action={
             <ForgeButton
               type="button"
-              onClick={() =>
-                setCreating(true)
-              }
+              onClick={() => setCreating(true)}
             >
               Add your first area
             </ForgeButton>
@@ -199,9 +180,7 @@ function AreasContent() {
       <div className="grid gap-3 md:grid-cols-2">
         {creating ? (
           <AreaForm
-            onClose={() =>
-              setCreating(false)
-            }
+            onClose={() => setCreating(false)}
           />
         ) : null}
 
@@ -215,9 +194,8 @@ function AreasContent() {
 
       {areas.length > 0 ? (
         <SuggestedAreas
-          existing={areas.map(
-            (area) =>
-              area.name.toLowerCase(),
+          existing={areas.map((area) =>
+            area.name.toLowerCase(),
           )}
         />
       ) : null}
@@ -235,15 +213,15 @@ function AreasContent() {
 
         <ForgeButton
           type="button"
-          disabled={
-            areas.length === 0
-          }
-          onClick={
-            continueToSkills
-          }
+          disabled={continuing}
+          onClick={() => {
+            void continueToSkills();
+          }}
           className="gap-2"
         >
-          Continue to skills
+          {continuing
+            ? "Loading..."
+            : "Continue to skills"}
 
           <ArrowRight className="size-4" />
         </ForgeButton>
@@ -257,42 +235,49 @@ function AreaCard({
 }: {
   area: LifeArea;
 }) {
-  const queryClient =
-    useQueryClient();
+  const queryClient = useQueryClient();
 
   async function remove() {
-    const confirmed =
-      window.confirm(
-        `Archive "${area.name}"?`,
-      );
+    const confirmed = window.confirm(
+      `Archive "${area.name}"?`,
+    );
 
     if (!confirmed) {
       return;
     }
 
-    const { error } =
-      await supabase
+    try {
+      const { error } = await supabase
         .from("life_areas")
         .update({
           archived: true,
         })
         .eq("id", area.id);
 
-    if (error) {
-      toast.error(
-        error.message,
+      if (error) {
+        throw error;
+      }
+
+      await queryClient.invalidateQueries({
+        queryKey: lifeAreasQuery().queryKey,
+      });
+
+      toast.success(
+        `${area.name} archived.`,
+      );
+    } catch (error) {
+      console.error(
+        "Archive area error:",
+        error,
       );
 
-      return;
+      toast.error(
+        getErrorMessage(
+          error,
+          "Life area could not be archived.",
+        ),
+      );
     }
-
-    await queryClient.invalidateQueries({
-      queryKey: lifeAreasQuery().queryKey,
-    });
-
-    toast.success(
-      `${area.name} archived.`,
-    );
   }
 
   return (
@@ -301,14 +286,15 @@ function AreaCard({
         <div
           className="size-10 rounded-xl"
           style={{
-            backgroundColor:
-              area.color,
+            backgroundColor: area.color,
           }}
         />
 
         <button
           type="button"
-          onClick={remove}
+          onClick={() => {
+            void remove();
+          }}
           className="rounded-lg p-2 text-muted-foreground opacity-100 transition hover:bg-destructive/10 hover:text-destructive md:opacity-0 md:group-hover:opacity-100"
           aria-label={`Archive ${area.name}`}
         >
@@ -326,8 +312,8 @@ function AreaCard({
         </p>
       ) : (
         <p className="mt-2 text-sm text-muted-foreground">
-          A broad domain for your
-          future skills and practices.
+          A broad domain for your future skills and
+          practices.
         </p>
       )}
 
@@ -343,35 +329,33 @@ function AreaForm({
 }: {
   onClose: () => void;
 }) {
-  const queryClient =
-    useQueryClient();
+  const queryClient = useQueryClient();
 
-  const [name, setName] =
-    useState("");
+  const [name, setName] = useState("");
+  const [vision, setVision] = useState("");
 
-  const [vision, setVision] =
-    useState("");
+  const [color, setColor] = useState<string>(
+    LIFE_AREA_COLORS[0],
+  );
 
-  const [color, setColor] =
-    useState<string>(
-      LIFE_AREA_COLORS[0],
-    );
-
-  const [priority, setPriority] =
-    useState(3);
-
-  const [loading, setLoading] =
-    useState(false);
+  const [priority, setPriority] = useState(3);
+  const [loading, setLoading] = useState(false);
 
   async function submit(
-    event: React.FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
 
-    if (!name.trim()) {
-      toast.error("Enter a name for your life area.");
+    const trimmedName = name.trim();
+    const trimmedVision = vision.trim();
+
+    if (!trimmedName) {
+      toast.error(
+        "Enter a name for your life area.",
+      );
+
       return;
-      }
+    }
 
     try {
       setLoading(true);
@@ -379,8 +363,7 @@ function AreaForm({
       const {
         data,
         error: userError,
-      } =
-        await supabase.auth.getUser();
+      } = await supabase.auth.getUser();
 
       if (userError) {
         throw userError;
@@ -392,18 +375,15 @@ function AreaForm({
         );
       }
 
-      const { error } =
-        await supabase
-          .from("life_areas")
-          .insert({
-            user_id: data.user.id,
-            name: name.trim(),
-            vision:
-              vision.trim() ||
-              null,
-            color,
-            priority,
-          });
+      const { error } = await supabase
+        .from("life_areas")
+        .insert({
+          user_id: data.user.id,
+          name: trimmedName,
+          vision: trimmedVision || null,
+          color,
+          priority,
+        });
 
       if (error) {
         throw error;
@@ -413,12 +393,21 @@ function AreaForm({
         queryKey: lifeAreasQuery().queryKey,
       });
 
+      await queryClient.refetchQueries({
+        queryKey: lifeAreasQuery().queryKey,
+      });
+
       toast.success(
-        `${name.trim()} added.`,
+        `${trimmedName} added.`,
       );
 
       onClose();
     } catch (error) {
+      console.error(
+        "Create life area error:",
+        error,
+      );
+
       toast.error(
         getErrorMessage(
           error,
@@ -435,7 +424,7 @@ function AreaForm({
       onSubmit={submit}
       className="rounded-2xl border-2 border-foreground bg-card p-5 md:col-span-2"
     >
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between">
         <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
           New life area
         </p>
@@ -450,63 +439,71 @@ function AreaForm({
         </button>
       </div>
 
-      <input
-        autoFocus
-        placeholder="e.g. Career, Health, Creativity"
-        value={name}
-        onChange={(event) =>
-          setName(
-            event.target.value,
-          )
-        }
-        className="w-full bg-transparent text-2xl font-extrabold tracking-tight outline-none placeholder:text-muted-foreground/40"
-      />
+      <div className="space-y-5">
+        <label className="block">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            Area name
+          </span>
 
-      <textarea
-        placeholder="Who do you want to become in this area?"
-        value={vision}
-        onChange={(event) =>
-          setVision(
-            event.target.value,
-          )
-        }
-        rows={2}
-        className="mt-3 w-full resize-none bg-transparent text-sm text-muted-foreground outline-none placeholder:text-muted-foreground/40"
-      />
+          <input
+            autoFocus
+            required
+            type="text"
+            placeholder="e.g. Career, Health, Creativity"
+            value={name}
+            onChange={(event) =>
+              setName(event.target.value)
+            }
+            className="mt-2 w-full bg-transparent text-2xl font-extrabold tracking-tight outline-none placeholder:text-muted-foreground/40"
+          />
+        </label>
 
-      <div className="mt-5 flex flex-col gap-5">
+        <label className="block">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            Vision
+          </span>
+
+          <textarea
+            placeholder="Who do you want to become in this area?"
+            value={vision}
+            onChange={(event) =>
+              setVision(event.target.value)
+            }
+            rows={3}
+            className="mt-2 w-full resize-none rounded-xl border border-border bg-background/50 px-4 py-3 text-sm leading-6 text-foreground outline-none transition placeholder:text-muted-foreground/50 focus:border-foreground/30 focus:ring-2 focus:ring-accent/20"
+          />
+        </label>
+      </div>
+
+      <div className="mt-6 flex flex-col gap-5">
         <div>
           <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
             Color
           </span>
 
           <div className="mt-3 flex flex-wrap gap-2">
-            {LIFE_AREA_COLORS.map(
-              (option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() =>
-                    setColor(option)
-                  }
-                  className={[
-                    "size-8 rounded-lg transition-all",
-                    color === option
-                      ? "ring-2 ring-foreground ring-offset-2 ring-offset-background"
-                      : "",
-                  ].join(" ")}
-                  style={{
-                    backgroundColor:
-                      option,
-                  }}
-                  aria-label={`Select color ${option}`}
-                />
-              ),
-            )}
+            {LIFE_AREA_COLORS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setColor(option)}
+                className={[
+                  "size-8 rounded-lg transition-all",
+                  color === option
+                    ? "ring-2 ring-foreground ring-offset-2 ring-offset-background"
+                    : "",
+                ].join(" ")}
+                style={{
+                  backgroundColor: option,
+                }}
+                aria-label={`Select color ${option}`}
+                aria-pressed={color === option}
+              />
+            ))}
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <label>
             <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
               Priority
@@ -516,13 +513,10 @@ function AreaForm({
               value={priority}
               onChange={(event) =>
                 setPriority(
-                  Number(
-                    event.target
-                      .value,
-                  ),
+                  Number(event.target.value),
                 )
               }
-              className="mt-2 block h-11 rounded-xl border border-border bg-background px-3 text-sm"
+              className="mt-2 block h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none transition focus:border-foreground/30 focus:ring-2 focus:ring-accent/20"
             >
               {[1, 2, 3, 4, 5].map(
                 (option) => (
@@ -545,11 +539,11 @@ function AreaForm({
               ? "Creating..."
               : "Create area"}
           </ForgeButton>
-                  </div>
-                </div>
-              </form>
-            );
-          }
+        </div>
+      </div>
+    </form>
+  );
+}
 
 const SUGGESTIONS = [
   {
@@ -591,33 +585,32 @@ function SuggestedAreas({
 }: {
   existing: string[];
 }) {
-  const queryClient =
-    useQueryClient();
+  const queryClient = useQueryClient();
+  const [addingName, setAddingName] =
+    useState<string | null>(null);
 
-  const remaining =
-    SUGGESTIONS.filter(
-      (suggestion) =>
-        !existing.includes(
-          suggestion.name.toLowerCase(),
-        ),
-    );
+  const remaining = SUGGESTIONS.filter(
+    (suggestion) =>
+      !existing.includes(
+        suggestion.name.toLowerCase(),
+      ),
+  );
 
   if (remaining.length === 0) {
     return null;
   }
 
-  async function add(
-    suggestion: {
-      name: string;
-      color: string;
-    },
-  ) {
+  async function add(suggestion: {
+    name: string;
+    color: string;
+  }) {
     try {
+      setAddingName(suggestion.name);
+
       const {
         data,
         error: userError,
-      } =
-        await supabase.auth.getUser();
+      } = await supabase.auth.getUser();
 
       if (userError) {
         throw userError;
@@ -629,15 +622,15 @@ function SuggestedAreas({
         );
       }
 
-      const { error } =
-        await supabase
-          .from("life_areas")
-          .insert({
-            user_id: data.user.id,
-            name: suggestion.name,
-            color:
-              suggestion.color,
-          });
+      const { error } = await supabase
+        .from("life_areas")
+        .insert({
+          user_id: data.user.id,
+          name: suggestion.name,
+          vision: null,
+          color: suggestion.color,
+          priority: 3,
+        });
 
       if (error) {
         throw error;
@@ -647,16 +640,27 @@ function SuggestedAreas({
         queryKey: lifeAreasQuery().queryKey,
       });
 
+      await queryClient.refetchQueries({
+        queryKey: lifeAreasQuery().queryKey,
+      });
+
       toast.success(
         `${suggestion.name} added.`,
       );
     } catch (error) {
+      console.error(
+        "Add suggested area error:",
+        error,
+      );
+
       toast.error(
         getErrorMessage(
           error,
           "Suggested area could not be added.",
         ),
       );
+    } finally {
+      setAddingName(null);
     }
   }
 
@@ -667,17 +671,19 @@ function SuggestedAreas({
       </p>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        {remaining.map(
-          (suggestion) => (
+        {remaining.map((suggestion) => {
+          const adding =
+            addingName === suggestion.name;
+
+          return (
             <button
-              key={
-                suggestion.name
-              }
+              key={suggestion.name}
               type="button"
-              onClick={() =>
-                add(suggestion)
-              }
-              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-medium transition hover:border-foreground/30 hover:bg-muted"
+              disabled={addingName !== null}
+              onClick={() => {
+                void add(suggestion);
+              }}
+              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-medium transition hover:border-foreground/30 hover:bg-muted disabled:cursor-wait disabled:opacity-50"
             >
               <span
                 className="size-2 rounded-full"
@@ -687,10 +693,12 @@ function SuggestedAreas({
                 }}
               />
 
-              {suggestion.name}
+              {adding
+                ? "Adding..."
+                : suggestion.name}
             </button>
-          ),
-        )}
+          );
+        })}
       </div>
     </section>
   );
@@ -700,9 +708,7 @@ function getErrorMessage(
   error: unknown,
   fallback: string,
 ): string {
-  if (
-    error instanceof Error
-  ) {
+  if (error instanceof Error) {
     return error.message;
   }
 
