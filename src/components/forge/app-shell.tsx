@@ -1,42 +1,117 @@
-import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Compass, Flame, Calendar, Target, BookOpen, LineChart, LogOut, Sparkles, History, Telescope, } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  Link,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
+import {
+  BookOpen,
+  Calendar,
+  Compass,
+  Flame,
+  History,
+  LayoutDashboard,
+  LineChart,
+  LogOut,
+  Sparkles,
+  Target,
+  Telescope,
+} from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState, type ReactNode, } from "react";
-import { ForgeCommandPalette, } from "@/components/forge";
+import {
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+
+import { ForgeCommandPalette } from "@/components/forge";
+import { supabase } from "@/integrations/supabase/client";
 
 const NAV = [
-  { to: "/today", label: "Today", icon: Target, },
-  { to: "/plan", label: "Practice", icon: Calendar, },
-  { to: "/observatory", label: "Observatory", icon: Telescope },
-  { to: "/intelligence", label: "Insights", icon: Sparkles, },
-  { to: "/vision", label: "Profile", icon: LayoutDashboard, },
+  {
+    to: "/today",
+    label: "Today",
+    icon: Target,
+  },
+  {
+    to: "/advisor",
+    label: "Advisor",
+    icon: Sparkles,
+  },
+  {
+    to: "/plan",
+    label: "Practice",
+    icon: Calendar,
+  },
+  {
+    to: "/observatory",
+    label: "Observatory",
+    icon: Telescope,
+  },
+  {
+    to: "/intelligence",
+    label: "Insights",
+    icon: Sparkles,
+  },
 
-  // Workspace 
+  // Workspace
 
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, },
-  { to: "/progress", label: "Progress", icon: LineChart, },
-  { to: "/skills", label: "Skills", icon: Flame, },
-  { to: "/journey", label: "Journey", icon: Compass, },
-  { to: "/review", label: "Review", icon: BookOpen, },
-  { to: "/timeline", label: "Timeline", icon: History, },
+  {
+    to: "/vision",
+    label: "Profile",
+    icon: LayoutDashboard,
+  },
+  {
+    to: "/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    to: "/progress",
+    label: "Progress",
+    icon: LineChart,
+  },
+  {
+    to: "/skills",
+    label: "Skills",
+    icon: Flame,
+  },
+  {
+    to: "/journey",
+    label: "Journey",
+    icon: Compass,
+  },
+  {
+    to: "/review",
+    label: "Review",
+    icon: BookOpen,
+  },
+  {
+    to: "/timeline",
+    label: "Timeline",
+    icon: History,
+  },
 ] as const;
 
-export function AppShell({ children }: { children: ReactNode }) {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+export function AppShell({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+
   const navigate = useNavigate();
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
+
   const primary = NAV.slice(0, 5);
   const workspace = NAV.slice(5);
-  const [ commandOpen, setCommandOpen, ] = useState(false);
+
+  const [commandOpen, setCommandOpen] = useState(false);
 
   useEffect(() => {
-    function handleCommandShortcut(
-      event: KeyboardEvent,
-    ) {
-      const commandKey =
-        event.metaKey ||
-        event.ctrlKey;
+    function handleCommandShortcut(event: KeyboardEvent) {
+      const commandKey = event.metaKey || event.ctrlKey;
 
       if (
         commandKey &&
@@ -44,9 +119,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       ) {
         event.preventDefault();
 
-        setCommandOpen(
-          (current) => !current,
-        );
+        setCommandOpen((current) => !current);
       }
     }
 
@@ -64,39 +137,46 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, []);
 
   async function handleSignOut() {
-    await qc.cancelQueries();
-    qc.clear();
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
+    await queryClient.cancelQueries();
+
+    queryClient.clear();
+
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.error("Unable to sign out:", error);
+      return;
+    }
+
+    await navigate({
+      to: "/auth",
+      replace: true,
+    });
   }
 
   return (
-     <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen bg-background text-foreground">
       <ForgeCommandPalette
         open={commandOpen}
         onOpenChange={setCommandOpen}
       />
-      {/* Sidebar (desktop) */}
-      <aside className="hidden md:flex flex-col w-60 border-r border-border bg-surface sticky top-0 h-screen">
+
+      {/* Desktop sidebar */}
+      <aside className="sticky top-0 hidden h-screen w-60 flex-col border-r border-border bg-surface md:flex">
+        {/* Brand */}
         <div className="border-b border-border px-5 py-6">
           <div className="flex items-center gap-4">
-
             <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 via-red-500 to-amber-600 shadow-lg">
-
               {/* Anvil */}
-
               <div className="absolute h-1.5 w-6 rounded-full bg-white/90" />
 
               <div className="absolute mt-2 h-3 w-2 rounded-sm bg-white/90" />
 
               {/* Spark */}
-
               <div className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-yellow-300 shadow-[0_0_10px_rgba(253,224,71,0.8)]" />
-
             </div>
 
             <div>
-
               <h1 className="text-lg font-black tracking-tight">
                 Forge
               </h1>
@@ -104,87 +184,93 @@ export function AppShell({ children }: { children: ReactNode }) {
               <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
                 Personal Intelligence
               </p>
-
             </div>
-
           </div>
         </div>
+
+        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-3">
-    <div className="space-y-1">
-      {primary.map((item) => {
-        const active =
-          pathname === item.to ||
-          (item.to !== "/dashboard" &&
-            pathname.startsWith(item.to));
+          <div className="space-y-1">
+            {primary.map((item) => {
+              const active =
+                pathname === item.to ||
+                pathname.startsWith(`${item.to}/`);
 
-        return (
-          <Link
-            key={item.to}
-            to={item.to}
-            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-              active
-                ? "bg-foreground text-background"
-                : "text-foreground/70 hover:bg-muted hover:text-foreground"
-            }`}
-          >
-            <item.icon className="size-4" />
-            {item.label}
-          </Link>
-        );
-      })}
-    </div>
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                    active
+                      ? "bg-foreground text-background"
+                      : "text-foreground/70 hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  <item.icon className="size-4" />
 
-    <div className="my-6 border-t border-border" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
 
-    <p className="mb-2 px-3 font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-      Workspace
-    </p>
+          <div className="my-6 border-t border-border" />
 
-    <div className="space-y-1">
-      {workspace.map((item) => {
-        const active =
-          pathname === item.to ||
-          pathname.startsWith(item.to);
+          <p className="mb-2 px-3 font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+            Workspace
+          </p>
 
-        return (
-          <Link
-            key={item.to}
-            to={item.to}
-            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-              active
-                ? "bg-foreground text-background"
-                : "text-foreground/70 hover:bg-muted hover:text-foreground"
-            }`}
-          >
-            <item.icon className="size-4" />
-            {item.label}
-          </Link>
-        );
-      })}
-    </div>
-  </nav>
-        <div className="p-3 border-t border-border">
+          <div className="space-y-1">
+            {workspace.map((item) => {
+              const active =
+                pathname === item.to ||
+                pathname.startsWith(`${item.to}/`);
+
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                    active
+                      ? "bg-foreground text-background"
+                      : "text-foreground/70 hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  <item.icon className="size-4" />
+
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+
+        {/* Sign out */}
+        <div className="border-t border-border p-3">
           <button
+            type="button"
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <LogOut className="size-4" />
-            Sign out
+
+            <span>Sign out</span>
           </button>
         </div>
       </aside>
 
-      {/* Main */}
-      <main className="min-w-0 flex-1 pb-28 md:pb-8">{children}</main>
+      {/* Main content */}
+      <main className="min-w-0 flex-1 pb-28 md:pb-8">
+        {children}
+      </main>
 
-      {/* Bottom nav — mobile */}
+      {/* Mobile bottom navigation */}
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur-xl md:hidden">
         <div className="mx-auto flex max-w-md items-center justify-around">
           {primary.map((item) => {
             const active =
               pathname === item.to ||
-              (item.to !== "/dashboard" &&
-                pathname.startsWith(item.to));
+              pathname.startsWith(`${item.to}/`);
 
             return (
               <Link
@@ -203,7 +289,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       : "bg-transparent"
                   }`}
                 >
-                  <item.icon className="size-4.5" />
+                  <item.icon className="size-[18px]" />
                 </span>
 
                 <span className="max-w-full truncate text-[8px] font-extrabold uppercase tracking-[-0.02em] sm:text-[9px]">
@@ -228,15 +314,17 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <header className="flex items-end justify-between gap-4 mb-8 animate-reveal">
+    <header className="mb-8 flex items-end justify-between gap-4 animate-reveal">
       <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-2">
+        <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
           {eyebrow}
         </p>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-[0.95] text-balance">
+
+        <h1 className="text-balance text-3xl font-extrabold leading-[0.95] tracking-tight md:text-4xl">
           {title}
         </h1>
       </div>
+
       {action}
     </header>
   );
