@@ -94,6 +94,7 @@ function AreasLoadingState() {
 
 function AreasContent() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient()
 
   const {
     data: areas,
@@ -104,8 +105,14 @@ function AreasContent() {
   const [creating, setCreating] =
     useState(false);
 
-  function continueToSkills() {
-    if (areas.length === 0) {
+  async function continueToSkills() {
+  try {
+    const refreshedAreas =
+      await queryClient.fetchQuery(
+        lifeAreasQuery(),
+      );
+
+    if (refreshedAreas.length === 0) {
       toast.error(
         "Add at least one life area before continuing.",
       );
@@ -113,10 +120,23 @@ function AreasContent() {
       return;
     }
 
-    void navigate({
+    await navigate({
       to: "/skills",
     });
+  } catch (error) {
+    console.error(
+      "Continue to skills error:",
+      error,
+    );
+
+    toast.error(
+      getErrorMessage(
+        error,
+        "Could not continue to skills.",
+      ),
+    );
   }
+}
 
   return (
     <div className="space-y-8">
@@ -138,9 +158,9 @@ function AreasContent() {
         action={
           <ForgeButton
             type="button"
-            onClick={() =>
-              setCreating(true)
-            }
+            onClick={() => {
+              void continueToSkills();
+            }}
             className="gap-2"
           >
             <Plus className="size-4" />
@@ -267,7 +287,7 @@ function AreaCard({
     }
 
     await queryClient.invalidateQueries({
-      queryKey: ["life_areas"],
+      queryKey: lifeAreasQuery().queryKey,
     });
 
     toast.success(
@@ -390,9 +410,7 @@ function AreaForm({
       }
 
       await queryClient.invalidateQueries({
-        queryKey: [
-          "life_areas",
-        ],
+        queryKey: lifeAreasQuery().queryKey,
       });
 
       toast.success(
@@ -626,9 +644,7 @@ function SuggestedAreas({
       }
 
       await queryClient.invalidateQueries({
-        queryKey: [
-          "life_areas",
-        ],
+        queryKey: lifeAreasQuery().queryKey,
       });
 
       toast.success(
