@@ -1,6 +1,9 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/forge/app-shell";
+import {
+  TourProvider,
+} from "@/features/tour";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -15,7 +18,9 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
   return (
     <AppShell>
-      <Outlet />
+      <TourProvider>
+        <Outlet />
+      </TourProvider>
     </AppShell>
   );
 }

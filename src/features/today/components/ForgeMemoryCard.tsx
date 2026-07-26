@@ -1,48 +1,66 @@
-import { ForgeCard } from "@/components/forge";
-
 import type {
   ForgeMemory,
 } from "@/features/forge-engine";
 
+type DisplayMemory = Pick<
+  ForgeMemory,
+  "id" | "title" | "summary"
+> & {
+  /**
+   * Supports memories created by the older Forge
+   * pipeline while it is being migrated.
+   */
+  statement?: string;
+};
+
 type ForgeMemoryCardProps = {
-  memories: ForgeMemory[];
+  memories?: DisplayMemory[];
 };
 
 export function ForgeMemoryCard({
-  memories,
+  memories = [],
 }: ForgeMemoryCardProps) {
   if (memories.length === 0) {
-    return null;
+    return (
+      <div className="rounded-2xl border border-dashed border-border bg-surface/40 px-5 py-6">
+        <p className="text-sm font-semibold">
+          Forge is still learning.
+        </p>
+
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          Meaningful patterns and memories will appear here as
+          you practice and reflect.
+        </p>
+      </div>
+    );
   }
 
   return (
-    <ForgeCard padding="large">
-      <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-        Forge remembers
-      </p>
+    <div className="space-y-3">
+      {memories.map((memory, index) => {
+        const body =
+          memory.statement?.trim() ||
+          memory.summary?.trim() ||
+          "A meaningful pattern has been recorded.";
 
-      <div className="mt-5 space-y-4">
-        {memories.slice(0, 3).map((memory) => (
+        return (
           <article
-            key={memory.id}
-            className="border-b border-border pb-4 last:border-b-0 last:pb-0"
+            key={
+              memory.id ||
+              `${memory.title || body}-${index}`
+            }
+            className="rounded-2xl border border-border bg-surface px-5 py-4"
           >
-            <p className="text-base font-bold leading-7">
-              {memory.statement}
+            <p className="text-sm font-semibold">
+              {memory.title?.trim() || "Forge remembers"}
             </p>
 
-            <div className="mt-2 flex items-center justify-between gap-4 text-xs text-muted-foreground">
-              <span className="capitalize">
-                {memory.category}
-              </span>
-
-              <span className="font-mono">
-                {memory.confidence}% confidence
-              </span>
-            </div>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {body}
+            </p>
           </article>
-        ))}
-      </div>
-    </ForgeCard>
+        );
+      })}
+    </div>
   );
 }

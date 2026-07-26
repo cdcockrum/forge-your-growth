@@ -30,11 +30,6 @@ import {
   TodayLoadingState,
 } from "@/features/today";
 
-import {
-  ForgeTour,
-  todayTour,
-} from "@/features/tour";
-
 export const Route = createFileRoute(
   "/_authenticated/today",
 )({
@@ -96,10 +91,6 @@ function TodayPage() {
         }
       >
         <TodayContent />
-
-        <ForgeTour
-          tour={todayTour}
-        />
       </Suspense>
     </ForgePage>
   );

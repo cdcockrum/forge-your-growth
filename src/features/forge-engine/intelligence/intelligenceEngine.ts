@@ -16,9 +16,11 @@ export function buildIntelligenceConclusion(
     confidence:
       input.advisor.confidence,
 
-    evidence: buildEvidence(input),
+    evidence:
+      buildEvidence(input),
 
-    reasoning: buildReasoning(input),
+    reasoning:
+      buildReasoning(input),
 
     recommendation:
       input.insight.recommendation,
@@ -30,14 +32,23 @@ function buildEvidence(
 ): string[] {
   const evidence: string[] = [];
 
-  if (input.identity.strongestIdentity) {
+  const memories =
+    input.memory?.memories ?? [];
+
+  const historyEvents =
+    input.history?.events ?? [];
+
+  if (
+    input.identity
+      ?.strongestIdentity
+  ) {
     evidence.push(
       "Identity Engine",
     );
   }
 
   if (
-    input.memory.memories.length > 0
+    memories.length > 0
   ) {
     evidence.push(
       "Memory Engine",
@@ -45,7 +56,7 @@ function buildEvidence(
   }
 
   if (
-    input.history.events.length > 0
+    historyEvents.length > 0
   ) {
     evidence.push(
       "History Engine",
@@ -69,26 +80,40 @@ function buildReasoning(
   const reasoning: string[] = [];
 
   reasoning.push(
-    `Completion rate: ${input.progress.completionRate}%`,
+    `Completion rate: ${
+      input.progress
+        ?.completionRate ?? 0
+    }%`,
   );
 
   reasoning.push(
-    `Momentum score: ${input.momentum.score}`,
+    `Momentum score: ${
+      input.momentum
+        ?.score ?? 0
+    }`,
   );
 
+  const strongestIdentity =
+    input.identity
+      ?.strongestIdentity;
+
   if (
-    input.identity.strongestIdentity
+    strongestIdentity
   ) {
     reasoning.push(
-      `${input.identity.strongestIdentity.identity.name} has become your strongest identity.`
+      `${strongestIdentity.identity.name} has become your strongest identity.`,
     );
   }
 
+  const strongestMemory =
+    input.memory
+      ?.strongest?.[0];
+
   if (
-    input.memory.strongest[0]
+    strongestMemory
   ) {
     reasoning.push(
-      input.memory.strongest[0].statement,
+      strongestMemory.statement,
     );
   }
 

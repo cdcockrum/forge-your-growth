@@ -37,8 +37,6 @@ import type {
   ReasoningStage,
 } from "./stages";
 
-
-
 export type ForgePipelineOptions = {
   vision: Vision | null;
   sessions: PracticeSession[];
@@ -81,14 +79,22 @@ export function buildForgePipelineSnapshot({
       assessment,
     });
 
+  
+  /*
+   * Context engines may be working with an account that
+   * has not accumulated memories or history yet.
+   *
+   * Normalize all collections here so every downstream
+   * engine receives a complete, predictable shape.
+   */
   const context = buildContextStage({
-    vision,
-    foundation: observation,
-    interpretation,
-    assessment,
-    achievements,
-    review,
-  });
+  vision,
+  foundation: observation,
+  interpretation,
+  assessment,
+  achievements,
+  review,
+});
 
   const reasoning = buildReasoningStage({
     vision,
@@ -122,24 +128,85 @@ export function buildForgeState(
     context,
     reasoning,
     explanation,
-  } = buildForgePipelineSnapshot(options);
+  } = buildForgePipelineSnapshot(
+    options,
+  );
 
   return {
-    vision: options.vision,
-    progress: observation.progress,
-    momentum: interpretation.momentum,
-    forgeScore: observation.forgeScore,
-    forgeHealth: observation.forgeHealth,
-    identity: interpretation.identity,
-    coach: context.coach,
-    narrative: context.narrative,
-    assessment: options.assessment,
-    insight: reasoning.insight,
-    history: context.history,
-    memory: context.memory,
-    advisor: reasoning.advisor,
-    intelligence: reasoning.intelligence,
-    evidence: explanation.evidence,
-    traits: interpretation.traits,
+    vision:
+      options.vision,
+
+    progress:
+      observation.progress,
+
+    momentum:
+      interpretation.momentum,
+
+    forgeScore:
+      observation.forgeScore,
+
+    forgeHealth:
+      observation.forgeHealth,
+
+    identity:
+      interpretation.identity,
+
+    coach:
+      context.coach,
+
+    narrative:
+      context.narrative,
+
+    assessment:
+      options.assessment,
+
+    insight:
+      reasoning.insight,
+
+    history: {
+      ...context.history,
+
+      events:
+        context.history?.events ??
+        [],
+    },
+
+    memory: {
+      ...context.memory,
+
+      memory: context.memory,
+    },
+
+    advisor: {
+      ...reasoning.advisor,
+
+      actions:
+        reasoning.advisor?.actions ??
+        [],
+
+      reasoning:
+        reasoning.advisor?.reasoning ??
+        [],
+    },
+
+    intelligence: {
+      ...reasoning.intelligence,
+
+      evidence:
+        reasoning.intelligence?.evidence ??
+        [],
+
+      reasoning:
+        reasoning.intelligence?.reasoning ??
+        [],
+    },
+
+    evidence:
+      explanation.evidence ??
+      [],
+
+    traits:
+      interpretation.traits ??
+      [],
   };
 }

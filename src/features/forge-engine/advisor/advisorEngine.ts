@@ -217,9 +217,12 @@ function buildReasoning(
     `Momentum is ${input.momentum.score} with ${input.momentum.burnoutRisk} burnout risk.`,
   );
 
-  if (input.memory.strongest[0]) {
+  const strongestMemory =
+  input.memory?.strongest?.[0];
+
+  if (strongestMemory) {
     reasoning.push(
-      `Forge remembers: ${input.memory.strongest[0].statement}`,
+      `Forge remembers: ${strongestMemory.statement}`,
     );
   }
 
@@ -238,19 +241,35 @@ function buildReasoning(
 function calculateAdvisorConfidence(
   input: AdvisorInput,
 ): number {
+  const memories =
+    input.memory?.memories ?? [];
+
+  const historyEvents =
+    input.history?.events ?? [];
+
+  const insightConfidence =
+    Number.isFinite(
+      input.insight?.confidence,
+    )
+      ? input.insight.confidence
+      : 0;
+
   const evidence = [
     input.progress.totalSessions > 0,
     input.progress.completedSessions > 0,
-    input.memory.memories.length > 0,
-    input.history.events.length > 0,
-    Boolean(input.identity.strongestIdentity),
+    memories.length > 0,
+    historyEvents.length > 0,
+    Boolean(
+      input.identity
+        ?.strongestIdentity,
+    ),
     Boolean(input.vision),
   ].filter(Boolean).length;
 
   return Math.min(
     100,
     Math.round(
-      input.insight.confidence * 0.65 +
+      insightConfidence * 0.65 +
         evidence * 6,
     ),
   );

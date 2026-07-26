@@ -4,6 +4,7 @@ import type {
 } from "@/features/forge/types";
 
 import type {
+  ForgeMemory,
   ForgeState,
 } from "@/features/forge-engine";
 
@@ -64,7 +65,19 @@ export function buildTodayViewModel({
     },
 
     memory: {
-      memories: forge.memory.strongest,
+      memories: (
+        forge.memory?.strongest ?? []
+      ).map(
+        (memory: ForgeMemory) => ({
+          id: memory.id,
+          title:
+            memory.title ??
+            "Forge remembers",
+          summary:
+            memory.summary ??
+            "A meaningful pattern has been recorded.",
+        }),
+      ),
     },
 
     momentum: {

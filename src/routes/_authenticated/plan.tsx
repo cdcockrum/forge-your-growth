@@ -354,42 +354,41 @@ function PlanContent() {
         currentStep={4}
       />
 
-      <PageHeader
-        eyebrow={`Week of ${monday.toLocaleDateString(
-          "en-US",
-          {
-            month: "short",
-            day: "numeric",
-          },
-        )}`}
-        title={
-          <>
-            Forge your{" "}
-            <span className="text-accent">
-              first week
-            </span>
-            .
-          </>
-        }
-        action={
-          <ForgeButton
-            type="button"
-            onClick={
-              generateWeek
-            }
-            disabled={
-              generating
-            }
-            className="gap-2"
-          >
-            <Sparkles className="size-4" />
+      <div data-tour="week-title">
+  <PageHeader
+    eyebrow={`Week of ${monday.toLocaleDateString(
+      "en-US",
+      {
+        month: "short",
+        day: "numeric",
+      },
+    )}`}
+    title={
+      <>
+        Forge your{" "}
+        <span className="text-accent">
+          first week
+        </span>
+        .
+      </>
+    }
+    action={
+      <ForgeButton
+        data-tour="week-generate"
+        type="button"
+        onClick={generateWeek}
+        disabled={generating}
+        className="gap-2"
+      >
+        <Sparkles className="size-4" />
 
-            {generating
-              ? "Forging..."
-              : "Generate week"}
-          </ForgeButton>
-        }
-      />
+        {generating
+          ? "Forging..."
+          : "Generate week"}
+      </ForgeButton>
+    }
+  />
+</div>
 
       <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
         Your Vision established
@@ -401,27 +400,28 @@ function PlanContent() {
         into a sustainable weekly
         rhythm.
       </p>
-
+      
+      <div data-tour="week-assessment">
       <WeekAssessment
-        assessment={
-          assessment
-        }
-      />
+          assessment={assessment}
+        />
+      </div>
+     
 
+      <div data-tour="week-focus">
       <WeeklyFocus
-        items={
-          focusItems
-        }
-        weekStart={
-          start
-        }
-      />
+          items={focusItems}
+          weekStart={start}
+        />
+      </div>
+      
 
       {skills.length === 0 ? (
         <EmptyPlanState />
       ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-7">
-          {dayList.map(
+        <div data-tour="week-calendar">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-7">
+                {dayList.map(
             (day) => {
               const daySessions =
                 sessions.filter(
@@ -533,7 +533,8 @@ function PlanContent() {
             },
           )}
         </div>
-      )}
+  </div>
+)}
 
       <div className="grid gap-4 md:grid-cols-4">
         <ForgeStat
@@ -613,22 +614,14 @@ function PlanContent() {
             )}
           </div>
 
-          <ForgeButton
-            type="button"
-            size="large"
-            disabled={
-              sessions.length ===
-              0
-            }
-            onClick={
-              enterForge
-            }
-            className="gap-2"
-          >
-            Enter your Forge
+            <ForgeButton
+              data-tour="week-enter"
+              onClick={enterForge}
+            >
+              Enter your Forge
 
-            <ArrowRight className="size-4" />
-          </ForgeButton>
+              <ArrowRight className="size-4" />
+            </ForgeButton>
         </div>
       </ForgeCard>
     </div>

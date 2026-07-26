@@ -132,29 +132,32 @@ function AreasContent() {
     <div className="space-y-8">
       <SetupProgress currentStep={2} />
 
-      <PageHeader
-        eyebrow="Life Areas"
-        title={
-          <>
-            Where do you want to{" "}
-            <span className="text-accent">
-              grow
-            </span>
-            ?
-          </>
-        }
-        action={
-          <ForgeButton
-            type="button"
-            onClick={() => setCreating(true)}
-            className="gap-2"
-          >
-            <Plus className="size-4" />
+      <div data-tour="areas-title">
+        <PageHeader
+          eyebrow="Life Areas"
+          title={
+            <>
+              Where do you want to{" "}
+              <span className="text-accent">
+                grow
+              </span>
+              ?
+            </>
+          }
+          action={
+            <ForgeButton
+              data-tour="areas-new"
+              type="button"
+              onClick={() => setCreating(true)}
+              className="gap-2"
+            >
+              <Plus className="size-4" />
 
-            New area
-          </ForgeButton>
-        }
-      />
+              New area
+            </ForgeButton>
+          }
+        />
+      </div>
 
       <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
         Life Areas organize the parts of your life that
@@ -168,6 +171,7 @@ function AreasContent() {
           description="Start with one or two meaningful areas, such as Creativity, Health, Career, Languages, Relationships, or Spirituality."
           action={
             <ForgeButton
+              data-tour="areas-empty-create"
               type="button"
               onClick={() => setCreating(true)}
             >
@@ -212,6 +216,7 @@ function AreasContent() {
         </p>
 
         <ForgeButton
+          data-tour="areas-continue"
           type="button"
           disabled={continuing}
           onClick={() => {
@@ -421,6 +426,7 @@ function AreaForm({
 
   return (
     <form
+      data-tour="area-form"
       onSubmit={submit}
       className="rounded-2xl border-2 border-foreground bg-card p-5 md:col-span-2"
     >
@@ -440,7 +446,10 @@ function AreaForm({
       </div>
 
       <div className="space-y-5">
-        <label className="block">
+        <label
+          data-tour="area-name"
+          className="block"
+        >
           <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
             Area name
           </span>
@@ -458,7 +467,10 @@ function AreaForm({
           />
         </label>
 
-        <label className="block">
+        <label
+          data-tour="area-vision"
+          className="block"
+        >
           <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
             Vision
           </span>
@@ -476,7 +488,7 @@ function AreaForm({
       </div>
 
       <div className="mt-6 flex flex-col gap-5">
-        <div>
+        <div data-tour="area-color">
           <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
             Color
           </span>
@@ -504,7 +516,7 @@ function AreaForm({
         </div>
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <label>
+          <label data-tour="area-priority">
             <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
               Priority
             </span>
@@ -532,6 +544,7 @@ function AreaForm({
           </label>
 
           <ForgeButton
+            data-tour="area-create"
             type="submit"
             disabled={loading}
           >
@@ -586,6 +599,7 @@ function SuggestedAreas({
   existing: string[];
 }) {
   const queryClient = useQueryClient();
+
   const [addingName, setAddingName] =
     useState<string | null>(null);
 

@@ -72,16 +72,20 @@ export const Route = createFileRoute(
   "/_authenticated/skills",
 )({
   loader: async ({ context }) => {
-    const { start, end } =
-      getHistoryRange();
+    const {
+      start,
+      end,
+    } = getHistoryRange();
 
     await Promise.all([
       context.queryClient.ensureQueryData(
         skillsQuery(),
       ),
+
       context.queryClient.ensureQueryData(
         lifeAreasQuery(),
       ),
+
       context.queryClient.ensureQueryData(
         sessionsInRangeQuery(
           start,
@@ -116,7 +120,9 @@ function SkillsLoadingState() {
       <div className="h-28 animate-pulse rounded-2xl bg-muted" />
 
       {Array.from(
-        { length: 3 },
+        {
+          length: 3,
+        },
         (_, index) => (
           <div
             key={index}
@@ -129,33 +135,42 @@ function SkillsLoadingState() {
 }
 
 function SkillsContent() {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
+
   const queryClient =
     useQueryClient();
 
-  const { start, end } =
-    getHistoryRange();
+  const {
+    start,
+    end,
+  } = getHistoryRange();
 
-  const { data: skills } =
-    useSuspenseQuery(
-      skillsQuery(),
-    );
+  const {
+    data: skills,
+  } = useSuspenseQuery(
+    skillsQuery(),
+  );
 
-  const { data: areas } =
-    useSuspenseQuery(
-      lifeAreasQuery(),
-    );
+  const {
+    data: areas,
+  } = useSuspenseQuery(
+    lifeAreasQuery(),
+  );
 
-  const { data: sessions } =
-    useSuspenseQuery(
-      sessionsInRangeQuery(
-        start,
-        end,
-      ),
-    );
+  const {
+    data: sessions,
+  } = useSuspenseQuery(
+    sessionsInRangeQuery(
+      start,
+      end,
+    ),
+  );
 
-  const [creating, setCreating] =
-    useState(false);
+  const [
+    creating,
+    setCreating,
+  ] = useState(false);
 
   const [
     applyingSkillId,
@@ -164,14 +179,18 @@ function SkillsContent() {
     null,
   );
 
-  const adaptation = useMemo(
-    () =>
-      analyzeAdaptivePlanning({
+  const adaptation =
+    useMemo(
+      () =>
+        analyzeAdaptivePlanning({
+          sessions,
+          skills,
+        }),
+      [
         sessions,
         skills,
-      }),
-    [sessions, skills],
-  );
+      ],
+    );
 
   const isCreatingFirstSkill =
     skills.length === 0;
@@ -184,7 +203,9 @@ function SkillsContent() {
         recommendation.skillId,
       );
 
-      const { error } =
+      const {
+        error,
+      } =
         await supabase
           .from("skills")
           .update({
@@ -201,13 +222,19 @@ function SkillsContent() {
       }
 
       await queryClient.invalidateQueries({
-        queryKey: ["skills"],
+        queryKey:
+          skillsQuery().queryKey,
       });
 
       toast.success(
         `${recommendation.skillName} schedule updated.`,
       );
     } catch (error) {
+      console.error(
+        "Apply skill recommendation error:",
+        error,
+      );
+
       toast.error(
         getErrorMessage(
           error,
@@ -215,12 +242,16 @@ function SkillsContent() {
         ),
       );
     } finally {
-      setApplyingSkillId(null);
+      setApplyingSkillId(
+        null,
+      );
     }
   }
 
   function continueToPlan() {
-    if (skills.length === 0) {
+    if (
+      skills.length === 0
+    ) {
       toast.error(
         "Add at least one skill before continuing.",
       );
@@ -239,33 +270,38 @@ function SkillsContent() {
         currentStep={3}
       />
 
-      <PageHeader
-        eyebrow="Skills"
-        title={
-          <>
-            What will you{" "}
-            <span className="text-accent">
-              practice
-            </span>
-            ?
-          </>
-        }
-        action={
-          areas.length > 0 ? (
-            <ForgeButton
-              type="button"
-              onClick={() =>
-                setCreating(true)
-              }
-              className="gap-2"
-            >
-              <Plus className="size-4" />
+      <div data-tour="skills-title">
+        <PageHeader
+          eyebrow="Skills"
+          title={
+            <>
+              What will you{" "}
+              <span className="text-accent">
+                practice
+              </span>
+              ?
+            </>
+          }
+          action={
+            areas.length > 0 ? (
+              <ForgeButton
+                data-tour="skills-new"
+                type="button"
+                onClick={() =>
+                  setCreating(
+                    true,
+                  )
+                }
+                className="gap-2"
+              >
+                <Plus className="size-4" />
 
-              New skill
-            </ForgeButton>
-          ) : undefined
-        }
-      />
+                New skill
+              </ForgeButton>
+            ) : undefined
+          }
+        />
+      </div>
 
       <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
         Skills turn broad Life Areas
@@ -281,7 +317,9 @@ function SkillsContent() {
         !creating ? (
         <NoSkillsState
           onCreate={() =>
-            setCreating(true)
+            setCreating(
+              true,
+            )
           }
         />
       ) : (
@@ -289,40 +327,54 @@ function SkillsContent() {
           <div className="space-y-3">
             {creating ? (
               <SkillForm
-                areas={areas}
+                areas={
+                  areas
+                }
                 continueAfterCreate={
                   isCreatingFirstSkill
                 }
                 onClose={() =>
-                  setCreating(false)
+                  setCreating(
+                    false,
+                  )
                 }
               />
             ) : null}
 
-            {skills.map((skill) => (
-              <SkillRow
-                key={skill.id}
-                skill={skill}
-                area={areas.find(
-                  (area) =>
-                    area.id ===
-                    skill.life_area_id,
-                )}
-              />
-            ))}
+            {skills.map(
+              (skill) => (
+                <SkillRow
+                  key={
+                    skill.id
+                  }
+                  skill={
+                    skill
+                  }
+                  area={areas.find(
+                    (
+                      area,
+                    ) =>
+                      area.id ===
+                      skill.life_area_id,
+                  )}
+                />
+              ),
+            )}
           </div>
 
-          <AdaptiveRecommendations
-            adaptations={
-              adaptation.skills
-            }
-            applyingSkillId={
-              applyingSkillId
-            }
-            onApply={
-              applyRecommendation
-            }
-          />
+          <div data-tour="skills-recommendations">
+            <AdaptiveRecommendations
+              adaptations={
+                adaptation.skills
+              }
+              applyingSkillId={
+                applyingSkillId
+              }
+              onApply={
+                applyRecommendation
+              }
+            />
+          </div>
         </>
       )}
 
@@ -338,6 +390,7 @@ function SkillsContent() {
         </p>
 
         <ForgeButton
+          data-tour="skills-continue"
           type="button"
           disabled={
             skills.length === 0
@@ -386,8 +439,11 @@ function NoSkillsState({
       description="Choose something concrete that you can repeatedly practice, such as writing, French, running, painting, guitar, Python, or leadership."
       action={
         <ForgeButton
+          data-tour="skills-empty-create"
           type="button"
-          onClick={onCreate}
+          onClick={
+            onCreate
+          }
         >
           Add your first skill
         </ForgeButton>
@@ -408,8 +464,10 @@ function SkillRow({
   const queryClient =
     useQueryClient();
 
-  const [archiving, setArchiving] =
-    useState(false);
+  const [
+    archiving,
+    setArchiving,
+  ] = useState(false);
 
   async function archive() {
     const confirmed =
@@ -422,28 +480,41 @@ function SkillRow({
     }
 
     try {
-      setArchiving(true);
+      setArchiving(
+        true,
+      );
 
-      const { error } =
+      const {
+        error,
+      } =
         await supabase
           .from("skills")
           .update({
             archived: true,
           })
-          .eq("id", skill.id);
+          .eq(
+            "id",
+            skill.id,
+          );
 
       if (error) {
         throw error;
       }
 
       await queryClient.invalidateQueries({
-        queryKey: ["skills"],
+        queryKey:
+          skillsQuery().queryKey,
       });
 
       toast.success(
         `${skill.name} archived.`,
       );
     } catch (error) {
+      console.error(
+        "Archive skill error:",
+        error,
+      );
+
       toast.error(
         getErrorMessage(
           error,
@@ -451,7 +522,9 @@ function SkillRow({
         ),
       );
     } finally {
-      setArchiving(false);
+      setArchiving(
+        false,
+      );
     }
   }
 
@@ -462,7 +535,8 @@ function SkillRow({
           <p
             className="font-mono text-[10px] uppercase tracking-widest"
             style={{
-              color: area.color,
+              color:
+                area.color,
             }}
           >
             {area.name}
@@ -474,38 +548,60 @@ function SkillRow({
         </h3>
 
         <p className="mt-1 text-xs text-muted-foreground">
-          {skill.target_frequency}
+          {
+            skill.target_frequency
+          }
           ×/week ·{" "}
-          {skill.session_minutes}m ·
-          Difficulty{" "}
-          {skill.difficulty}/5 ·
-          Level{" "}
-          {skill.current_level}
+          {
+            skill.session_minutes
+          }
+          m · Difficulty{" "}
+          {
+            skill.difficulty
+          }
+          /5 · Level{" "}
+          {
+            skill.current_level
+          }
         </p>
 
         <div className="mt-3 flex flex-wrap gap-1">
-          {DAYS.map((day) => (
-            <span
-              key={day}
-              className={[
-                "rounded px-1.5 py-0.5 font-mono text-[9px] uppercase",
-                skill.preferred_days.includes(
-                  day,
-                )
-                  ? "bg-foreground text-background"
-                  : "bg-muted text-muted-foreground",
-              ].join(" ")}
-            >
-              {DAY_LABELS[day][0]}
-            </span>
-          ))}
+          {DAYS.map(
+            (day) => (
+              <span
+                key={
+                  day
+                }
+                className={[
+                  "rounded px-1.5 py-0.5 font-mono text-[9px] uppercase",
+                  skill.preferred_days.includes(
+                    day,
+                  )
+                    ? "bg-foreground text-background"
+                    : "bg-muted text-muted-foreground",
+                ].join(
+                  " ",
+                )}
+              >
+                {
+                  DAY_LABELS[
+                    day
+                  ][0]
+                }
+              </span>
+            ),
+          )}
         </div>
       </div>
 
       <button
         type="button"
-        onClick={archive}
-        disabled={archiving}
+        onClick={() => {
+          void archive();
+        }}
+        disabled={
+          archiving
+        }
         className="rounded-lg p-2 text-muted-foreground opacity-100 transition hover:bg-destructive/10 hover:text-destructive md:opacity-0 md:group-hover:opacity-100 disabled:cursor-wait disabled:opacity-50"
         aria-label={`Archive ${skill.name}`}
       >
@@ -526,48 +622,73 @@ function SkillForm({
   continueAfterCreate,
   onClose,
 }: SkillFormProps) {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
   const queryClient =
     useQueryClient();
 
-  const [name, setName] =
-    useState("");
+  const [
+    name,
+    setName,
+  ] = useState("");
 
-  const [areaId, setAreaId] =
-    useState(
-      areas[0]?.id ?? "",
-    );
+  const [
+    areaId,
+    setAreaId,
+  ] = useState(
+    areas[0]?.id ??
+      "",
+  );
 
-  const [frequency, setFrequency] =
-    useState(3);
+  const [
+    frequency,
+    setFrequency,
+  ] = useState(3);
 
-  const [minutes, setMinutes] =
-    useState(30);
+  const [
+    minutes,
+    setMinutes,
+  ] = useState(30);
 
-  const [difficulty, setDifficulty] =
-    useState(3);
+  const [
+    difficulty,
+    setDifficulty,
+  ] = useState(3);
 
-  const [days, setDays] =
-    useState<string[]>([
-      "mon",
-      "wed",
-      "fri",
-    ]);
+  const [
+    days,
+    setDays,
+  ] = useState<string[]>([
+    "mon",
+    "wed",
+    "fri",
+  ]);
 
-  const [loading, setLoading] =
-    useState(false);
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
 
   function toggleDay(
     day: string,
   ) {
-    setDays((current) =>
-      current.includes(day)
-        ? current.filter(
-            (selectedDay) =>
-              selectedDay !== day,
-          )
-        : [...current, day],
+    setDays(
+      (current) =>
+        current.includes(
+          day,
+        )
+          ? current.filter(
+              (
+                selectedDay,
+              ) =>
+                selectedDay !==
+                day,
+            )
+          : [
+              ...current,
+              day,
+            ],
     );
   }
 
@@ -580,19 +701,42 @@ function SkillForm({
       name.trim();
 
     if (
-      !trimmedName ||
-      !areaId ||
+      !trimmedName
+    ) {
+      toast.error(
+        "Enter a name for your skill.",
+      );
+
+      return;
+    }
+
+    if (!areaId) {
+      toast.error(
+        "Choose a Life Area for this skill.",
+      );
+
+      return;
+    }
+
+    if (
       days.length === 0
     ) {
+      toast.error(
+        "Choose at least one preferred practice day.",
+      );
+
       return;
     }
 
     try {
-      setLoading(true);
+      setLoading(
+        true,
+      );
 
       const {
         data,
-        error: userError,
+        error:
+          userError,
       } =
         await supabase.auth.getUser();
 
@@ -607,30 +751,41 @@ function SkillForm({
       }
 
       const {
-        error: insertError,
-      } = await supabase
-        .from("skills")
-        .insert({
-          user_id:
-            data.user.id,
-          life_area_id:
-            areaId,
-          name: trimmedName,
-          target_frequency:
-            frequency,
-          session_minutes:
-            minutes,
-          difficulty,
-          preferred_days:
-            days,
-        });
+        error:
+          insertError,
+      } =
+        await supabase
+          .from("skills")
+          .insert({
+            user_id:
+              data.user.id,
+            life_area_id:
+              areaId,
+            name:
+              trimmedName,
+            target_frequency:
+              frequency,
+            session_minutes:
+              minutes,
+            difficulty,
+            preferred_days:
+              days,
+          });
 
-      if (insertError) {
+      if (
+        insertError
+      ) {
         throw insertError;
       }
 
       await queryClient.invalidateQueries({
-        queryKey: ["skills"],
+        queryKey:
+          skillsQuery().queryKey,
+      });
+
+      await queryClient.refetchQueries({
+        queryKey:
+          skillsQuery().queryKey,
       });
 
       toast.success(
@@ -641,12 +796,19 @@ function SkillForm({
 
       onClose();
 
-      if (continueAfterCreate) {
+      if (
+        continueAfterCreate
+      ) {
         await navigate({
           to: "/plan",
         });
       }
     } catch (error) {
+      console.error(
+        "Create skill error:",
+        error,
+      );
+
       toast.error(
         getErrorMessage(
           error,
@@ -654,13 +816,18 @@ function SkillForm({
         ),
       );
     } finally {
-      setLoading(false);
+      setLoading(
+        false,
+      );
     }
   }
 
   return (
     <form
-      onSubmit={submit}
+      data-tour="skill-form"
+      onSubmit={
+        submit
+      }
       className="rounded-2xl border-2 border-foreground bg-card p-5"
     >
       <div className="mb-4 flex items-center justify-between">
@@ -677,7 +844,9 @@ function SkillForm({
 
         <button
           type="button"
-          onClick={onClose}
+          onClick={
+            onClose
+          }
           className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
           aria-label="Close new skill form"
         >
@@ -685,37 +854,69 @@ function SkillForm({
         </button>
       </div>
 
-      <input
-        autoFocus
-        placeholder="e.g. Deep Writing, French, Running"
-        value={name}
-        onChange={(event) =>
-          setName(
-            event.target.value,
-          )
-        }
-        className="w-full bg-transparent text-2xl font-extrabold tracking-tight outline-none placeholder:text-muted-foreground/40"
-      />
+      <label
+        data-tour="skill-name"
+        className="block"
+      >
+        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          Skill name
+        </span>
+
+        <input
+          autoFocus
+          required
+          type="text"
+          placeholder="e.g. Deep Writing, French, Running"
+          value={
+            name
+          }
+          onChange={(
+            event,
+          ) =>
+            setName(
+              event.target
+                .value,
+            )
+          }
+          className="mt-2 w-full bg-transparent text-2xl font-extrabold tracking-tight outline-none placeholder:text-muted-foreground/40"
+        />
+      </label>
 
       <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
         <SelectField
+          tourTarget="skill-area"
           label="Life area"
-          value={areaId}
-          onChange={setAreaId}
+          value={
+            areaId
+          }
+          onChange={
+            setAreaId
+          }
         >
-          {areas.map((area) => (
-            <option
-              key={area.id}
-              value={area.id}
-            >
-              {area.name}
-            </option>
-          ))}
+          {areas.map(
+            (area) => (
+              <option
+                key={
+                  area.id
+                }
+                value={
+                  area.id
+                }
+              >
+                {
+                  area.name
+                }
+              </option>
+            ),
+          )}
         </SelectField>
 
         <NumField
+          tourTarget="skill-frequency"
           label="Times/week"
-          value={frequency}
+          value={
+            frequency
+          }
           onChange={
             setFrequency
           }
@@ -724,17 +925,25 @@ function SkillForm({
         />
 
         <NumField
+          tourTarget="skill-minutes"
           label="Minutes"
-          value={minutes}
-          onChange={setMinutes}
+          value={
+            minutes
+          }
+          onChange={
+            setMinutes
+          }
           min={5}
           max={240}
           step={5}
         />
 
         <NumField
+          tourTarget="skill-difficulty"
           label="Difficulty"
-          value={difficulty}
+          value={
+            difficulty
+          }
           onChange={
             setDifficulty
           }
@@ -743,39 +952,58 @@ function SkillForm({
         />
       </div>
 
-      <div className="mt-5">
+      <div
+        data-tour="skill-days"
+        className="mt-5"
+      >
         <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
           Preferred days
         </p>
 
         <div className="flex flex-wrap gap-1.5">
-          {DAYS.map((day) => (
-            <button
-              key={day}
-              type="button"
-              onClick={() =>
-                toggleDay(day)
-              }
-              className={[
-                "rounded-lg px-3 py-1.5 text-xs font-semibold uppercase transition-colors",
-                days.includes(day)
-                  ? "bg-foreground text-background"
-                  : "bg-muted text-muted-foreground hover:bg-border",
-              ].join(" ")}
-            >
-              {DAY_LABELS[day]}
-            </button>
-          ))}
+          {DAYS.map(
+            (day) => (
+              <button
+                key={
+                  day
+                }
+                type="button"
+                onClick={() =>
+                  toggleDay(
+                    day,
+                  )
+                }
+                className={[
+                  "rounded-lg px-3 py-1.5 text-xs font-semibold uppercase transition-colors",
+                  days.includes(
+                    day,
+                  )
+                    ? "bg-foreground text-background"
+                    : "bg-muted text-muted-foreground hover:bg-border",
+                ].join(
+                  " ",
+                )}
+              >
+                {
+                  DAY_LABELS[
+                    day
+                  ]
+                }
+              </button>
+            ),
+          )}
         </div>
       </div>
 
       <div className="mt-5 flex justify-end">
         <ForgeButton
+          data-tour="skill-create"
           type="submit"
           disabled={
             loading ||
             !name.trim() ||
-            days.length === 0
+            days.length ===
+              0
           }
           className="gap-2"
         >
@@ -802,6 +1030,7 @@ type SelectFieldProps = {
     value: string,
   ) => void;
   children: ReactNode;
+  tourTarget?: string;
 };
 
 function SelectField({
@@ -809,18 +1038,29 @@ function SelectField({
   value,
   onChange,
   children,
+  tourTarget,
 }: SelectFieldProps) {
   return (
-    <label className="block">
+    <label
+      data-tour={
+        tourTarget
+      }
+      className="block"
+    >
       <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
         {label}
       </span>
 
       <select
-        value={value}
-        onChange={(event) =>
+        value={
+          value
+        }
+        onChange={(
+          event,
+        ) =>
           onChange(
-            event.target.value,
+            event.target
+              .value,
           )
         }
         className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-2 text-sm"
@@ -840,6 +1080,7 @@ type NumFieldProps = {
   min: number;
   max: number;
   step?: number;
+  tourTarget?: string;
 };
 
 function NumField({
@@ -849,23 +1090,40 @@ function NumField({
   min,
   max,
   step = 1,
+  tourTarget,
 }: NumFieldProps) {
   return (
-    <label className="block">
+    <label
+      data-tour={
+        tourTarget
+      }
+      className="block"
+    >
       <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
         {label}
       </span>
 
       <input
         type="number"
-        value={value}
-        min={min}
-        max={max}
-        step={step}
-        onChange={(event) =>
+        value={
+          value
+        }
+        min={
+          min
+        }
+        max={
+          max
+        }
+        step={
+          step
+        }
+        onChange={(
+          event,
+        ) =>
           onChange(
             Number(
-              event.target.value,
+              event.target
+                .value,
             ),
           )
         }
@@ -876,7 +1134,8 @@ function NumField({
 }
 
 function getHistoryRange() {
-  const endDate = new Date();
+  const endDate =
+    new Date();
 
   endDate.setHours(
     0,
@@ -886,15 +1145,24 @@ function getHistoryRange() {
   );
 
   const startDate =
-    new Date(endDate);
+    new Date(
+      endDate,
+    );
 
   startDate.setDate(
-    endDate.getDate() - 83,
+    endDate.getDate() -
+      83,
   );
 
   return {
-    start: iso(startDate),
-    end: iso(endDate),
+    start:
+      iso(
+        startDate,
+      ),
+    end:
+      iso(
+        endDate,
+      ),
   };
 }
 
@@ -902,19 +1170,24 @@ function getErrorMessage(
   error: unknown,
   fallback: string,
 ): string {
-  if (error instanceof Error) {
+  if (
+    error instanceof Error
+  ) {
     return error.message;
   }
 
   if (
-    typeof error === "object" &&
+    typeof error ===
+      "object" &&
     error !== null &&
-    "message" in error &&
+    "message" in
+      error &&
     typeof (
       error as {
         message?: unknown;
       }
-    ).message === "string"
+    ).message ===
+      "string"
   ) {
     return (
       error as {

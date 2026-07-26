@@ -15,6 +15,7 @@ import {
   Sparkles,
   Target,
   Telescope,
+  Search,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -25,6 +26,18 @@ import {
 
 import { ForgeCommandPalette } from "@/components/forge";
 import { supabase } from "@/integrations/supabase/client";
+
+import {
+  CircleHelp,
+  RotateCcw,
+} from "lucide-react";
+
+import {
+  resetAllTours,
+  resetTour,
+  startTour,
+  type TourId,
+} from "@/features/tour";
 
 const NAV = [
   {
@@ -244,6 +257,21 @@ export function AppShell({
             })}
           </div>
         </nav>
+
+        <button
+          type="button"
+          onClick={() => setCommandOpen(true)}
+          className="mx-3 mb-3 flex items-center justify-between rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+        >
+          <span className="flex items-center gap-3">
+            <Search className="size-4" />
+            Search & Guides
+          </span>
+
+          <span className="rounded-md border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">
+            Ctrl K
+          </span>
+        </button>
 
         {/* Sign out */}
         <div className="border-t border-border p-3">

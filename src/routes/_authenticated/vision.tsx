@@ -188,6 +188,7 @@ function VisionContent() {
         />
 
         <textarea
+  data-tour="mission"
           value={mission}
           onChange={(event) =>
             setMission(
@@ -213,6 +214,7 @@ function VisionContent() {
         />
 
         <input
+          data-tour="north-star"
           value={northStar}
           onChange={(event) =>
             setNorthStar(
@@ -231,6 +233,7 @@ function VisionContent() {
       </ForgeCard>
 
       <EditableListCard
+        tourId="values"
         eyebrow="Core values"
         title="What principles should guide your choices?"
         placeholder="Add a value"
@@ -249,6 +252,7 @@ function VisionContent() {
       />
 
       <EditableListCard
+        tourId="identities"
         eyebrow="Future identities"
         title="Who are you becoming through practice?"
         placeholder="Add an identity"
@@ -305,6 +309,7 @@ function VisionContent() {
 }
 
 type EditableListCardProps = {
+  tourId?: string;
   eyebrow: string;
   title: string;
   placeholder: string;
@@ -316,6 +321,7 @@ type EditableListCardProps = {
 };
 
 function EditableListCard({
+  tourId,
   eyebrow,
   title,
   placeholder,
@@ -378,7 +384,10 @@ function EditableListCard({
     );
 
   return (
-    <ForgeCard padding="large">
+    <ForgeCard
+      padding="large"
+      data-tour={tourId}
+    >
       <ForgeSection
         eyebrow={eyebrow}
         title={title}
@@ -405,6 +414,7 @@ function EditableListCard({
         />
 
         <ForgeButton
+          data-tour="vision-save" 
           type="button"
           variant="secondary"
           onClick={() =>

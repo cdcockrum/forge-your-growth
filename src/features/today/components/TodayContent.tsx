@@ -64,7 +64,7 @@ export function TodayContent() {
 
   return (
     <div className="space-y-8">
-      <div id="today-hero">
+      <div data-tour="today-hero">
         <MorningHero
           firstName={
             model.hero.firstName
@@ -78,16 +78,20 @@ export function TodayContent() {
         />
       </div>
 
-      <QuoteCard />
+      <div data-tour="today-quote">
+        <QuoteCard />
+      </div>
 
-      <CoachCard
-        coach={model.coach.coach}
-      />
+      <div data-tour="today-coach">
+        <CoachCard
+          coach={model.coach.coach}
+        />
+      </div>
 
       <ForgeSidebarLayout
         main={
           <div className="space-y-12">
-            <section id="mission-card">
+            <section data-tour="today-next-action">
               <ForgeSection
                 eyebrow="Today"
                 title="Take the next meaningful step"
@@ -122,51 +126,48 @@ export function TodayContent() {
                     />
                   )}
 
-                  {focusItems.length > 0 ? (
-                    <div id="focus-list">
+                  <div data-tour="today-focus">
+                    {focusItems.length > 0 ? (
                       <TodayFocusList
                         items={focusItems}
                       />
-                    </div>
-                  ) : (
-                    <div
-                      id="focus-list"
-                      className="rounded-2xl border border-dashed border-border bg-surface/40 px-5 py-6"
-                    >
-                      <p className="text-sm font-semibold">
-                        Today’s Focus
-                      </p>
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-border bg-surface/40 px-5 py-6">
+                        <p className="text-sm font-semibold">
+                          Today’s Focus
+                        </p>
 
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        Important commitments that are not deliberate practice will appear here.
-                      </p>
-                    </div>
-                  )}
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                          Important commitments that are not deliberate practice will appear here.
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </ForgeSection>
             </section>
 
-            <ForgeSection
-              eyebrow="Understanding"
-              title="What Forge is learning"
-              description="Your recent actions are beginning to form a clearer story about your direction and identity."
-            >
-              <div className="space-y-6">
-                <WeeklyStoryTeaser
-                  narrative={
-                    model.story.narrative
-                  }
-                />
+            <section data-tour="today-learning">
+              <ForgeSection
+                eyebrow="Understanding"
+                title="What Forge is learning"
+                description="Your recent actions are beginning to form a clearer story about your direction and identity."
+              >
+                <div className="space-y-6">
+                  <WeeklyStoryTeaser
+                    narrative={
+                      model.story.narrative
+                    }
+                  />
 
-                <ForgeMemoryCard
-                  memories={
-                    model.memory.memories
-                  }
-                />
-              </div>
-            </ForgeSection>
+                  <ForgeMemoryCard
+                    memories={model.memory?.memories ?? []}
+                  />
+                </div>
+              </ForgeSection>
+            </section>
 
-            <section id="reflection">
+            <section data-tour="today-reflection">
               <ForgeSection
                 eyebrow="Reflection"
                 title="Close the loop"
@@ -179,7 +180,7 @@ export function TodayContent() {
         }
         sidebar={
           <div className="space-y-6">
-            <div>
+            <div data-tour="today-state-header">
               <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
                 Intelligence
               </p>
@@ -189,7 +190,7 @@ export function TodayContent() {
               </h2>
             </div>
 
-            <div id="momentum">
+            <div data-tour="today-momentum">
               <MomentumPanel
                 score={
                   model.momentum.score
@@ -215,44 +216,52 @@ export function TodayContent() {
               />
             </div>
 
-            <IdentityCard
-              identity={
-                model.identity.identity
-              }
-            />
+            <div data-tour="today-identity">
+              <IdentityCard
+                identity={
+                  model.identity.identity
+                }
+              />
+            </div>
 
-            <ForgeScorePanel
-              score={
-                model.forgeScore.score
-              }
-              breakdown={
-                model.forgeScore.breakdown
-              }
-            />
+            <div data-tour="today-forge-score">
+              <ForgeScorePanel
+                score={
+                  model.forgeScore.score
+                }
+                breakdown={
+                  model.forgeScore.breakdown
+                }
+              />
+            </div>
 
-            <ProgressPanel
-              todayCompleted={
-                model.progress.todayCompleted
-              }
-              todayTotal={
-                model.progress.todayTotal
-              }
-              todayPercentage={
-                model.progress.todayPercentage
-              }
-              weekCompleted={
-                model.progress.weekCompleted
-              }
-              weekTotal={
-                model.progress.weekTotal
-              }
-            />
+            <div data-tour="today-progress">
+              <ProgressPanel
+                todayCompleted={
+                  model.progress.todayCompleted
+                }
+                todayTotal={
+                  model.progress.todayTotal
+                }
+                todayPercentage={
+                  model.progress.todayPercentage
+                }
+                weekCompleted={
+                  model.progress.weekCompleted
+                }
+                weekTotal={
+                  model.progress.weekTotal
+                }
+              />
+            </div>
 
-            <RecentAchievementCard
-              achievement={
-                model.achievement.achievement
-              }
-            />
+            <div data-tour="today-achievement">
+              <RecentAchievementCard
+                achievement={
+                  model.achievement.achievement
+                }
+              />
+            </div>
           </div>
         }
       />
