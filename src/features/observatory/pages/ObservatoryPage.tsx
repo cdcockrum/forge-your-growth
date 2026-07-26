@@ -1,6 +1,6 @@
 import {
   ExecutiveBriefing,
-} from "@/features/briefing";
+} from "@/features/forge-engine/briefing";
 
 import {
   ChronicleTimeline,

@@ -12,6 +12,7 @@ import {
 
 import {
   buildMemory,
+  type ForgeMemory,
 } from "../../memory";
 
 import {
@@ -49,6 +50,12 @@ type ContextOptions = {
   assessment?: WeeklyPlanAssessment;
   achievements?: AchievementSnapshot[];
   review?: WeeklyReviewSnapshot | null;
+
+  /**
+   * Persisted long-term memories loaded from
+   * public.forge_memories.
+   */
+  persistedMemories?: ForgeMemory[];
 };
 
 export function buildContextStage({
@@ -58,6 +65,7 @@ export function buildContextStage({
   assessment,
   achievements = [],
   review = null,
+  persistedMemories = [],
 }: ContextOptions): ContextStage {
   const memory = buildMemory({
     progress: foundation.progress,
@@ -84,6 +92,7 @@ export function buildContextStage({
     achievements,
     narrativeTitle: narrative.title,
     northStar: vision?.north_star,
+    memories: persistedMemories,
   });
 
   return {

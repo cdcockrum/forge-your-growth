@@ -41,7 +41,7 @@ import {
 
 import {
   buildMorningBriefing,
-} from "@/features/briefing"
+} from "@/features/forge-engine/briefing"
 
 import {
   buildForgeEvents,

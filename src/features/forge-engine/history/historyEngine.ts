@@ -3,6 +3,21 @@ import type {
   HistoryResult,
 } from "./history.types";
 
+type HistoryMemory = {
+  id: string;
+  createdAt: string;
+  title: string;
+  summary: string;
+  importance:
+    | "minor"
+    | "normal"
+    | "major"
+    | "permanent";
+  confidence?: number;
+  evidence?: string[];
+  metadata?: Record<string, unknown>;
+};
+
 type BuildHistoryOptions = {
   achievements: {
     id: string;
@@ -13,41 +28,53 @@ type BuildHistoryOptions = {
   narrativeTitle?: string;
 
   northStar?: string | null;
+
+  memories?: HistoryMemory[];
 };
 
 export function buildHistory({
   achievements,
   narrativeTitle,
   northStar,
+  memories = [],
 }: BuildHistoryOptions): HistoryResult {
-
   const events: HistoryEvent[] = [];
 
-  if (northStar) {
+  if (northStar?.trim()) {
     events.push({
       id: "vision",
 
-      occurredAt: new Date().toISOString(),
+      occurredAt:
+        new Date().toISOString(),
 
       type: "vision",
 
-      title: "North Star Defined",
+      title:
+        "North Star Defined",
 
-      description: northStar,
+      description:
+        northStar.trim(),
 
       importance: 100,
     });
   }
 
-  for (const achievement of achievements) {
+  for (
+    const achievement
+    of achievements
+  ) {
     events.push({
-      id: achievement.id,
+      id:
+        achievement.id,
 
-      occurredAt: achievement.earned_at,
+      occurredAt:
+        achievement.earned_at,
 
-      type: "achievement",
+      type:
+        "achievement",
 
-      title: achievement.title,
+      title:
+        achievement.title,
 
       description:
         "Achievement unlocked.",
@@ -56,15 +83,57 @@ export function buildHistory({
     });
   }
 
-  if (narrativeTitle) {
+  for (
+    const memory
+    of memories
+  ) {
+    events.push({
+      id:
+        memory.id,
+
+      occurredAt:
+        memory.createdAt,
+
+      type:
+        "memory",
+
+      title:
+        memory.title,
+
+      description:
+        memory.summary,
+
+      importance:
+        memoryImportanceToNumber(
+          memory.importance,
+        ),
+
+      metadata: {
+        confidence:
+          memory.confidence,
+
+        evidence:
+          memory.evidence ??
+          [],
+
+        ...memory.metadata,
+      },
+    });
+  }
+
+  if (
+    narrativeTitle?.trim()
+  ) {
     events.push({
       id: "story",
 
-      occurredAt: new Date().toISOString(),
+      occurredAt:
+        new Date().toISOString(),
 
       type: "story",
 
-      title: narrativeTitle,
+      title:
+        narrativeTitle.trim(),
 
       description:
         "Weekly narrative generated.",
@@ -73,20 +142,81 @@ export function buildHistory({
     });
   }
 
-  events.sort(
-    (a, b) =>
-      new Date(b.occurredAt).getTime() -
-      new Date(a.occurredAt).getTime(),
+  const uniqueEvents =
+    deduplicateEvents(
+      events,
+    );
+
+  uniqueEvents.sort(
+    (
+      first,
+      second,
+    ) =>
+      new Date(
+        second.occurredAt,
+      ).getTime() -
+      new Date(
+        first.occurredAt,
+      ).getTime(),
   );
 
   return {
-    events,
+    events:
+      uniqueEvents,
 
-    highlights: events
-      .filter(
-        (event) =>
-          event.importance >= 80,
-      )
-      .slice(0, 5),
+    highlights:
+      uniqueEvents
+        .filter(
+          (event) =>
+            event.importance >=
+            80,
+        )
+        .slice(0, 5),
   };
+}
+
+function memoryImportanceToNumber(
+  importance:
+    HistoryMemory["importance"],
+): number {
+  switch (importance) {
+    case "permanent":
+      return 100;
+
+    case "major":
+      return 85;
+
+    case "normal":
+      return 65;
+
+    case "minor":
+      return 40;
+  }
+}
+
+function deduplicateEvents(
+  events: HistoryEvent[],
+): HistoryEvent[] {
+  const seen =
+    new Set<string>();
+
+  return events.filter(
+    (event) => {
+      const key = [
+        event.type,
+        event.id,
+        event.occurredAt,
+      ].join(":");
+
+      if (
+        seen.has(key)
+      ) {
+        return false;
+      }
+
+      seen.add(key);
+
+      return true;
+    },
+  );
 }

@@ -5,7 +5,8 @@ export type HistoryEventType =
   | "achievement"
   | "story"
   | "coach"
-  | "reflection";
+  | "reflection"
+  | "memory";
 
 export type HistoryEvent = {
   id: string;

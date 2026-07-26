@@ -55,6 +55,11 @@ import type {
   TraitEngineResult,
 } from "./traits";
 
+import type {
+  DailyBriefing,
+  ForgeCognitiveState,
+} from "./index";
+
 
 export type ForgeState = {
 
@@ -89,5 +94,9 @@ export type ForgeState = {
   evidence: EvidenceGraph;
 
   traits: TraitEngineResult;
+
+  cognitiveState: ForgeCognitiveState;
+  
+  dailyBriefing: DailyBriefing;
 
 };

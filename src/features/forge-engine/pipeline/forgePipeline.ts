@@ -4,22 +4,19 @@ import type {
   Skill,
 } from "@/features/forge/types";
 
-import type {
-  Vision,
-} from "@/features/vision";
+import type { Vision } from "@/features/vision";
 
-import type {
-  ForgeState,
-} from "../forge.types";
+import { buildDailyBriefing } from "../briefing";
+import { buildCognitiveState } from "../cognitive-state";
+
+import type { ForgeState } from "../forge.types";
 
 import type {
   AchievementSnapshot,
   WeeklyReviewSnapshot,
 } from "../narrative";
 
-import type {
-  WeeklyPlanAssessment,
-} from "../planning-assessment/assessment.types";
+import type { WeeklyPlanAssessment } from "../planning-assessment/assessment.types";
 
 import {
   buildContextStage,
@@ -71,30 +68,28 @@ export function buildForgePipelineSnapshot({
     weeklyReviewCompleted: Boolean(review),
   });
 
-  const interpretation =
-    buildInterpretationStage({
-      foundation: observation,
-      sessions,
-      skills,
-      assessment,
-    });
+  const interpretation = buildInterpretationStage({
+    foundation: observation,
+    sessions,
+    skills,
+    assessment,
+  });
 
-  
   /*
    * Context engines may be working with an account that
    * has not accumulated memories or history yet.
    *
-   * Normalize all collections here so every downstream
-   * engine receives a complete, predictable shape.
+   * The context stage is responsible for normalizing those
+   * results before they reach the reasoning pipeline.
    */
   const context = buildContextStage({
-  vision,
-  foundation: observation,
-  interpretation,
-  assessment,
-  achievements,
-  review,
-});
+    vision,
+    foundation: observation,
+    interpretation,
+    assessment,
+    achievements,
+    review,
+  });
 
   const reasoning = buildReasoningStage({
     vision,
@@ -103,12 +98,11 @@ export function buildForgePipelineSnapshot({
     context,
   });
 
-  const explanation =
-    buildExplanationStage({
-      foundation: observation,
-      interpretation,
-      reasoning,
-    });
+  const explanation = buildExplanationStage({
+    foundation: observation,
+    interpretation,
+    reasoning,
+  });
 
   return {
     observation,
@@ -128,13 +122,63 @@ export function buildForgeState(
     context,
     reasoning,
     explanation,
-  } = buildForgePipelineSnapshot(
-    options,
-  );
+  } = buildForgePipelineSnapshot(options);
+
+  const history = {
+    ...context.history,
+
+    events:
+      context.history?.events ??
+      [],
+  };
+
+  const advisor = {
+    ...reasoning.advisor,
+
+    actions:
+      reasoning.advisor?.actions ??
+      [],
+
+    reasoning:
+      reasoning.advisor?.reasoning ??
+      [],
+  };
+
+  const intelligence = {
+    ...reasoning.intelligence,
+
+    evidence:
+      reasoning.intelligence?.evidence ??
+      [],
+
+    reasoning:
+      reasoning.intelligence?.reasoning ??
+      [],
+  };
+
+  const evidence =
+    explanation.evidence ??
+    [];
+
+  const cognitiveState = buildCognitiveState({
+    progress: observation.progress,
+    momentum: interpretation.momentum,
+    identity: interpretation.identity,
+    narrative: context.narrative,
+    memory: context.memory,
+    history,
+    evidence,
+    intelligence,
+    advisor,
+    vision: options.vision,
+  });
+
+  const dailyBriefing = buildDailyBriefing({
+    cognitiveState,
+  });
 
   return {
-    vision:
-      options.vision,
+    vision: options.vision,
 
     progress:
       observation.progress,
@@ -163,50 +207,23 @@ export function buildForgeState(
     insight:
       reasoning.insight,
 
-    history: {
-      ...context.history,
+    history,
 
-      events:
-        context.history?.events ??
-        [],
-    },
+    memory:
+      context.memory,
 
-    memory: {
-      ...context.memory,
+    advisor,
 
-      memory: context.memory,
-    },
+    intelligence,
 
-    advisor: {
-      ...reasoning.advisor,
-
-      actions:
-        reasoning.advisor?.actions ??
-        [],
-
-      reasoning:
-        reasoning.advisor?.reasoning ??
-        [],
-    },
-
-    intelligence: {
-      ...reasoning.intelligence,
-
-      evidence:
-        reasoning.intelligence?.evidence ??
-        [],
-
-      reasoning:
-        reasoning.intelligence?.reasoning ??
-        [],
-    },
-
-    evidence:
-      explanation.evidence ??
-      [],
+    evidence,
 
     traits:
       interpretation.traits ??
       [],
+
+    cognitiveState,
+
+    dailyBriefing,
   };
 }

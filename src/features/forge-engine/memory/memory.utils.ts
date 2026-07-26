@@ -3,7 +3,7 @@ import type {
   MemoryCandidate,
 } from "./memory.types";
 
-export function buildMemory(
+export function createForgeMemory(
   candidate: MemoryCandidate,
 ): ForgeMemory {
   const now =
