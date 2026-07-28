@@ -8,6 +8,13 @@ import type { MomentumResult } from "../momentum";
 import type { WeeklyNarrative } from "../narrative";
 import type { ProgressSummary } from "../progress";
 import type { Vision } from "@/features/vision";
+import type {
+  ContradictionResult,
+} from "../contradictions";
+
+import type {
+  PredictionResult,
+} from "../prediction";
 
 export type CognitiveStateStatus =
   | "initializing"
@@ -23,7 +30,9 @@ export type CognitiveDomain =
   | "memory"
   | "history"
   | "evidence"
+  | "predictions"
   | "intelligence"
+  | "contradictions"
   | "advisor"
   | "vision";
 
@@ -43,9 +52,11 @@ export interface ForgeCognitiveState {
   memory: MemoryResult | null;
   history: HistoryResult | null;
   evidence: EvidenceGraph | null;
+  predictions: PredictionResult | null;
   intelligence: IntelligenceConclusion | null;
   advisor: AdvisorBriefing | null;
   vision: Vision | null;
 
+  contradictions: ContradictionResult | null;
   meta: CognitiveStateMeta;
 }

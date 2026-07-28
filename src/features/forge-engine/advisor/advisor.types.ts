@@ -13,6 +13,10 @@ import type {
   Vision,
 } from "@/features/vision";
 
+import type {
+  ContradictionResult,
+} from "../contradictions";
+
 export type AdvisorPriority =
   | "identity"
   | "consistency"
@@ -39,4 +43,5 @@ export type AdvisorInput = {
   memory: MemoryResult;
   narrative: WeeklyNarrative;
   history: HistoryResult;
+  contradictions: ContradictionResult;
 };

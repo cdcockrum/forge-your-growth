@@ -34,6 +34,18 @@ import type {
   ReasoningStage,
 } from "./stages";
 
+import {
+  buildBeliefs,
+} from "../beliefs";
+
+import {
+  buildPatternSummary,
+} from "../patterns";
+
+import {
+  buildPredictions,
+} from "../prediction";
+
 export type ForgePipelineOptions = {
   vision: Vision | null;
   sessions: PracticeSession[];
@@ -144,6 +156,9 @@ export function buildForgeState(
       [],
   };
 
+  const contradictions =
+  reasoning.contradictions;
+
   const intelligence = {
     ...reasoning.intelligence,
 
@@ -160,6 +175,35 @@ export function buildForgeState(
     explanation.evidence ??
     [];
 
+  
+  const beliefs = buildBeliefs({
+      advisor,
+      identity:
+        interpretation.identity,
+      evidence,
+      memory:
+        context.memory,
+    });
+
+  const patterns = buildPatternSummary(
+      [],
+      options.sessions,
+    );
+
+  const predictions = buildPredictions({
+    progress:
+      observation.progress,
+
+    momentum:
+      interpretation.momentum,
+
+    beliefs,
+
+    contradictions,
+
+    patterns,
+  });
+
   const cognitiveState = buildCognitiveState({
     progress: observation.progress,
     momentum: interpretation.momentum,
@@ -168,9 +212,12 @@ export function buildForgeState(
     memory: context.memory,
     history,
     evidence,
+    predictions,
     intelligence,
+    contradictions,
     advisor,
     vision: options.vision,
+
   });
 
   const dailyBriefing = buildDailyBriefing({
@@ -178,52 +225,60 @@ export function buildForgeState(
   });
 
   return {
-    vision: options.vision,
+  vision: options.vision,
 
-    progress:
-      observation.progress,
+  progress:
+    observation.progress,
 
-    momentum:
-      interpretation.momentum,
+  momentum:
+    interpretation.momentum,
 
-    forgeScore:
-      observation.forgeScore,
+  forgeScore:
+    observation.forgeScore,
 
-    forgeHealth:
-      observation.forgeHealth,
+  forgeHealth:
+    observation.forgeHealth,
 
-    identity:
-      interpretation.identity,
+  identity:
+    interpretation.identity,
 
-    coach:
-      context.coach,
+  coach:
+    context.coach,
 
-    narrative:
-      context.narrative,
+  narrative:
+    context.narrative,
 
-    assessment:
-      options.assessment,
+  assessment:
+    options.assessment,
 
-    insight:
-      reasoning.insight,
+  insight:
+    reasoning.insight,
 
-    history,
+  history,
 
-    memory:
-      context.memory,
+  memory:
+    context.memory,
 
-    advisor,
+  advisor,
 
-    intelligence,
+  contradictions,
 
-    evidence,
+  intelligence,
 
-    traits:
-      interpretation.traits ??
-      [],
+  evidence,
 
-    cognitiveState,
+  beliefs,
 
-    dailyBriefing,
-  };
+  patterns,
+
+  predictions,
+
+  traits:
+    interpretation.traits ??
+    [],
+
+  cognitiveState,
+
+  dailyBriefing,
+};
 }

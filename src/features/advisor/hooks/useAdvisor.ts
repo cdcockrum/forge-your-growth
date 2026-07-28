@@ -3,13 +3,26 @@ import {
 } from "react";
 
 import {
-  buildAdvisorSummary,
-} from "../engine/AdvisorEngine";
+  useTodayDashboard,
+} from "@/features/today/hooks/useTodayDashboard";
 
-export function useAdvisor() {
+import {
+  buildAdvisorViewModel,
+  type AdvisorViewModel,
+} from "../services/advisorViewModel";
+
+export function useAdvisor(): AdvisorViewModel {
+  const {
+    forge,
+  } = useTodayDashboard();
+
   return useMemo(
     () =>
-      buildAdvisorSummary(),
-    [],
+      buildAdvisorViewModel(
+        forge,
+      ),
+    [
+      forge,
+    ],
   );
 }

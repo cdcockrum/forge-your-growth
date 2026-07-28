@@ -213,6 +213,15 @@ function buildReasoning(
     `Weekly completion is ${input.progress.completionRate}%.`,
   );
 
+  const strongestContradiction =
+  input.contradictions.strongest;
+
+if (strongestContradiction) {
+  reasoning.push(
+    strongestContradiction.title,
+  );
+}
+
   reasoning.push(
     `Momentum is ${input.momentum.score} with ${input.momentum.burnoutRisk} burnout risk.`,
   );

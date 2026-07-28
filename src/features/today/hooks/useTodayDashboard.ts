@@ -163,6 +163,12 @@ export function useTodayDashboard() {
     ],
   );
 
+  console.log("Forge Advisor", forge.advisor);
+
+  console.log("Forge Intelligence", forge.intelligence);
+
+  console.log("Forge Insight", forge.insight);
+
   const snapshotRecorder =
     useForgeSnapshotRecorder({
       snapshotDate: today,

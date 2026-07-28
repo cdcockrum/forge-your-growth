@@ -26,13 +26,23 @@ import type {
   InterpretationStage,
 } from "./interpretation";
 
+import {
+  buildContradictions,
+} from "../../contradictions";
+
 export type ReasoningStage = {
   insight: ReturnType<
     typeof buildForgeInsight
   >;
+
+  contradictions: ReturnType<
+    typeof buildContradictions
+  >;
+
   advisor: ReturnType<
     typeof buildAdvisorBriefing
   >;
+
   intelligence: ReturnType<
     typeof buildIntelligenceConclusion
   >;
@@ -62,16 +72,51 @@ export function buildReasoningStage({
     narrative: context.narrative,
   });
 
-  const advisor = buildAdvisorBriefing({
+  const contradictions =
+  buildContradictions({
+
     vision,
+
     progress: foundation.progress,
+
     momentum: interpretation.momentum,
+
     identity: interpretation.identity,
+
+    advisor: {
+      title: "",
+      message: "",
+      priority: "focus",
+      confidence: 0,
+      actions: [],
+      reasoning: [],
+    },
+
+  });
+
+  const advisor =
+  buildAdvisorBriefing({
+
+    vision,
+
+    progress: foundation.progress,
+
+    momentum: interpretation.momentum,
+
+    identity: interpretation.identity,
+
     coach: context.coach,
+
     insight,
+
     memory: context.memory,
+
     narrative: context.narrative,
+
     history: context.history,
+
+    contradictions,
+
   });
 
   const intelligence =
@@ -90,6 +135,13 @@ export function buildReasoningStage({
 
   return {
     insight,
+    contradictions: buildContradictions({
+      vision,
+      progress: foundation.progress,
+      momentum: interpretation.momentum,
+      identity: interpretation.identity,
+      advisor,
+    }),
     advisor,
     intelligence,
   };

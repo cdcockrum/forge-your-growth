@@ -81,6 +81,8 @@ export function buildPipelineDiagnostics(
     }),
   ];
 
+  
+
   const completedStages = stages.filter(
     (stage) => stage.completed,
   ).length;

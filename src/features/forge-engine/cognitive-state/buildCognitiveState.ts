@@ -4,8 +4,6 @@ import type {
   ForgeCognitiveState,
 } from "./cognitiveState.types";
 
-
-
 export type BuildCognitiveStateInput = Omit<
   ForgeCognitiveState,
   "meta"
@@ -22,10 +20,11 @@ const DOMAIN_KEYS = [
   "history",
   "evidence",
   "intelligence",
+  "contradictions",
+  "predictions",
   "advisor",
   "vision",
-] as const;
-
+] as const satisfies readonly CognitiveDomain[];
 
 function getAvailableDomains(
   input: BuildCognitiveStateInput,
@@ -39,14 +38,18 @@ function getMissingDomains(
   availableDomains: CognitiveDomain[],
 ): CognitiveDomain[] {
   return DOMAIN_KEYS.filter(
-    (key) => !availableDomains.includes(key),
+    (key) =>
+      !availableDomains.includes(key),
   );
 }
 
 function calculateStateConfidence(
   availableDomains: CognitiveDomain[],
 ): number {
-  return availableDomains.length / DOMAIN_KEYS.length;
+  return (
+    availableDomains.length /
+    DOMAIN_KEYS.length
+  );
 }
 
 function determineStatus(
@@ -56,7 +59,10 @@ function determineStatus(
     return "insufficient-data";
   }
 
-  if (availableDomains.length === DOMAIN_KEYS.length) {
+  if (
+    availableDomains.length ===
+    DOMAIN_KEYS.length
+  ) {
     return "active";
   }
 
@@ -66,30 +72,69 @@ function determineStatus(
 export function buildCognitiveState(
   input: BuildCognitiveStateInput,
 ): ForgeCognitiveState {
-  const availableDomains = getAvailableDomains(input);
-  const missingDomains = getMissingDomains(availableDomains);
+  const availableDomains =
+    getAvailableDomains(input);
+
+  const missingDomains =
+    getMissingDomains(
+      availableDomains,
+    );
 
   return {
-    progress: input.progress,
-    momentum: input.momentum,
-    identity: input.identity,
-    narrative: input.narrative,
-    memory: input.memory,
-    history: input.history,
-    evidence: input.evidence,
-    intelligence: input.intelligence,
-    advisor: input.advisor,
-    vision: input.vision,
+    progress:
+      input.progress,
+
+    momentum:
+      input.momentum,
+
+    identity:
+      input.identity,
+
+    narrative:
+      input.narrative,
+
+    memory:
+      input.memory,
+
+    history:
+      input.history,
+
+    evidence:
+      input.evidence,
+
+    intelligence:
+      input.intelligence,
+
+    contradictions:
+      input.contradictions,
+
+    predictions:
+      input.predictions,
+
+    advisor:
+      input.advisor,
+
+    vision:
+      input.vision,
 
     meta: {
       generatedAt:
-        input.generatedAt ?? new Date().toISOString(),
-      status: determineStatus(availableDomains),
+        input.generatedAt ??
+        new Date().toISOString(),
+
+      status:
+        determineStatus(
+          availableDomains,
+        ),
+
       availableDomains,
+
       missingDomains,
-      confidence: calculateStateConfidence(
-        availableDomains,
-      ),
+
+      confidence:
+        calculateStateConfidence(
+          availableDomains,
+        ),
     },
   };
 }

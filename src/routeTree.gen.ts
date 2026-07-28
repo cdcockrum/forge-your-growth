@@ -27,6 +27,7 @@ import { Route as AuthenticatedJourneyRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedIntelligenceRouteImport } from './routes/_authenticated/intelligence'
 import { Route as AuthenticatedDeveloperRouteImport } from './routes/_authenticated/developer'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedCognitiveRouteImport } from './routes/_authenticated/cognitive'
 import { Route as AuthenticatedAreasRouteImport } from './routes/_authenticated/areas'
 import { Route as AuthenticatedAdvisorRouteImport } from './routes/_authenticated/advisor'
 import { Route as AuthenticatedDevForgeRouteImport } from './routes/_authenticated/dev/forge'
@@ -122,6 +123,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCognitiveRoute = AuthenticatedCognitiveRouteImport.update({
+  id: '/cognitive',
+  path: '/cognitive',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAreasRoute = AuthenticatedAreasRouteImport.update({
   id: '/areas',
   path: '/areas',
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/advisor': typeof AuthenticatedAdvisorRoute
   '/areas': typeof AuthenticatedAreasRoute
+  '/cognitive': typeof AuthenticatedCognitiveRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/developer': typeof AuthenticatedDeveloperRoute
   '/intelligence': typeof AuthenticatedIntelligenceRoute
@@ -166,6 +173,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/advisor': typeof AuthenticatedAdvisorRoute
   '/areas': typeof AuthenticatedAreasRoute
+  '/cognitive': typeof AuthenticatedCognitiveRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/developer': typeof AuthenticatedDeveloperRoute
   '/intelligence': typeof AuthenticatedIntelligenceRoute
@@ -190,6 +198,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/_authenticated/advisor': typeof AuthenticatedAdvisorRoute
   '/_authenticated/areas': typeof AuthenticatedAreasRoute
+  '/_authenticated/cognitive': typeof AuthenticatedCognitiveRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/developer': typeof AuthenticatedDeveloperRoute
   '/_authenticated/intelligence': typeof AuthenticatedIntelligenceRoute
@@ -214,6 +223,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/advisor'
     | '/areas'
+    | '/cognitive'
     | '/dashboard'
     | '/developer'
     | '/intelligence'
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/advisor'
     | '/areas'
+    | '/cognitive'
     | '/dashboard'
     | '/developer'
     | '/intelligence'
@@ -259,6 +270,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/_authenticated/advisor'
     | '/_authenticated/areas'
+    | '/_authenticated/cognitive'
     | '/_authenticated/dashboard'
     | '/_authenticated/developer'
     | '/_authenticated/intelligence'
@@ -411,6 +423,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cognitive': {
+      id: '/_authenticated/cognitive'
+      path: '/cognitive'
+      fullPath: '/cognitive'
+      preLoaderRoute: typeof AuthenticatedCognitiveRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/areas': {
       id: '/_authenticated/areas'
       path: '/areas'
@@ -438,6 +457,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdvisorRoute: typeof AuthenticatedAdvisorRoute
   AuthenticatedAreasRoute: typeof AuthenticatedAreasRoute
+  AuthenticatedCognitiveRoute: typeof AuthenticatedCognitiveRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDeveloperRoute: typeof AuthenticatedDeveloperRoute
   AuthenticatedIntelligenceRoute: typeof AuthenticatedIntelligenceRoute
@@ -458,6 +478,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdvisorRoute: AuthenticatedAdvisorRoute,
   AuthenticatedAreasRoute: AuthenticatedAreasRoute,
+  AuthenticatedCognitiveRoute: AuthenticatedCognitiveRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDeveloperRoute: AuthenticatedDeveloperRoute,
   AuthenticatedIntelligenceRoute: AuthenticatedIntelligenceRoute,

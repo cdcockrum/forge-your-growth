@@ -33,6 +33,13 @@ export function buildEvidenceNodes({
     subject: "Weekly completion",
     statement: `Completed ${progress.completedSessions} of ${progress.totalSessions} scheduled sessions.`,
     confidence: 100,
+    weight: calculateCompletionWeight(
+      progress.completionRate,
+    ),
+    polarity:
+      progress.completionRate >= 60
+        ? "supporting"
+        : "contradicting",
     timestamp: observedAt,
     relatedIds: [],
   });
@@ -42,35 +49,55 @@ export function buildEvidenceNodes({
       id: `progress-skill-${progress.strongestSkill.skillId}`,
       source: "progress",
       category: "practice",
-      subject: progress.strongestSkill.name,
-      statement: `${progress.strongestSkill.name} received your strongest investment of practice.`,
-      confidence: calculateEvidenceConfidence(
-        progress.strongestSkill.completedSessions,
-      ),
+      subject:
+        progress.strongestSkill.name,
+      statement:
+        `${progress.strongestSkill.name} received your strongest investment of practice.`,
+      confidence:
+        calculateEvidenceConfidence(
+          progress.strongestSkill
+            .completedSessions,
+        ),
+      weight: 78,
+      polarity: "supporting",
       timestamp: observedAt,
-      relatedIds: [completionNodeId],
+      relatedIds: [
+        completionNodeId,
+      ],
     });
   }
 
   const strongestIdentity =
     identity.strongestIdentity;
 
-  const identityNodeId = strongestIdentity
-    ? `identity-${strongestIdentity.identity.key}`
-    : null;
+  const identityNodeId =
+    strongestIdentity
+      ? `identity-${strongestIdentity.identity.key}`
+      : null;
 
-  if (strongestIdentity && identityNodeId) {
+  if (
+    strongestIdentity &&
+    identityNodeId
+  ) {
     nodes.push({
       id: identityNodeId,
       source: "identity",
       category: "identity",
-      subject: strongestIdentity.identity.name,
-      statement: `${strongestIdentity.identity.name} is currently your strongest supported identity.`,
-      confidence: calculateEvidenceConfidence(
-        strongestIdentity.completedSessions,
-      ),
+      subject:
+        strongestIdentity.identity.name,
+      statement:
+        `${strongestIdentity.identity.name} is currently your strongest supported identity.`,
+      confidence:
+        calculateEvidenceConfidence(
+          strongestIdentity
+            .completedSessions,
+        ),
+      weight: 82,
+      polarity: "supporting",
       timestamp: observedAt,
-      relatedIds: [completionNodeId],
+      relatedIds: [
+        completionNodeId,
+      ],
     });
   }
 
@@ -81,10 +108,17 @@ export function buildEvidenceNodes({
     subject: advisor.title,
     statement: advisor.message,
     confidence: advisor.confidence,
+    weight: 90,
+    polarity: "neutral",
     timestamp: observedAt,
     relatedIds: identityNodeId
-      ? [identityNodeId, completionNodeId]
-      : [completionNodeId],
+      ? [
+          identityNodeId,
+          completionNodeId,
+        ]
+      : [
+          completionNodeId,
+        ],
   });
 
   return nodes;
@@ -97,4 +131,22 @@ function calculateEvidenceConfidence(
     95,
     45 + evidenceCount * 8,
   );
+}
+
+function calculateCompletionWeight(
+  completionRate: number,
+): number {
+  if (completionRate >= 80) {
+    return 90;
+  }
+
+  if (completionRate >= 60) {
+    return 75;
+  }
+
+  if (completionRate >= 40) {
+    return 65;
+  }
+
+  return 85;
 }

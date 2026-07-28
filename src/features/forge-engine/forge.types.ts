@@ -60,6 +60,22 @@ import type {
   ForgeCognitiveState,
 } from "./index";
 
+import type {
+  ContradictionResult,
+} from "./contradictions";
+
+import type {
+  BeliefResult,
+} from "./beliefs";
+
+import type {
+  PatternSummary,
+} from "./patterns";
+
+import type {
+  PredictionResult,
+} from "./prediction";
+
 
 export type ForgeState = {
 
@@ -98,5 +114,13 @@ export type ForgeState = {
   cognitiveState: ForgeCognitiveState;
   
   dailyBriefing: DailyBriefing;
+
+  beliefs: BeliefResult;
+
+  contradictions: ContradictionResult;
+
+  patterns: PatternSummary;
+
+  predictions: PredictionResult;
 
 };
