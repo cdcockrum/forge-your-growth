@@ -1,9 +1,9 @@
 import type {
-  MorningBriefingModel,
-} from "../types";
+  DailyBriefing,
+} from "@/features/forge-engine/briefing";
 
 type ExecutiveBriefingProps = {
-  briefing: MorningBriefingModel;
+  briefing: DailyBriefing;
 };
 
 export function ExecutiveBriefing({
@@ -11,8 +11,32 @@ export function ExecutiveBriefing({
 }: ExecutiveBriefingProps) {
   const confidence = Math.max(
     0,
-    Math.min(100, briefing.confidence),
+    Math.min(
+      100,
+      Math.round(
+        briefing.confidence <= 1
+          ? briefing.confidence * 100
+          : briefing.confidence,
+      ),
+    ),
   );
+
+  const observations = [
+    ...briefing.strengths.map(
+      (strength) =>
+        strength.description,
+    ),
+
+    ...briefing.watchItems.map(
+      (item) =>
+        item.description,
+    ),
+
+    ...briefing.priorities.map(
+      (priority) =>
+        priority.reason,
+    ),
+  ].slice(0, 4);
 
   return (
     <section className="overflow-hidden rounded-3xl border bg-card">
@@ -25,7 +49,11 @@ export function ExecutiveBriefing({
           {briefing.greeting}
         </h2>
 
-        <p className="mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+        <h3 className="mt-5 text-xl font-bold tracking-tight">
+          {briefing.headline}
+        </h3>
+
+        <p className="mt-3 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
           {briefing.summary}
         </p>
       </div>
@@ -36,18 +64,30 @@ export function ExecutiveBriefing({
             Today&apos;s recommendation
           </h3>
 
-          <p className="mt-3 text-lg leading-relaxed">
-            {briefing.recommendation}
-          </p>
+          {briefing.recommendedAction ? (
+            <>
+              <p className="mt-3 text-lg font-semibold leading-relaxed">
+                {briefing.recommendedAction.title}
+              </p>
+
+              <p className="mt-2 leading-relaxed text-muted-foreground">
+                {briefing.recommendedAction.description}
+              </p>
+            </>
+          ) : (
+            <p className="mt-3 text-muted-foreground">
+              Complete one meaningful practice so Forge can form a more specific recommendation.
+            </p>
+          )}
 
           <div className="mt-8">
             <h3 className="font-semibold">
               Forge noticed
             </h3>
 
-            {briefing.observations.length > 0 ? (
+            {observations.length > 0 ? (
               <ul className="mt-3 space-y-3">
-                {briefing.observations.map(
+                {observations.map(
                   (item, index) => (
                     <li
                       key={`${index}:${item}`}
@@ -69,36 +109,27 @@ export function ExecutiveBriefing({
               </ul>
             ) : (
               <p className="mt-3 text-sm text-muted-foreground">
-                Forge is still collecting enough evidence
-                to identify meaningful observations.
+                Forge is still collecting enough evidence to identify meaningful observations.
               </p>
             )}
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-          {briefing.metrics.map((metric) => (
-            <div
-              key={metric.label}
-              className="rounded-xl border bg-background p-4"
-            >
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                {metric.label}
-              </p>
+          <MetricCard
+            label="Priorities"
+            value={briefing.priorities.length}
+          />
 
-              <div className="mt-2 flex items-center gap-2">
-                <p className="text-2xl font-bold sm:text-3xl">
-                  {metric.value}
-                </p>
+          <MetricCard
+            label="Strengths"
+            value={briefing.strengths.length}
+          />
 
-                {metric.trend ? (
-                  <span className="text-xs capitalize text-muted-foreground">
-                    {metric.trend}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-          ))}
+          <MetricCard
+            label="Watch items"
+            value={briefing.watchItems.length}
+          />
 
           <div className="rounded-xl border bg-background p-4 sm:col-span-2 lg:col-span-1">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -121,5 +152,25 @@ export function ExecutiveBriefing({
         </div>
       </div>
     </section>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="rounded-xl border bg-background p-4">
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+
+      <p className="mt-2 text-2xl font-bold sm:text-3xl">
+        {value}
+      </p>
+    </div>
   );
 }

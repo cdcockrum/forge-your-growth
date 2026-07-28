@@ -40,7 +40,7 @@ import {
 } from "./useForgeSnapshots";
 
 import {
-  buildMorningBriefing,
+  buildDailyBriefing,
 } from "@/features/forge-engine/briefing"
 
 import {
@@ -185,7 +185,7 @@ export function useObservatory(
 
   const briefing = useMemo(
   () =>
-    buildMorningBriefing(
+    buildDailyBriefing(
       forge,
     ),
   [forge],
