@@ -11,6 +11,16 @@ import type { PatternSummary } from "../patterns";
 import type { PredictionResult } from "../prediction";
 import type { ProgressSummary } from "../progress";
 import type { PracticeTrendAnalysis } from "../trends";
+import type {
+  ReasoningResult,
+} from "./reasoning";
+
+export type AdvisorResult = {
+  evidence: AdvisorEvidence[];
+
+  reasoning: ReasoningResult;
+};
+
 
 export type AdvisorEvidenceCategory =
   | "progress"
