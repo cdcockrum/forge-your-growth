@@ -17,14 +17,12 @@ export type AdvisorEvidenceCategory =
   | "momentum"
   | "identity"
   | "memory"
-  | "history"
-  | "trend"
-  | "belief"
   | "pattern"
+  | "belief"
   | "prediction"
   | "vision"
-  | "intelligence"
-  | "advisor";
+  | "history"
+  | "trend";
 
 export type AdvisorPriority =
   | "low"
@@ -32,19 +30,59 @@ export type AdvisorPriority =
   | "high";
 
 export interface AdvisorEvidence {
+  /**
+   * Stable identifier for the evidence item.
+   */
   id: string;
 
+  /**
+   * Which cognitive engine produced it.
+   */
   category: AdvisorEvidenceCategory;
 
+  /**
+   * Specific metric or source within that engine.
+   * Examples:
+   *  - completionRate
+   *  - momentumScore
+   *  - identityConfidence
+   *  - overallDirection
+   */
   source: string;
 
+  /**
+   * Human-readable description.
+   */
   statement: string;
 
+  /**
+   * Confidence from 0–1.
+   */
   confidence: number;
 
+  /**
+   * Relative importance from 0–1.
+   */
   impact: number;
+
+  /**
+   * Whether the evidence supports,
+   * opposes, or is neutral toward
+   * current progress.
+   */
+  polarity:
+    | "positive"
+    | "negative"
+    | "neutral";
+
+  /**
+   * Searchable labels used by
+   * higher-level reasoning.
+   */
+  tags: string[];
 }
 
+  
 export interface AdvisorInsight {
   title: string;
 

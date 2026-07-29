@@ -1,108 +1,88 @@
-import type {
-  ProgressSummary,
-} from "../progress";
-
-import type {
-  MomentumResult,
-} from "../momentum";
-
-import type {
-  IdentityEngineResult,
-} from "../identity";
-
-import type {
-  MemoryResult,
-} from "../memory";
-
-import type {
-  HistoryResult,
-} from "../history";
-
-import type {
-  PatternSummary,
-} from "../patterns";
-
-import type {
-  BeliefResult,
-} from "../beliefs";
-
-import type {
-  PredictionResult,
-} from "../prediction";
-
-import type {
-  PracticeTrendAnalysis,
-} from "../trends";
-
-import type {
-  Vision,
-} from "@/features/vision";
+// src/features/forge-engine/advisor-v2/evidenceCollector.ts
 
 import type {
   AdvisorEvidence,
+  BuildAdvisorAnalysisInput,
 } from "./advisor.types";
 
-export interface CollectEvidenceInput {
-  progress: ProgressSummary;
-
-  momentum: MomentumResult;
-
-  identity: IdentityEngineResult;
-
-  memory: MemoryResult;
-
-  history: HistoryResult;
-
-  patterns: PatternSummary;
-
-  beliefs: BeliefResult;
-
-  predictions: PredictionResult;
-
-  trendAnalysis: PracticeTrendAnalysis | null;
-
-  vision: Vision | null;
-}
+import {
+  buildBeliefEvidence,
+  buildIdentityEvidence,
+  buildMemoryEvidence,
+  buildMomentumEvidence,
+  buildPatternEvidence,
+  buildPredictionEvidence,
+  buildProgressEvidence,
+  buildTrendEvidence,
+  buildVisionEvidence,
+  buildHistoryEvidence,
+} from "./evidence";
 
 export function collectEvidence(
-  input: CollectEvidenceInput,
+  input: BuildAdvisorAnalysisInput,
 ): AdvisorEvidence[] {
   const evidence: AdvisorEvidence[] = [];
 
-  if (input.trendAnalysis) {
-    evidence.push({
-      id: "trend-direction",
+  evidence.push(
+    ...buildProgressEvidence(
+      input.progress,
+    ),
+  );
 
-      category: "trend",
+  evidence.push(
+    ...buildMemoryEvidence(
+      input.memory,
+    ),
+  );
 
-      source: "overallDirection",
+  evidence.push(
+    ...buildMomentumEvidence(
+      input.momentum,
+    ),
+  );
 
-      statement:
-        `Overall trend is ${input.trendAnalysis.overallDirection}.`,
+  evidence.push(
+    ...buildHistoryEvidence(
+      input.history,
+    ),
+  );
 
-      confidence:
-        input.trendAnalysis.confidence / 100,
 
-      impact: 0.9,
-    });
-  }
+  evidence.push(
+    ...buildBeliefEvidence(
+      input.beliefs,
+    ),
+  );
 
-  if (input.vision) {
-    evidence.push({
-      id: "vision-present",
+ evidence.push(
+    ...buildPredictionEvidence(
+      input.predictions,
+    ),
+  );
 
-      category: "vision",
+evidence.push(
+  ...buildTrendEvidence(
+    input.trendAnalysis,
+  ),
+);
 
-      source: "vision",
+  evidence.push(
+    ...buildIdentityEvidence(
+      input.identity,
+    ),
+  );
 
-      statement:
-        "A long-term vision is defined.",
+  evidence.push(
+    ...buildPatternEvidence(
+      input.patterns,
+    ),
+  );
 
-      confidence: 1,
-
-      impact: 0.7,
-    });
-  }
+  evidence.push(
+    ...buildVisionEvidence(
+      input.vision,
+    ),
+  );
 
   return evidence;
 }
