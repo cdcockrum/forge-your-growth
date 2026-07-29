@@ -23,7 +23,84 @@ function buildPriorities(
 
   const priorities: BriefingPriority[] = [];
 
-  if (cognitiveState.momentum) {
+  const trendDirection =
+    cognitiveState.trendAnalysis?.overallDirection ??
+    "insufficient-data";
+
+  if (trendDirection === "improving") {
+    priorities.push({
+      id: "priority-protect-improving-trend",
+      kind: "protect-momentum",
+      title: "Protect the rhythm that is working",
+      reason:
+        "Your recent practice trend is improving. Preserve consistency before increasing intensity.",
+      urgency: 0.8,
+      confidence: 0.75,
+      evidence: [
+        {
+          source: "momentum",
+          description:
+            "Recent practice trend analysis indicates improvement.",
+        },
+      ],
+    });
+  }
+
+  if (trendDirection === "declining") {
+    priorities.push({
+      id: "priority-rebuild-consistency",
+      kind: "rebuild-consistency",
+      title: "Rebuild consistency with one achievable action",
+      reason:
+        "Your recent practice trend is declining. A smaller completed action can help restore momentum.",
+      urgency: 0.9,
+      confidence: 0.75,
+      evidence: [
+        {
+          source: "momentum",
+          description:
+            "Recent practice trend analysis indicates declining consistency.",
+        },
+      ],
+    });
+  }
+
+  if (trendDirection === "stable") {
+    priorities.push({
+      id: "priority-strengthen-stable-trend",
+      kind: "continue-growth",
+      title: "Strengthen your stable practice rhythm",
+      reason:
+        "Your recent practice trend is stable. Reinforce the pattern with another meaningful action today.",
+      urgency: 0.68,
+      confidence: 0.7,
+      evidence: [
+        {
+          source: "progress",
+          description:
+            "Recent practice trend analysis indicates a stable pattern.",
+        },
+      ],
+    });
+  }
+
+  if (trendDirection === "insufficient-data") {
+    priorities.push({
+      id: "priority-create-trend-evidence",
+      kind: "general",
+      title: "Create another meaningful point of evidence",
+      reason:
+        "Forge needs more completed sessions before it can identify a reliable direction of change.",
+      urgency: 0.62,
+      confidence: 0.55,
+      evidence: [],
+    });
+  }
+
+ if (
+  cognitiveState.momentum &&
+  trendDirection === "insufficient-data"
+) {
     priorities.push({
       id: "priority-protect-momentum",
       kind: "protect-momentum",
@@ -108,6 +185,42 @@ function buildStrengths(
 
   const strengths: BriefingStrength[] = [];
 
+    const trend =
+    cognitiveState.trendAnalysis;
+
+    const trendConfidence =
+      trend == null
+        ? 0
+        : trend.confidence > 1
+          ? trend.confidence / 100
+          : trend.confidence;
+
+  if (
+    trend?.overallDirection === "improving"
+  ) {
+    strengths.push({
+      id: "strength-improving-trajectory",
+      title: "Your recent trajectory is improving",
+      description:
+        "Your current practice period shows stronger follow-through than the previous period.",
+      confidence: Math.min(
+        trend.confidence,
+        1,
+      ),
+      evidence: [
+        {
+          source: "progress",
+          description:
+            `Completion rate changed from ${Math.round(
+              trend.completionRate.previous,
+            )}% to ${Math.round(
+              trend.completionRate.current,
+            )}%.`,
+        },
+      ],
+    });
+  }
+
   if (cognitiveState.progress) {
     strengths.push({
       id: "strength-visible-progress",
@@ -166,7 +279,7 @@ function buildWatchItems(
       confidence: 1,
       evidence: cognitiveState.meta.missingDomains.map(
         (domain) => ({
-          source: domain,
+          source: "intelligence" as const,
           description: `${domain} data is not currently available.`,
         }),
       ),
@@ -201,6 +314,22 @@ function buildHeadline(
 ): string {
   const { cognitiveState } = input;
 
+  const direction =
+    cognitiveState.trendAnalysis?.overallDirection ??
+    "insufficient-data";
+
+  if (direction === "improving") {
+    return "Your recent trajectory is improving.";
+  }
+
+  if (direction === "declining") {
+    return "Your recent momentum has weakened. Focus on rebuilding consistency.";
+  }
+
+  if (direction === "stable") {
+    return "Your recent practice is stable. Continue reinforcing it.";
+  }
+
   if (
     cognitiveState.meta.status ===
     "insufficient-data"
@@ -222,6 +351,10 @@ function buildSummary(
 ): string {
   const { cognitiveState } = input;
 
+  const trendDirection =
+    cognitiveState.trendAnalysis?.overallDirection ??
+    "insufficient-data";
+
   const availableCount =
     cognitiveState.meta.availableDomains.length;
 
@@ -229,17 +362,38 @@ function buildSummary(
     availableCount +
     cognitiveState.meta.missingDomains.length;
 
-  if (availableCount === 0) {
-    return (
-      "Forge does not yet have enough information for a deeply personalized briefing. " +
-      "Completing a practice session or reflection today will begin building that understanding."
-    );
-  }
+  switch (trendDirection) {
+    case "improving":
+      return (
+        "Forge has detected improvement across recent practice periods. " +
+        "Today's objective is to reinforce the habits producing that improvement."
+      );
 
-  return (
-    `Forge currently has useful context from ${availableCount} of ${totalCount} cognitive domains. ` +
-    "Today’s briefing emphasizes consistency, identity reinforcement, and alignment with your longer-term direction."
-  );
+    case "declining":
+      return (
+        "Forge has detected a recent decline in consistency. " +
+        "A single completed practice today is more valuable than increasing intensity."
+      );
+
+    case "stable":
+      return (
+        "Your recent practice has remained relatively stable. " +
+        "Continue reinforcing the behaviors that support long-term growth."
+      );
+
+    default:
+      if (availableCount === 0) {
+        return (
+          "Forge does not yet have enough information for a deeply personalized briefing. " +
+          "Completing a practice session or reflection today will begin building that understanding."
+        );
+      }
+
+      return (
+        `Forge currently has useful context from ${availableCount} of ${totalCount} cognitive domains. ` +
+        "Today’s briefing emphasizes consistency, identity reinforcement, and alignment with your longer-term direction."
+      );
+  }
 }
 
 export function buildDailyBriefing(

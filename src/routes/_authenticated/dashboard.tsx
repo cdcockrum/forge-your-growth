@@ -7,7 +7,6 @@ import {
 
 import {
   ArrowRight,
-  Sparkles,
 } from "lucide-react";
 
 import {
@@ -32,7 +31,10 @@ import {
   useDashboard,
 } from "@/features/dashboard";
 
+
+
 import {
+  DashboardCurrentState,
   DailyBriefingPanel,
 } from "@/features/dashboard/components";
 
@@ -298,165 +300,47 @@ function DashboardContent() {
               </section>
             )}
 
-            <section className="animate-reveal [animation-delay:500ms]">
-              <div className="relative overflow-hidden rounded-2xl border border-accent/10 bg-accent/5 p-6 md:p-8">
-                <div className="pointer-events-none absolute right-0 top-0 select-none p-4 font-mono text-[80px] font-extrabold uppercase leading-none opacity-[0.03] md:text-[120px]">
-                  FORGE
-                </div>
-
-                <div className="mb-4 flex items-center gap-2">
-                  <Sparkles className="size-3.5 text-accent" />
-
-                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
-                    The Mentor · Insight
-                  </p>
-                </div>
-
-                <p className="relative text-pretty text-lg font-bold leading-snug tracking-tight md:text-2xl">
-                  {getInsight(
-                    consistency,
-                    areas.length,
-                    skills.length,
-                  )}
-                </p>
-              </div>
-            </section>
+            
           </div>
         }
         sidebar={
-          <>
+  <>
+    <DashboardCurrentState
+      forgeHealth={forgeHealth}
+      forgePoints={forgePoints}
+      consistency={consistency}
+      completedThisWeek={completedThisWeek}
+      totalSessions={weekSessions.length}
+      totalHours={totalHours}
+    />
 
-           <div className="rounded-2xl border border-border bg-surface p-5">
-            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-              Forge Score
-            </p>
+    <div className="rounded-2xl border border-border bg-surface p-5">
+      <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+        Continue
+      </p>
 
-            <div className="mt-5 flex items-end justify-between gap-4">
-              <p className="text-6xl font-extrabold tracking-tighter">
-                {forgeHealth.score}
-              </p>
+      <h2 className="mt-3 text-xl font-extrabold tracking-tight">
+        Keep the rhythm moving.
+      </h2>
 
-              <p className="pb-2 text-sm font-bold text-accent">
-                {forgeHealth.grade}
-              </p>
-            </div>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">
+        Open Today to start, finish, or review the
+        practices waiting for you.
+      </p>
 
-            <div className="mt-5 h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-foreground transition-all"
-                style={{
-                  width: `${forgeHealth.score}%`,
-                }}
-              />
-            </div>
-
-            <div className="mt-5 grid grid-cols-2 gap-3 text-xs">
-              <div>
-                <p className="text-muted-foreground">
-                  Completion
-                </p>
-                <p className="mt-1 font-bold">
-                  {forgeHealth.breakdown.completion}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-muted-foreground">
-                  Consistency
-                </p>
-                <p className="mt-1 font-bold">
-                  {forgeHealth.breakdown.consistency}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-muted-foreground">
-                  Balance
-                </p>
-                <p className="mt-1 font-bold">
-                  {forgeHealth.breakdown.balance}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-muted-foreground">
-                  Reflection
-                </p>
-                <p className="mt-1 font-bold">
-                  {forgeHealth.breakdown.reflection}
-                </p>
-              </div>
-            </div>
-          </div>
-
-           <div className="rounded-2xl border border-border bg-surface p-5">
-            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-              Forge Points
-            </p>
-
-            <p className="mt-5 text-4xl font-extrabold tracking-tighter">
-              {forgePoints.score}
-            </p>
-
-            <p className="mt-2 text-xs font-semibold text-muted-foreground">
-              Earned through completed practice, difficulty, duration, reflection, and review.
-            </p>
-           </div>
-
-           <div className="rounded-2xl border border-border bg-surface p-5">
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-                Consistency
-              </p>
-
-              <p className="mt-6 text-5xl font-extrabold tracking-tighter">
-                {consistency}%
-              </p>
-
-              <p className="mt-2 text-xs font-semibold text-muted-foreground">
-                {completedThisWeek} of {weekSessions.length} this week
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-foreground bg-foreground p-5 text-background">
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] opacity-60">
-                Practice
-              </p>
-
-              <p className="mt-6 text-5xl font-extrabold tracking-tighter">
-                {totalHours}h
-              </p>
-
-              <p className="mt-2 text-xs font-semibold opacity-70">
-                Hours completed this week
-              </p>
-            </div>
-          
-
-            <div className="rounded-2xl border border-border bg-surface p-5">
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-                Continue
-              </p>
-
-              <h2 className="mt-3 text-xl font-extrabold tracking-tight">
-                Keep the rhythm moving.
-              </h2>
-
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                Open Today to start, finish, or review
-                the practices waiting for you.
-              </p>
-
-              <Link
-                to="/today"
-                className="mt-5 inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-xs font-semibold text-background transition hover:bg-foreground/90"
-              >
-                Go to Today
-                <ArrowRight className="size-3.5" />
-              </Link>
-            </div>
-          </>
-        }
-      />
+      <Link
+        to="/today"
+        className="mt-5 inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-xs font-semibold text-background transition hover:bg-foreground/90"
+      >
+        Go to Today
+        <ArrowRight className="size-3.5" />
+      </Link>
+    </div>
+     </>
+  }
+/>
+        
+    
 
       <div className="mt-16 border-t border-border pt-8">
         <p className="text-center font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
@@ -467,26 +351,3 @@ function DashboardContent() {
   );
 }
 
-function getInsight(
-  consistency: number,
-  areaCount: number,
-  skillCount: number,
-): string {
-  if (areaCount === 0) {
-    return "Begin by naming the areas of life you want to strengthen. The forge waits for the first strike.";
-  }
-
-  if (skillCount === 0) {
-    return "Add the skills that will move you toward who you are becoming. Direction precedes discipline.";
-  }
-
-  if (consistency >= 80) {
-    return "You are showing up consistently. Protect the rhythm you have created and keep the next step simple.";
-  }
-
-  if (consistency >= 50) {
-    return "The blade is shaped by the regularity of the strike. Return tomorrow and continue the work.";
-  }
-
-  return "Discipline begins by remembering what matters most. Start with one practice today.";
-}

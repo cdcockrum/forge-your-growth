@@ -24,6 +24,7 @@ const DOMAIN_KEYS = [
   "predictions",
   "advisor",
   "vision",
+  "trendAnalysis",
 ] as const satisfies readonly CognitiveDomain[];
 
 function getAvailableDomains(
@@ -116,6 +117,9 @@ export function buildCognitiveState(
 
     vision:
       input.vision,
+
+    trendAnalysis:
+      input.trendAnalysis,
 
     meta: {
       generatedAt:

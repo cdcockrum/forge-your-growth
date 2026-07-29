@@ -16,6 +16,10 @@ import type {
   PredictionResult,
 } from "../prediction";
 
+import type {
+  PracticeTrendAnalysis,
+} from "../trends";
+
 export type CognitiveStateStatus =
   | "initializing"
   | "active"
@@ -34,7 +38,8 @@ export type CognitiveDomain =
   | "intelligence"
   | "contradictions"
   | "advisor"
-  | "vision";
+  | "vision"
+  | "trendAnalysis";
 
 export interface CognitiveStateMeta {
   generatedAt: string;
@@ -56,6 +61,7 @@ export interface ForgeCognitiveState {
   intelligence: IntelligenceConclusion | null;
   advisor: AdvisorBriefing | null;
   vision: Vision | null;
+  trendAnalysis: PracticeTrendAnalysis | null;
 
   contradictions: ContradictionResult | null;
   meta: CognitiveStateMeta;

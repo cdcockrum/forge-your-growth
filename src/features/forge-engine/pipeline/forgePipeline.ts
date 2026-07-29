@@ -6,6 +6,7 @@ import type {
 
 import type { Vision } from "@/features/vision";
 
+import { buildBeliefs } from "../beliefs";
 import { buildDailyBriefing } from "../briefing";
 import { buildCognitiveState } from "../cognitive-state";
 
@@ -16,7 +17,19 @@ import type {
   WeeklyReviewSnapshot,
 } from "../narrative";
 
+import { buildPatternSummary } from "../patterns";
+
 import type { WeeklyPlanAssessment } from "../planning-assessment/assessment.types";
+
+import { buildPredictions } from "../prediction";
+
+import {
+  buildPracticeTrendAnalysis,
+} from "../trends";
+
+import type {
+  PracticeTrendAnalysis,
+} from "../trends";
 
 import {
   buildContextStage,
@@ -34,18 +47,6 @@ import type {
   ReasoningStage,
 } from "./stages";
 
-import {
-  buildBeliefs,
-} from "../beliefs";
-
-import {
-  buildPatternSummary,
-} from "../patterns";
-
-import {
-  buildPredictions,
-} from "../prediction";
-
 export type ForgePipelineOptions = {
   vision: Vision | null;
   sessions: PracticeSession[];
@@ -54,6 +55,7 @@ export type ForgePipelineOptions = {
   assessment?: WeeklyPlanAssessment;
   achievements?: AchievementSnapshot[];
   review?: WeeklyReviewSnapshot | null;
+  userName?: string;
 };
 
 export type ForgePipelineSnapshot = {
@@ -62,6 +64,7 @@ export type ForgePipelineSnapshot = {
   context: ContextStage;
   reasoning: ReasoningStage;
   explanation: ExplanationStage;
+  trendAnalysis: PracticeTrendAnalysis;
 };
 
 export function buildForgePipelineSnapshot({
@@ -86,6 +89,15 @@ export function buildForgePipelineSnapshot({
     skills,
     assessment,
   });
+
+  /*
+   * Trend analysis compares the most recent seven-day
+   * period with the preceding seven-day period.
+   */
+  const trendAnalysis =
+    buildPracticeTrendAnalysis({
+      sessions,
+    });
 
   /*
    * Context engines may be working with an account that
@@ -122,6 +134,7 @@ export function buildForgePipelineSnapshot({
     context,
     reasoning,
     explanation,
+    trendAnalysis,
   };
 }
 
@@ -134,6 +147,7 @@ export function buildForgeState(
     context,
     reasoning,
     explanation,
+    trendAnalysis,
   } = buildForgePipelineSnapshot(options);
 
   const history = {
@@ -157,7 +171,7 @@ export function buildForgeState(
   };
 
   const contradictions =
-  reasoning.contradictions;
+    reasoning.contradictions;
 
   const intelligence = {
     ...reasoning.intelligence,
@@ -175,20 +189,19 @@ export function buildForgeState(
     explanation.evidence ??
     [];
 
-  
   const beliefs = buildBeliefs({
-      advisor,
-      identity:
-        interpretation.identity,
-      evidence,
-      memory:
-        context.memory,
-    });
+    advisor,
+    identity:
+      interpretation.identity,
+    evidence,
+    memory:
+      context.memory,
+  });
 
   const patterns = buildPatternSummary(
-      [],
-      options.sessions,
-    );
+    [],
+    options.sessions,
+  );
 
   const predictions = buildPredictions({
     progress:
@@ -205,80 +218,85 @@ export function buildForgeState(
   });
 
   const cognitiveState = buildCognitiveState({
-    progress: observation.progress,
-    momentum: interpretation.momentum,
-    identity: interpretation.identity,
-    narrative: context.narrative,
-    memory: context.memory,
-    history,
-    evidence,
-    predictions,
-    intelligence,
-    contradictions,
-    advisor,
-    vision: options.vision,
+  progress: observation.progress,
+  momentum: interpretation.momentum,
+  identity: interpretation.identity,
+  narrative: context.narrative,
+  memory: context.memory,
+  history,
+  evidence,
+  predictions,
+  intelligence,
+  contradictions,
+  advisor,
+  vision: options.vision,
 
-  });
+  trendAnalysis,
+});
 
   const dailyBriefing = buildDailyBriefing({
     cognitiveState,
+    userName: options.userName,
   });
 
   return {
-  vision: options.vision,
+    vision:
+      options.vision,
 
-  progress:
-    observation.progress,
+    progress:
+      observation.progress,
 
-  momentum:
-    interpretation.momentum,
+    momentum:
+      interpretation.momentum,
 
-  forgeScore:
-    observation.forgeScore,
+    forgeScore:
+      observation.forgeScore,
 
-  forgeHealth:
-    observation.forgeHealth,
+    forgeHealth:
+      observation.forgeHealth,
 
-  identity:
-    interpretation.identity,
+    identity:
+      interpretation.identity,
 
-  coach:
-    context.coach,
+    coach:
+      context.coach,
 
-  narrative:
-    context.narrative,
+    narrative:
+      context.narrative,
 
-  assessment:
-    options.assessment,
+    assessment:
+      options.assessment,
 
-  insight:
-    reasoning.insight,
+    insight:
+      reasoning.insight,
 
-  history,
+    history,
 
-  memory:
-    context.memory,
+    memory:
+      context.memory,
 
-  advisor,
+    advisor,
 
-  contradictions,
+    contradictions,
 
-  intelligence,
+    intelligence,
 
-  evidence,
+    evidence,
 
-  beliefs,
+    beliefs,
 
-  patterns,
+    trendAnalysis,
 
-  predictions,
+    patterns,
 
-  traits:
-    interpretation.traits ??
-    [],
+    predictions,
 
-  cognitiveState,
+    traits:
+      interpretation.traits ??
+      [],
 
-  dailyBriefing,
-};
+    cognitiveState,
+
+    dailyBriefing,
+  };
 }
