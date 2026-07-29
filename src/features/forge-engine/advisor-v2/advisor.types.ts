@@ -15,12 +15,20 @@ import type {
   ReasoningResult,
 } from "./reasoning";
 
+import type {
+  ConfidenceResult,
+} from "./confidence/confidence.types";
+
+import type {
+  AdvisorBrief,
+} from "./advisor-brief/advisorBrief.types";
+
 export type AdvisorResult = {
   evidence: AdvisorEvidence[];
-
   reasoning: ReasoningResult;
+  confidence: ConfidenceResult;
+  brief: AdvisorBrief;
 };
-
 
 export type AdvisorEvidenceCategory =
   | "progress"
