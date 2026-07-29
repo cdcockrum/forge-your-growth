@@ -5,6 +5,10 @@ import type {
 } from "./advisor";
 
 import type {
+  AdvisorAnalysis,
+} from "./advisor-v2";
+
+import type {
   BeliefResult,
 } from "./beliefs";
 
@@ -104,7 +108,15 @@ export type ForgeState = {
 
   narrative: WeeklyNarrative;
 
+  /*
+   * Existing Advisor system.
+   */
   advisor: AdvisorBriefing;
+
+  /*
+   * Evidence-driven Advisor V2 analysis.
+   */
+  advisorAnalysis: AdvisorAnalysis;
 
   insight: ForgeInsight;
 

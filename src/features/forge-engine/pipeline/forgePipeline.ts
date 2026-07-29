@@ -6,6 +6,10 @@ import type {
 
 import type { Vision } from "@/features/vision";
 
+import {
+  buildAdvisorAnalysis,
+} from "../advisor-v2";
+
 import { buildBeliefs } from "../beliefs";
 import { buildDailyBriefing } from "../briefing";
 import { buildCognitiveState } from "../cognitive-state";
@@ -19,7 +23,9 @@ import type {
 
 import { buildPatternSummary } from "../patterns";
 
-import type { WeeklyPlanAssessment } from "../planning-assessment/assessment.types";
+import type {
+  WeeklyPlanAssessment,
+} from "../planning-assessment/assessment.types";
 
 import { buildPredictions } from "../prediction";
 
@@ -158,6 +164,13 @@ export function buildForgeState(
       [],
   };
 
+  /*
+   * Preserve the existing Advisor system.
+   *
+   * Advisor V2 is introduced separately as advisorAnalysis
+   * so the current user-facing Advisor remains stable during
+   * the migration.
+   */
   const advisor = {
     ...reasoning.advisor,
 
@@ -191,9 +204,12 @@ export function buildForgeState(
 
   const beliefs = buildBeliefs({
     advisor,
+
     identity:
       interpretation.identity,
+
     evidence,
+
     memory:
       context.memory,
   });
@@ -217,26 +233,83 @@ export function buildForgeState(
     patterns,
   });
 
-  const cognitiveState = buildCognitiveState({
-  progress: observation.progress,
-  momentum: interpretation.momentum,
-  identity: interpretation.identity,
-  narrative: context.narrative,
-  memory: context.memory,
-  history,
-  evidence,
-  predictions,
-  intelligence,
-  contradictions,
-  advisor,
-  vision: options.vision,
+  /*
+   * Advisor V2 receives normalized outputs from the
+   * existing cognitive engines and translates them into
+   * standardized executive evidence.
+   */
+  const advisorAnalysis = buildAdvisorAnalysis({
+    progress:
+      observation.progress,
 
-  trendAnalysis,
-});
+    momentum:
+      interpretation.momentum,
+
+    identity:
+      interpretation.identity,
+
+    memory:
+      context.memory,
+
+    history,
+
+    patterns,
+
+    beliefs,
+
+    predictions,
+
+    trendAnalysis,
+
+    vision:
+      options.vision,
+  });
+
+  /*
+   * Cognitive State continues using the existing Advisor
+   * during the first stage of the Advisor V2 migration.
+   *
+   * We will add advisorAnalysis to Cognitive State in a
+   * separate, controlled change.
+   */
+  const cognitiveState = buildCognitiveState({
+    progress:
+      observation.progress,
+
+    momentum:
+      interpretation.momentum,
+
+    identity:
+      interpretation.identity,
+
+    narrative:
+      context.narrative,
+
+    memory:
+      context.memory,
+
+    history,
+
+    evidence,
+
+    predictions,
+
+    intelligence,
+
+    contradictions,
+
+    advisor,
+
+    vision:
+      options.vision,
+
+    trendAnalysis,
+  });
 
   const dailyBriefing = buildDailyBriefing({
     cognitiveState,
-    userName: options.userName,
+    userName:
+      options.userName,
   });
 
   return {
@@ -276,6 +349,8 @@ export function buildForgeState(
       context.memory,
 
     advisor,
+
+    advisorAnalysis,
 
     contradictions,
 
