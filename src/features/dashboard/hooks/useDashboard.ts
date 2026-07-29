@@ -103,5 +103,6 @@ const totalHours =
   forgeHealth: forge.forgeHealth,
   forgePoints: forge.forgeScore,
   vision: forge.vision,
+  dailyBriefing: forge.dailyBriefing,
 };
 }

@@ -32,7 +32,10 @@ import {
   useDashboard,
 } from "@/features/dashboard";
 
-import { ForgeInsightCard } from "@/features/dashboard/components/ForgeInsightCard";
+import {
+  DailyBriefingPanel,
+} from "@/features/dashboard/components";
+
 
 export const Route = createFileRoute(
   "/_authenticated/dashboard",
@@ -92,20 +95,21 @@ function DashboardLoadingState() {
 
 function DashboardContent() {
   const {
-    areas,
-    skills,
-    weekSessions,
-    todaySessions,
-    completedThisWeek,
-    consistency,
-    totalHours,
-    dayName,
-    dateStr,
-    firstName,
-    forgeHealth,
-    forgePoints,
-    forge,
-  } = useDashboard();
+  areas,
+  skills,
+  weekSessions,
+  todaySessions,
+  completedThisWeek,
+  consistency,
+  totalHours,
+  dayName,
+  dateStr,
+  firstName,
+  forgeHealth,
+  forgePoints,
+  forge,
+  dailyBriefing,
+} = useDashboard();
 
   return (
     <>
@@ -124,13 +128,9 @@ function DashboardContent() {
 
       <WeeklyStrip sessions={weekSessions} />
 
-      <ForgeInsightCard
-        headline={forge.insight.headline}
-        summary={forge.insight.summary}
-        recommendation={forge.insight.recommendation}
-        confidence={forge.insight.confidence}
+      <DailyBriefingPanel
+        briefing={dailyBriefing}
       />
-
       <ForgeSidebarLayout
         className="mt-10"
         main={
