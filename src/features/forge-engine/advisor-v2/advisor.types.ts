@@ -23,6 +23,8 @@ import type {
   AdvisorBrief,
 } from "./advisor-brief/advisorBrief.types";
 
+
+
 export type AdvisorResult = {
   evidence: AdvisorEvidence[];
   reasoning: ReasoningResult;

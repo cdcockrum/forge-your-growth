@@ -10,21 +10,15 @@ import type {
   InferenceRule,
 } from "../inference.types";
 
-const hasPattern = (
-  patterns: readonly DetectedPattern[],
-  id: DetectedPattern["id"],
-): boolean =>
-  patterns.some(
-    (pattern) => pattern.id === id,
-  );
+import {
+  averageConfidence,
+  getPattern,
+  hasPattern,
+  maxImportance,
+  mergeEvidence,
+} from "../ruleHelpers";
 
-const getPattern = (
-  patterns: readonly DetectedPattern[],
-  id: DetectedPattern["id"],
-): DetectedPattern | undefined =>
-  patterns.find(
-    (pattern) => pattern.id === id,
-  );
+
 
 export const interruptionRule: InferenceRule = {
   id: "interruption",
