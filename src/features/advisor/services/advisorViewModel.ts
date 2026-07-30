@@ -3,8 +3,12 @@ import type {
 } from "@/features/forge-engine";
 
 import {
-  composeExecutiveNarrative,
-} from "@/features/forge-engine/reasoning-composer";
+  buildAdvisorAnalysis,
+} from "@/features/forge-engine/advisor-v2/advisorEngine";
+
+import {
+  runCommunicationPipeline,
+} from "@/features/forge-engine/advisor-v2/communication";
 
 export type AdvisorViewModel = {
   greeting: string;
@@ -58,14 +62,12 @@ export type AdvisorViewModel = {
 
   actions: string[];
 
-confidenceReasoning: number; 
+  confidenceReasoning: number;
 
   memories: {
     title: string;
     summary: string;
   }[];
-
-  
 
   longTermDirection: string;
 
@@ -75,22 +77,37 @@ confidenceReasoning: number;
 export function buildAdvisorViewModel(
   forge: ForgeState,
 ): AdvisorViewModel {
-  const assessment =
-    composeExecutiveNarrative({
-      advisor:
-        forge.advisor,
+  const advisor =
+    buildAdvisorAnalysis({
+      progress:
+        forge.progress,
 
-      beliefs:
-        forge.beliefs,
+      momentum:
+        forge.momentum,
 
-      contradictions:
-        forge.contradictions,
+      identity:
+        forge.identity,
+
+      memory:
+        forge.memory,
+
+      history:
+        forge.history,
 
       patterns:
         forge.patterns,
 
+      beliefs:
+        forge.beliefs,
+
       predictions:
         forge.predictions,
+
+      trendAnalysis:
+        forge.trendAnalysis,
+
+      vision:
+        forge.vision,
     });
 
   const strongestPattern =
@@ -99,39 +116,103 @@ export function buildAdvisorViewModel(
   const strongestPrediction =
     forge.predictions.strongest;
 
+  const primaryRecommendation =
+    advisor.reasoning.recommendations[0] ??
+    null;
+
+  const recommendationItem =
+    advisor.brief.items.find(
+      (item) =>
+        item.section ===
+        "recommendation",
+    ) ?? null;
+
+  const opportunityItem =
+    advisor.brief.items.find(
+      (item) =>
+        item.section ===
+        "opportunity",
+    ) ?? null;
+
+  const assessment =
+    advisor.brief.items
+      .flatMap(
+        (item) =>
+          item.body,
+      )
+      .filter(
+        (statement) =>
+          statement.trim().length > 0,
+      )
+      .join(" ");
+
+  const reasoning =
+    uniqueStrings([
+      ...(
+        advisor.reasoning
+          .interpretation
+          .strongest
+          ?.rationale ?? []
+      ),
+
+      ...advisor.confidence.reasons.map(
+        (reason) =>
+          reason.message,
+      ),
+    ]);
+
+  const actions =
+    uniqueStrings(
+      advisor.reasoning
+        .recommendations
+        .flatMap(
+          (recommendation) => [
+            recommendation.description,
+            ...recommendation.rationale,
+          ],
+        )
+        .slice(0, 4),
+    );
+
+
+
+  const communication =
+  runCommunicationPipeline({
+    evidence:
+      advisor.evidence,
+
+    reasoning:
+      advisor.reasoning,
+
+    confidence:
+      advisor.confidence,
+
+    brief:
+      advisor.brief,
+  });
+
   return {
     greeting:
       greeting(),
 
     summary:
-      forge.advisor.message,
+      communication.summary,
 
     assessment:
-      assessment.summary,
-
-    recommendation: {
-      title:
-        forge.advisor.title,
-
-      explanation:
-        forge.advisor.message,
-
-      priority:
-        mapAdvisorPriority(
-          forge.advisor.priority,
-        ),
-    },
-
-    actions:
-      forge.advisor.actions,
+      communication.assessment,
 
 
+    recommendation:
+      communication.recommendation,
+        actions:
+          
+
+      communication.actions.length > 0
+        ? communication.actions
+        : forge.advisor.actions,
 
     evidence:
-      forge.evidence.strongest.map(
-        (node) =>
-          node.statement,
-      ),
+      communication.evidence,
 
     beliefs:
       forge.beliefs.strongest.map(
@@ -148,31 +229,17 @@ export function buildAdvisorViewModel(
       ),
 
     opportunities:
-      forge.evidence.supporting
-        .filter(
-          (node) =>
-            node.source !==
-            "advisor",
-        )
-        .slice(0, 3)
-        .map(
-          (node) =>
-            node.statement,
-        ),
+      communication.opportunities,
 
     risks:
-      forge.evidence.contradicting
-        .slice(0, 3)
-        .map(
-          (node) =>
-            node.statement,
-        ),
+      communication.risks,
 
     reasoning:
-      forge.advisor.reasoning,
+      communication.reasoning,
 
+    
     confidenceReasoning:
-      forge.advisor.confidence,
+      advisor.confidence.score,
 
     strongestContradiction:
       forge.contradictions.strongest,
@@ -228,37 +295,26 @@ export function buildAdvisorViewModel(
       "Continue becoming the person you described in your vision.",
 
     confidence:
-      Math.round(
-        assessment.confidence,
-      ),
+      advisor.confidence.score,
   };
 }
 
-function mapAdvisorPriority(
-  priority:
-    ForgeState["advisor"]["priority"],
-): AdvisorViewModel[
-  "recommendation"
-]["priority"] {
-  switch (priority) {
-    case "recovery":
-      return "high";
-
-    case "consistency":
-      return "high";
-
-    case "focus":
-      return "medium";
-
-    case "identity":
-      return "medium";
-
-    case "vision":
-      return "low";
-
-    default:
-      return "medium";
-  }
+function uniqueStrings(
+  values: string[],
+): string[] {
+  return Array.from(
+    new Set(
+      values
+        .map(
+          (value) =>
+            value.trim(),
+        )
+        .filter(
+          (value) =>
+            value.length > 0,
+        ),
+    ),
+  );
 }
 
 function greeting(): string {

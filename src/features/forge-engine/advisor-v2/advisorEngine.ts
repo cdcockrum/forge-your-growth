@@ -19,32 +19,36 @@ import {
   runBriefPipeline,
 } from "./advisor-brief/briefPipeline";
 
+import {
+  runCommunicationPipeline,
+} from "./communication";
+
 export function buildAdvisorAnalysis(
   input: BuildAdvisorAnalysisInput,
 ): AdvisorResult {
   const evidence =
-  collectEvidence(input);
+    collectEvidence(input);
 
-const reasoning =
-  runReasoningPipeline(
+  const reasoning =
+    runReasoningPipeline(
+      evidence,
+    );
+
+  const confidence =
+    runConfidencePipeline(
+      reasoning,
+    );
+
+  const brief =
+    runBriefPipeline(
+      reasoning,
+      confidence,
+    );
+
+  return {
     evidence,
-  );
-
-const confidence =
-  runConfidencePipeline(
-    reasoning,
-  );
-
-const brief =
-  runBriefPipeline(
     reasoning,
     confidence,
-  );
-
-return {
-  evidence,
-  reasoning,
-  confidence,
-  brief,
-};
+    brief,
+  };
 }
