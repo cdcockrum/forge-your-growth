@@ -31,6 +31,7 @@ import { Route as AuthenticatedCognitiveRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAreasRouteImport } from './routes/_authenticated/areas'
 import { Route as AuthenticatedAdvisorRouteImport } from './routes/_authenticated/advisor'
 import { Route as AuthenticatedDevForgeRouteImport } from './routes/_authenticated/dev/forge'
+import { Route as AuthenticatedAdvisorDebugRouteImport } from './routes/_authenticated/advisor.debug'
 
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
@@ -143,12 +144,18 @@ const AuthenticatedDevForgeRoute = AuthenticatedDevForgeRouteImport.update({
   path: '/dev/forge',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdvisorDebugRoute =
+  AuthenticatedAdvisorDebugRouteImport.update({
+    id: '/debug',
+    path: '/debug',
+    getParentRoute: () => AuthenticatedAdvisorRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
-  '/advisor': typeof AuthenticatedAdvisorRoute
+  '/advisor': typeof AuthenticatedAdvisorRouteWithChildren
   '/areas': typeof AuthenticatedAreasRoute
   '/cognitive': typeof AuthenticatedCognitiveRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -165,13 +172,14 @@ export interface FileRoutesByFullPath {
   '/timeline': typeof AuthenticatedTimelineRoute
   '/today': typeof AuthenticatedTodayRoute
   '/vision': typeof AuthenticatedVisionRoute
+  '/advisor/debug': typeof AuthenticatedAdvisorDebugRoute
   '/dev/forge': typeof AuthenticatedDevForgeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
-  '/advisor': typeof AuthenticatedAdvisorRoute
+  '/advisor': typeof AuthenticatedAdvisorRouteWithChildren
   '/areas': typeof AuthenticatedAreasRoute
   '/cognitive': typeof AuthenticatedCognitiveRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -188,6 +196,7 @@ export interface FileRoutesByTo {
   '/timeline': typeof AuthenticatedTimelineRoute
   '/today': typeof AuthenticatedTodayRoute
   '/vision': typeof AuthenticatedVisionRoute
+  '/advisor/debug': typeof AuthenticatedAdvisorDebugRoute
   '/dev/forge': typeof AuthenticatedDevForgeRoute
 }
 export interface FileRoutesById {
@@ -196,7 +205,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
-  '/_authenticated/advisor': typeof AuthenticatedAdvisorRoute
+  '/_authenticated/advisor': typeof AuthenticatedAdvisorRouteWithChildren
   '/_authenticated/areas': typeof AuthenticatedAreasRoute
   '/_authenticated/cognitive': typeof AuthenticatedCognitiveRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -213,6 +222,7 @@ export interface FileRoutesById {
   '/_authenticated/timeline': typeof AuthenticatedTimelineRoute
   '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/vision': typeof AuthenticatedVisionRoute
+  '/_authenticated/advisor/debug': typeof AuthenticatedAdvisorDebugRoute
   '/_authenticated/dev/forge': typeof AuthenticatedDevForgeRoute
 }
 export interface FileRouteTypes {
@@ -238,6 +248,7 @@ export interface FileRouteTypes {
     | '/timeline'
     | '/today'
     | '/vision'
+    | '/advisor/debug'
     | '/dev/forge'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -261,6 +272,7 @@ export interface FileRouteTypes {
     | '/timeline'
     | '/today'
     | '/vision'
+    | '/advisor/debug'
     | '/dev/forge'
   id:
     | '__root__'
@@ -285,6 +297,7 @@ export interface FileRouteTypes {
     | '/_authenticated/timeline'
     | '/_authenticated/today'
     | '/_authenticated/vision'
+    | '/_authenticated/advisor/debug'
     | '/_authenticated/dev/forge'
   fileRoutesById: FileRoutesById
 }
@@ -451,11 +464,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDevForgeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/advisor/debug': {
+      id: '/_authenticated/advisor/debug'
+      path: '/debug'
+      fullPath: '/advisor/debug'
+      preLoaderRoute: typeof AuthenticatedAdvisorDebugRouteImport
+      parentRoute: typeof AuthenticatedAdvisorRoute
+    }
   }
 }
 
+interface AuthenticatedAdvisorRouteChildren {
+  AuthenticatedAdvisorDebugRoute: typeof AuthenticatedAdvisorDebugRoute
+}
+
+const AuthenticatedAdvisorRouteChildren: AuthenticatedAdvisorRouteChildren = {
+  AuthenticatedAdvisorDebugRoute: AuthenticatedAdvisorDebugRoute,
+}
+
+const AuthenticatedAdvisorRouteWithChildren =
+  AuthenticatedAdvisorRoute._addFileChildren(AuthenticatedAdvisorRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAdvisorRoute: typeof AuthenticatedAdvisorRoute
+  AuthenticatedAdvisorRoute: typeof AuthenticatedAdvisorRouteWithChildren
   AuthenticatedAreasRoute: typeof AuthenticatedAreasRoute
   AuthenticatedCognitiveRoute: typeof AuthenticatedCognitiveRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -476,7 +507,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdvisorRoute: AuthenticatedAdvisorRoute,
+  AuthenticatedAdvisorRoute: AuthenticatedAdvisorRouteWithChildren,
   AuthenticatedAreasRoute: AuthenticatedAreasRoute,
   AuthenticatedCognitiveRoute: AuthenticatedCognitiveRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,

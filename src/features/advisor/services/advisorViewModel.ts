@@ -6,9 +6,25 @@ import {
   buildAdvisorAnalysis,
 } from "@/features/forge-engine/advisor-v2/advisorEngine";
 
+import type {
+  AdvisorResult,
+} from "@/features/forge-engine/advisor-v2/advisor.types";
+
 import {
   runCommunicationPipeline,
 } from "@/features/forge-engine/advisor-v2/communication";
+
+type ReadableRecommendationProvenance = {
+  explanation: string;
+
+  evidence: string[];
+
+  hypotheses: string[];
+
+  conflicts: string[];
+
+  gaps: string[];
+};
 
 export type AdvisorViewModel = {
   greeting: string;
@@ -19,11 +35,18 @@ export type AdvisorViewModel = {
 
   recommendation: {
     title: string;
+
     explanation: string;
+
     priority:
       | "low"
       | "medium"
       | "high";
+
+    confidence: number;
+
+    provenance:
+      ReadableRecommendationProvenance | null;
   };
 
   evidence: string[];
@@ -74,40 +97,63 @@ export type AdvisorViewModel = {
   confidence: number;
 };
 
+export function buildAdvisorAnalysisFromForge(
+  forge: ForgeState,
+): AdvisorResult {
+  return buildAdvisorAnalysis({
+    progress:
+      forge.progress,
+
+    momentum:
+      forge.momentum,
+
+    identity:
+      forge.identity,
+
+    memory:
+      forge.memory,
+
+    history:
+      forge.history,
+
+    patterns:
+      forge.patterns,
+
+    beliefs:
+      forge.beliefs,
+
+    predictions:
+      forge.predictions,
+
+    trendAnalysis:
+      forge.trendAnalysis,
+
+    vision:
+      forge.vision,
+  });
+}
+
 export function buildAdvisorViewModel(
   forge: ForgeState,
 ): AdvisorViewModel {
   const advisor =
-    buildAdvisorAnalysis({
-      progress:
-        forge.progress,
+    buildAdvisorAnalysisFromForge(
+      forge,
+    );
 
-      momentum:
-        forge.momentum,
+  const communication =
+    runCommunicationPipeline({
+      evidence:
+        advisor.evidence,
 
-      identity:
-        forge.identity,
+      reasoning:
+        advisor.reasoning,
 
-      memory:
-        forge.memory,
+      confidence:
+        advisor.confidence,
 
-      history:
-        forge.history,
-
-      patterns:
-        forge.patterns,
-
-      beliefs:
-        forge.beliefs,
-
-      predictions:
-        forge.predictions,
-
-      trendAnalysis:
-        forge.trendAnalysis,
-
-      vision:
-        forge.vision,
+      brief:
+        advisor.brief,
     });
 
   const strongestPattern =
@@ -117,79 +163,13 @@ export function buildAdvisorViewModel(
     forge.predictions.strongest;
 
   const primaryRecommendation =
-    advisor.reasoning.recommendations[0] ??
-    null;
+    advisor.reasoning
+      .recommendations[0] ?? null;
 
-  const recommendationItem =
-    advisor.brief.items.find(
-      (item) =>
-        item.section ===
-        "recommendation",
-    ) ?? null;
-
-  const opportunityItem =
-    advisor.brief.items.find(
-      (item) =>
-        item.section ===
-        "opportunity",
-    ) ?? null;
-
-  const assessment =
-    advisor.brief.items
-      .flatMap(
-        (item) =>
-          item.body,
-      )
-      .filter(
-        (statement) =>
-          statement.trim().length > 0,
-      )
-      .join(" ");
-
-  const reasoning =
-    uniqueStrings([
-      ...(
-        advisor.reasoning
-          .interpretation
-          .strongest
-          ?.rationale ?? []
-      ),
-
-      ...advisor.confidence.reasons.map(
-        (reason) =>
-          reason.message,
-      ),
-    ]);
-
-  const actions =
-    uniqueStrings(
-      advisor.reasoning
-        .recommendations
-        .flatMap(
-          (recommendation) => [
-            recommendation.description,
-            ...recommendation.rationale,
-          ],
-        )
-        .slice(0, 4),
+  const readableProvenance =
+    buildReadableProvenance(
+      advisor,
     );
-
-
-
-  const communication =
-  runCommunicationPipeline({
-    evidence:
-      advisor.evidence,
-
-    reasoning:
-      advisor.reasoning,
-
-    confidence:
-      advisor.confidence,
-
-    brief:
-      advisor.brief,
-  });
 
   return {
     greeting:
@@ -201,12 +181,25 @@ export function buildAdvisorViewModel(
     assessment:
       communication.assessment,
 
+    recommendation: {
+      title:
+        communication.recommendation.title,
 
-    recommendation:
-      communication.recommendation,
-        actions:
-          
+      explanation:
+        communication.recommendation.explanation,
 
+      priority:
+        communication.recommendation.priority,
+
+      confidence:
+        primaryRecommendation?.confidence ??
+        advisor.confidence.score,
+
+      provenance:
+        readableProvenance,
+    },
+
+    actions:
       communication.actions.length > 0
         ? communication.actions
         : forge.advisor.actions,
@@ -237,7 +230,6 @@ export function buildAdvisorViewModel(
     reasoning:
       communication.reasoning,
 
-    
     confidenceReasoning:
       advisor.confidence.score,
 
@@ -299,19 +291,116 @@ export function buildAdvisorViewModel(
   };
 }
 
-function uniqueStrings(
-  values: string[],
+function buildReadableProvenance(
+  advisor: AdvisorResult,
+): AdvisorViewModel[
+  "recommendation"
+]["provenance"] {
+  const recommendation =
+    advisor.reasoning
+      .recommendations[0] ?? null;
+
+  if (!recommendation) {
+    return null;
+  }
+
+  const {
+    provenance,
+  } = recommendation;
+
+  const evidenceById =
+    new Map<string, string>(
+      advisor.reasoning.graph.nodes.map(
+        (node) => [
+          node.evidence.id,
+          node.evidence.statement,
+        ],
+      ),
+    );
+
+  const hypothesisById =
+    new Map<string, string>(
+      advisor.reasoning.hypotheses.map(
+        (hypothesis) => [
+          hypothesis.id,
+          hypothesis.title,
+        ],
+      ),
+    );
+
+  const contradictionById =
+    new Map<string, string>(
+      advisor.reasoning.evaluation
+        .contradictions.map(
+          (contradiction) => [
+            contradiction.id,
+            contradiction.explanation,
+          ],
+        ),
+    );
+
+  const gapById =
+    new Map<string, string>(
+      advisor.reasoning.evaluation
+        .gaps.map(
+          (gap) => [
+            gap.id,
+            gap.explanation,
+          ],
+        ),
+    );
+
+  return {
+    explanation:
+      provenance.explanation,
+
+    evidence:
+      resolveReferences(
+        provenance.evidenceIds,
+        evidenceById,
+      ),
+
+    hypotheses:
+      resolveReferences(
+        provenance.hypothesisIds,
+        hypothesisById,
+      ),
+
+    conflicts:
+      resolveReferences(
+        provenance.conflictIds,
+        contradictionById,
+      ),
+
+    gaps:
+      resolveReferences(
+        provenance.gapIds,
+        gapById,
+      ),
+  };
+}
+
+function resolveReferences(
+  ids: string[],
+  references: ReadonlyMap<
+    string,
+    string
+  >,
 ): string[] {
   return Array.from(
     new Set(
-      values
+      ids
         .map(
-          (value) =>
-            value.trim(),
+          (id) =>
+            references.get(id),
         )
         .filter(
-          (value) =>
-            value.length > 0,
+          (
+            value,
+          ): value is string =>
+            Boolean(
+              value?.trim(),
+            ),
         ),
     ),
   );

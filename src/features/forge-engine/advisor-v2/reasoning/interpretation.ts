@@ -4,6 +4,10 @@ import type {
   ReasoningAnalysis,
 } from "./reasoning.types";
 
+import type {
+  EvaluationResult,
+} from "./evaluation";
+
 function clamp01(
   value: number,
 ): number {
@@ -179,7 +183,7 @@ function rankHypotheses(
 
 function buildInterpretationSummary(
   strongest: Hypothesis | null,
-  analysis: ReasoningAnalysis,
+  evaluation: EvaluationResult,
 ): string {
   if (!strongest) {
     return (
@@ -188,16 +192,12 @@ function buildInterpretationSummary(
     );
   }
 
-  const hasContradictions =
-    analysis.contradictions.length > 0;
+  const competingCount =
+    evaluation.competingHypotheses.length;
 
-  const hasTensions =
-    analysis.tensions.length > 0;
-
-  const hasGaps =
-    analysis.gaps.length > 0;
-
-  if (hasContradictions) {
+  if (
+    evaluation.contradictions.length > 0
+  ) {
     return (
       `${strongest.description} ` +
       "However, meaningful contradictory evidence remains, " +
@@ -205,7 +205,19 @@ function buildInterpretationSummary(
     );
   }
 
-  if (hasTensions) {
+  if (competingCount > 0) {
+    return (
+      `${strongest.description} ` +
+      `${competingCount === 1
+        ? "A credible alternative explanation remains"
+        : `${competingCount} credible alternative explanations remain`
+      }, so the current conclusion should remain provisional.`
+    );
+  }
+
+  if (
+    evaluation.tensions.length > 0
+  ) {
     return (
       `${strongest.description} ` +
       "Some evidence remains in tension with this interpretation, " +
@@ -213,7 +225,9 @@ function buildInterpretationSummary(
     );
   }
 
-  if (hasGaps) {
+  if (
+    evaluation.gaps.length > 0
+  ) {
     return (
       `${strongest.description} ` +
       "This is the strongest current interpretation, although " +
@@ -230,6 +244,7 @@ function buildInterpretationSummary(
 function calculateInterpretationConfidence(
   strongest: Hypothesis | null,
   analysis: ReasoningAnalysis,
+  evaluation: EvaluationResult,
 ): number {
   if (!strongest) {
     return 0;
@@ -241,44 +256,32 @@ function calculateInterpretationConfidence(
       analysis,
     );
 
-  const contradictionPenalty =
-    Math.min(
-      analysis.contradictions.reduce(
-        (total, contradiction) =>
-          total +
-          contradiction.severity,
-        0,
-      ) * 0.05,
-      0.2,
-    );
+  /*
+   * Consistency adjusts confidence without
+   * completely overriding the strength of
+   * the underlying hypothesis.
+   *
+   * A consistency score of:
+   *
+   * 1.0 preserves the full score.
+   * 0.5 preserves 82.5% of the score.
+   * 0.0 preserves 65% of the score.
+   */
+  const consistencyMultiplier =
+    0.65 +
+    evaluation.consistencyScore * 0.35;
 
-  const tensionPenalty =
+  const competitionPenalty =
     Math.min(
-      analysis.tensions.reduce(
-        (total, tension) =>
-          total +
-          tension.severity,
-        0,
-      ) * 0.025,
+      evaluation.competingHypotheses.length *
+        0.04,
       0.12,
     );
 
-  const gapPenalty =
-    Math.min(
-      analysis.gaps.reduce(
-        (total, gap) =>
-          total +
-          gap.importance,
-        0,
-      ) * 0.015,
-      0.15,
-    );
-
   return clamp01(
-    hypothesisScore -
-      contradictionPenalty -
-      tensionPenalty -
-      gapPenalty,
+    hypothesisScore *
+      consistencyMultiplier -
+      competitionPenalty,
   );
 }
 
@@ -365,6 +368,7 @@ function collectConflictingEvidence(
 export function buildInterpretation(
   hypotheses: Hypothesis[],
   analysis: ReasoningAnalysis,
+  evaluation: EvaluationResult,
 ): Interpretation {
   const rankedHypotheses =
     rankHypotheses(
@@ -380,7 +384,7 @@ export function buildInterpretation(
     summary:
       buildInterpretationSummary(
         strongest,
-        analysis,
+        evaluation,
       ),
 
     hypotheses:
@@ -392,6 +396,7 @@ export function buildInterpretation(
       calculateInterpretationConfidence(
         strongest,
         analysis,
+        evaluation,
       ),
 
     supportingEvidence:

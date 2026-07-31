@@ -6,3 +6,4 @@ export * from "./reasoningPipeline";
 export * from "./reasoning.types";
 export * from "./recommendations";
 export * from "./weighting";
+export * from "./provenance";

@@ -30,6 +30,15 @@ import {
   weightEvidenceGraph,
 } from "./weighting";
 
+
+import {
+  evaluateReasoning,
+} from "./evaluation";
+
+import {
+  buildReasoningTrace,
+} from "./trace";
+
 export function runReasoningPipeline(
   evidence: AdvisorEvidence[],
 ): ReasoningResult {
@@ -56,16 +65,31 @@ export function runReasoningPipeline(
       analysis,
     );
 
+  const evaluation =
+  evaluateReasoning(
+    analysis,
+    hypotheses,
+  );
+
   const interpretation =
-    buildInterpretation(
-      hypotheses,
-      analysis,
-    );
+  buildInterpretation(
+    hypotheses,
+    analysis,
+    evaluation,
+  );
 
   const recommendations =
-    buildRecommendations(
-      interpretation,
-    );
+  buildRecommendations(
+    interpretation,
+    evaluation,
+  );
+
+  const trace =
+  buildReasoningTrace(
+    interpretation,
+    analysis,
+    evaluation,
+  );
 
   return {
     graph:
@@ -82,6 +106,10 @@ export function runReasoningPipeline(
 
     interpretation,
 
+    evaluation,
+
     recommendations,
+
+    trace,
   };
 }

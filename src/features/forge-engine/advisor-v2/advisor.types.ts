@@ -23,14 +23,16 @@ import type {
   AdvisorBrief,
 } from "./advisor-brief/advisorBrief.types";
 
+import type {
+  AdvisorProvenance,
+} from "./provenance";
 
-
-export type AdvisorResult = {
+export interface AdvisorResult {
   evidence: AdvisorEvidence[];
   reasoning: ReasoningResult;
   confidence: ConfidenceResult;
   brief: AdvisorBrief;
-};
+}
 
 export type AdvisorEvidenceCategory =
   | "progress"

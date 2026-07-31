@@ -2,6 +2,21 @@ import type {
   AdvisorEvidence,
 } from "../advisor.types";
 
+import type {
+  EvaluationResult,
+} from "./evaluation";
+
+import type {
+  ReasoningTrace,
+} from "./trace";
+
+
+import type {
+  RecommendationProvenance,
+} from "../provenance";
+
+
+
 export type ReasoningNode = {
   /**
    * Internal graph node identifier.
@@ -137,6 +152,8 @@ export type Recommendation = {
   confidence: number;
 
   priority: RecommendationPriority;
+
+  provenance: RecommendationProvenance;
 };
 
 export type EvidenceAgreement = {
@@ -213,7 +230,11 @@ export type ReasoningResult = {
 
   hypotheses: Hypothesis[];
 
+  evaluation: EvaluationResult;
+
   interpretation: Interpretation;
 
   recommendations: Recommendation[];
+
+  trace: ReasoningTrace;
 };

@@ -80,6 +80,12 @@ function AdvisorContent() {
         priority={
           advisor.recommendation.priority
         }
+        confidence={
+          advisor.recommendation.confidence
+        }
+        provenance={
+          advisor.recommendation.provenance
+        }
       />
 
       <AdvisorActionsCard
