@@ -14,6 +14,9 @@ import {
   AdvisorActionsCard,
   AdvisorExecutiveSummary,
   AdvisorReasoningPanel,
+  AdvisorReflectionPanel,
+  AdvisorSimulationPanel,
+  AdvisorWisdomPanel,
   AssessmentNarrative,
   BeliefsCard,
   ContradictionCard,
@@ -100,13 +103,94 @@ function AdvisorContent() {
         reasoning={advisor.reasoning}
       />
 
-    
+      <AdvisorReflectionPanel
+  confidenceStatement={
+    advisor.reflection
+      .confidenceStatement
+  }
+  assumptions={
+    advisor.reflection
+      .assumptions
+  }
+  uncertainties={
+    advisor.reflection
+      .uncertainties
+  }
+  alternativeInterpretations={
+    advisor.reflection
+      .alternativeInterpretations
+  }
+  additionalEvidenceNeeded={
+    advisor.reflection
+      .additionalEvidenceNeeded
+  }
+/>
 
-      <AssessmentNarrative
-        narrative={
-          advisor.assessment
-        }
-      />
+<AdvisorReflectionPanel
+  confidenceStatement={
+    advisor.reflection
+      .confidenceStatement
+  }
+  assumptions={
+    advisor.reflection
+      .assumptions
+  }
+  uncertainties={
+    advisor.reflection
+      .uncertainties
+  }
+  alternativeInterpretations={
+    advisor.reflection
+      .alternativeInterpretations
+  }
+  additionalEvidenceNeeded={
+    advisor.reflection
+      .additionalEvidenceNeeded
+  }
+/>
+
+<AdvisorSimulationPanel
+  bestCase={
+    advisor.simulation.bestCase
+  }
+  expectedCase={
+    advisor.simulation.expectedCase
+  }
+  worstCase={
+    advisor.simulation.worstCase
+  }
+/>
+
+<AssessmentNarrative
+  narrative={
+    advisor.assessment
+  }
+/>
+
+      
+<AdvisorWisdomPanel
+  narrative={
+    advisor.wisdom.narrative
+  }
+  insights={
+    advisor.wisdom.insights
+  }
+  longTermThemes={
+    advisor.wisdom.longTermThemes
+  }
+  emergingIdentity={
+    advisor.wisdom.emergingIdentity
+  }
+  cautions={
+    advisor.wisdom.cautions
+  }
+  opportunities={
+    advisor.wisdom.opportunities
+  }
+  confidence={
+    advisor.wisdom.confidence
+  }
+/>
 
       <section className="space-y-6">
         <header>

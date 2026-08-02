@@ -26,6 +26,28 @@ type ReadableRecommendationProvenance = {
   gaps: string[];
 };
 
+type AdvisorSimulationScenario = {
+  title: string;
+
+  description: string;
+
+  probability: number;
+
+  trajectory: string;
+
+  recommendations: string[];
+};
+
+type AdvisorWisdomInsight = {
+  id: string;
+
+  title: string;
+
+  explanation: string;
+
+  confidence: number;
+};
+
 export type AdvisorViewModel = {
   greeting: string;
 
@@ -53,7 +75,9 @@ export type AdvisorViewModel = {
 
   beliefs: {
     id: string;
+
     statement: string;
+
     confidence: number;
   }[];
 
@@ -66,22 +90,67 @@ export type AdvisorViewModel = {
 
   pattern: {
     title: string;
+
     description: string;
+
     confidence:
       | "low"
       | "medium"
       | "high";
+
     recommendation?: string;
   } | null;
 
   prediction: {
     title: string;
+
     description: string;
+
     confidence: number;
+
     recommendation: string;
   } | null;
 
   reasoning: string[];
+
+  wisdom: {
+    narrative: string;
+
+    insights: AdvisorWisdomInsight[];
+
+    longTermThemes: string[];
+
+    emergingIdentity: string[];
+
+    cautions: string[];
+
+    opportunities: string[];
+
+    confidence: number;
+  };
+
+  reflection: {
+    confidenceStatement: string;
+
+    assumptions: string[];
+
+    uncertainties: string[];
+
+    alternativeInterpretations: string[];
+
+    additionalEvidenceNeeded: string[];
+  };
+
+  simulation: {
+    bestCase:
+      AdvisorSimulationScenario;
+
+    expectedCase:
+      AdvisorSimulationScenario;
+
+    worstCase:
+      AdvisorSimulationScenario;
+  };
 
   actions: string[];
 
@@ -89,6 +158,7 @@ export type AdvisorViewModel = {
 
   memories: {
     title: string;
+
     summary: string;
   }[];
 
@@ -142,19 +212,16 @@ export function buildAdvisorViewModel(
     );
 
   const communication =
-    runCommunicationPipeline({
-      evidence:
-        advisor.evidence,
+  runCommunicationPipeline({
+    wisdom:
+      advisor.wisdom,
 
-      reasoning:
-        advisor.reasoning,
+    confidence:
+      advisor.confidence,
 
-      confidence:
-        advisor.confidence,
-
-      brief:
-        advisor.brief,
-    });
+    brief:
+      advisor.brief,
+  });
 
   const strongestPattern =
     forge.patterns.strongestPattern;
@@ -199,11 +266,6 @@ export function buildAdvisorViewModel(
         readableProvenance,
     },
 
-    actions:
-      communication.actions.length > 0
-        ? communication.actions
-        : forge.advisor.actions,
-
     evidence:
       communication.evidence,
 
@@ -226,12 +288,6 @@ export function buildAdvisorViewModel(
 
     risks:
       communication.risks,
-
-    reasoning:
-      communication.reasoning,
-
-    confidenceReasoning:
-      advisor.confidence.score,
 
     strongestContradiction:
       forge.contradictions.strongest,
@@ -270,6 +326,94 @@ export function buildAdvisorViewModel(
           }
         : null,
 
+    reasoning:
+      communication.reasoning,
+
+    reflection: {
+      confidenceStatement:
+        advisor.reflection.confidenceStatement,
+
+      assumptions:
+        advisor.reflection.assumptions,
+
+      uncertainties:
+        advisor.reflection.uncertainties,
+
+      alternativeInterpretations:
+        advisor.reflection
+          .alternativeInterpretations,
+
+      additionalEvidenceNeeded:
+        advisor.reflection
+          .additionalEvidenceNeeded,
+    },
+
+    simulation: {
+      bestCase:
+        mapSimulationScenario(
+          advisor.simulation.bestCase,
+        ),
+
+      expectedCase:
+        mapSimulationScenario(
+          advisor.simulation.expectedCase,
+        ),
+
+      worstCase:
+        mapSimulationScenario(
+          advisor.simulation.worstCase,
+        ),
+    },
+
+    wisdom: {
+  narrative:
+    advisor.wisdom.narrative,
+
+  insights:
+    advisor.wisdom.insights.map(
+      (insight) => ({
+        id:
+          insight.id,
+
+        title:
+          insight.title,
+
+        explanation:
+          insight.explanation,
+
+        confidence:
+          insight.confidence,
+      }),
+    ),
+
+  longTermThemes: [
+    ...advisor.wisdom.longTermThemes,
+  ],
+
+  emergingIdentity: [
+    ...advisor.wisdom.emergingIdentity,
+  ],
+
+  cautions: [
+    ...advisor.wisdom.cautions,
+  ],
+
+  opportunities: [
+    ...advisor.wisdom.opportunities,
+  ],
+
+  confidence:
+    advisor.wisdom.confidence,
+},
+
+    actions:
+      communication.actions.length > 0
+        ? communication.actions
+        : forge.advisor.actions,
+
+    confidenceReasoning:
+      advisor.confidence.score,
+
     memories:
       forge.memory.strongest.map(
         (memory) => ({
@@ -288,6 +432,30 @@ export function buildAdvisorViewModel(
 
     confidence:
       advisor.confidence.score,
+  };
+}
+
+function mapSimulationScenario(
+  scenario: AdvisorResult[
+    "simulation"
+  ]["bestCase"],
+): AdvisorSimulationScenario {
+  return {
+    title:
+      scenario.title,
+
+    description:
+      scenario.description,
+
+    probability:
+      scenario.probability,
+
+    trajectory:
+      scenario.trajectory,
+
+    recommendations: [
+      ...scenario.recommendations,
+    ],
   };
 }
 

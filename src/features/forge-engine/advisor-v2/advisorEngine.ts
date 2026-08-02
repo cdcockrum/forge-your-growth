@@ -1,14 +1,6 @@
 import {
-  collectEvidence,
-} from "./evidenceCollector";
-
-import {
-  runReasoningPipeline,
-} from "./reasoning";
-
-import {
-  runConfidencePipeline,
-} from "./confidence/confidencePipeline";
+  runBriefPipeline,
+} from "./advisor-brief/briefPipeline";
 
 import type {
   AdvisorResult,
@@ -16,12 +8,32 @@ import type {
 } from "./advisor.types";
 
 import {
-  runBriefPipeline,
-} from "./advisor-brief/briefPipeline";
+  runConfidencePipeline,
+} from "./confidence/confidencePipeline";
 
 import {
-  runCommunicationPipeline,
-} from "./communication";
+  collectEvidence,
+} from "./evidenceCollector";
+
+import {
+  buildExecutiveJudgment,
+} from "./executive-judgment";
+
+import {
+  buildSimulation,
+} from "./simulation";
+
+import {
+  runReasoningPipeline,
+} from "./reasoning";
+
+import {
+  buildReflection,
+} from "./reflection";
+
+import {
+  buildWisdom,
+} from "./wisdom";
 
 export function buildAdvisorAnalysis(
   input: BuildAdvisorAnalysisInput,
@@ -33,6 +45,33 @@ export function buildAdvisorAnalysis(
     runReasoningPipeline(
       evidence,
     );
+
+  const judgment =
+    buildExecutiveJudgment(
+      reasoning,
+    );
+
+  const reflection =
+    buildReflection(
+      reasoning,
+      judgment,
+    );
+
+  const simulation =
+    buildSimulation(
+      reasoning,
+      judgment,
+      reflection,
+    );
+
+    const wisdom =
+  buildWisdom(
+    reasoning,
+    judgment,
+    reflection,
+    simulation,
+    null,
+  );
 
   const confidence =
     runConfidencePipeline(
@@ -47,8 +86,19 @@ export function buildAdvisorAnalysis(
 
   return {
     evidence,
+
     reasoning,
+
+    judgment,
+
     confidence,
+
+    reflection,
+
+    simulation,
+
+    wisdom,
+    
     brief,
   };
 }

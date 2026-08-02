@@ -12,8 +12,16 @@ import type {
 } from "../confidence/confidence.types";
 
 import type {
+  ExecutiveJudgment,
+} from "../executive-judgment";
+
+import type {
   ReasoningResult,
 } from "../reasoning";
+
+import type {
+  Wisdom,
+} from "../wisdom";
 
 export type ForgeCommunicationTone =
   | "encouraging"
@@ -22,9 +30,7 @@ export type ForgeCommunicationTone =
   | "direct";
 
 export type ForgeCommunicationInput = {
-  evidence: AdvisorEvidence[];
-
-  reasoning: ReasoningResult;
+  wisdom: Wisdom;
 
   confidence: ConfidenceResult;
 

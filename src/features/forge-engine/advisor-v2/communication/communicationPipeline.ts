@@ -1,132 +1,81 @@
-import {
-  describeConfidence,
-  humanizeEvidence,
-  normalizeConfidence,
-  selectTone,
-} from "./language";
+import type {
+  AdvisorPriority,
+} from "../advisor.types";
 
 import type {
   ForgeCommunicationInput,
   ForgeCommunicationResult,
+  ForgeCommunicationTone,
 } from "./communication.types";
-
-import {
-  composeConversation,
-} from "./conversation";
-
-import {
-  buildNarrative,
-} from "./narrative";
 
 export function runCommunicationPipeline(
   input: ForgeCommunicationInput,
 ): ForgeCommunicationResult {
-  const positiveEvidence =
-    input.evidence.filter(
-      (item) =>
-        item.polarity ===
-        "positive",
-    );
-
-  const negativeEvidence =
-    input.evidence.filter(
-      (item) =>
-        item.polarity ===
-        "negative",
-    );
-
   const tone =
-    selectTone(
-      positiveEvidence.length,
-      negativeEvidence.length,
+    selectCommunicationTone(
+      input.wisdom.confidence,
+      input.wisdom.cautions.length,
+      input.wisdom.opportunities.length,
+    );
+
+  const primaryInsight =
+    input.wisdom.insights[0] ??
+    null;
+
+  const summary =
+    buildSummary(
+      input.wisdom.narrative,
+      tone,
+    );
+
+  const assessment =
+    buildAssessment(
+      input.wisdom.narrative,
+      input.wisdom.longTermThemes,
+      input.wisdom.emergingIdentity,
+    );
+
+  const recommendation =
+    buildRecommendation(
+      primaryInsight,
+      input.wisdom.opportunities,
       input.confidence.score,
     );
 
- 
-const narrative =
-  buildNarrative(
-    input,
-  );
-
-const summary =
-  composeConversation(
-    narrative,
-  );
-
-
-  const strongestEvidence =
-    [...input.evidence]
-      .sort(
-        (left, right) =>
-          evidenceWeight(right) -
-          evidenceWeight(left),
-      )
-      .slice(0, 6);
-
-  const primaryRecommendation =
-    input.reasoning
-      .recommendations[0] ??
-    null;
-
-   const assessment =
-    buildAssessment(
-      strongestEvidence.map(
-        humanizeEvidence,
-      ),
-      describeConfidence(
-        input.confidence,
-      ),
-    );
-
-  const recommendation = {
-    title:
-      humanizeRecommendationTitle(
-        primaryRecommendation
-          ?.title,
-      ),
-
-    explanation:
-      humanizeRecommendationExplanation(
-        primaryRecommendation
-          ?.description,
-        primaryRecommendation
-          ?.rationale,
-      ),
-
-    priority:
-      primaryRecommendation
-        ?.priority ??
-      "low",
-  };
-
   const reasoning =
     uniqueStrings([
-      ...strongestEvidence
-        .slice(0, 4)
-        .map(
-          humanizeEvidence,
-        ),
-
-      describeConfidence(
-        input.confidence,
+      ...input.wisdom.insights.map(
+        (insight) =>
+          insight.explanation,
       ),
-    ]);
+
+      ...input.wisdom.longTermThemes,
+
+      ...input.wisdom.emergingIdentity,
+    ]).slice(0, 6);
 
   const actions =
     uniqueStrings(
-      input.reasoning
-        .recommendations
-        .flatMap(
-          (item) => [
-            item.description,
-            ...item.rationale,
-          ],
-        )
-        .map(
-          humanizeAction,
-        )
-        .slice(0, 4),
-    );
+      input.wisdom.opportunities,
+    ).slice(0, 4);
+
+  const evidence =
+    uniqueStrings(
+      input.wisdom.insights.map(
+        (insight) =>
+          insight.title,
+      ),
+    ).slice(0, 6);
+
+  const opportunities =
+    uniqueStrings(
+      input.wisdom.opportunities,
+    ).slice(0, 4);
+
+  const risks =
+    uniqueStrings(
+      input.wisdom.cautions,
+    ).slice(0, 4);
 
   return {
     summary,
@@ -139,167 +88,216 @@ const summary =
 
     actions,
 
-    evidence:
-      strongestEvidence.map(
-        humanizeEvidence,
-      ),
+    evidence,
 
-    opportunities:
-      positiveEvidence
-        .sort(
-          (left, right) =>
-            evidenceWeight(right) -
-            evidenceWeight(left),
-        )
-        .slice(0, 3)
-        .map(
-          humanizeEvidence,
-        ),
+    opportunities,
 
-    risks:
-      negativeEvidence
-        .sort(
-          (left, right) =>
-            evidenceWeight(right) -
-            evidenceWeight(left),
-        )
-        .slice(0, 3)
-        .map(
-          humanizeEvidence,
-        ),
+    risks,
 
     tone,
   };
 }
 
 function buildSummary(
-  evidence: string[],
-  tone:
-    ForgeCommunicationResult["tone"],
+  narrative: string,
+  tone: ForgeCommunicationTone,
 ): string {
-  const primary =
-    evidence[0] ??
-    "Forge is still learning how your recent actions connect to your longer-term direction.";
+  const trimmedNarrative =
+    narrative.trim();
+
+  if (trimmedNarrative) {
+    return sentenceCase(
+      trimmedNarrative,
+    );
+  }
 
   switch (tone) {
     case "encouraging":
-      return `Looking across your recent activity, one encouraging theme stands out. ${primary}`;
+      return (
+        "Your current direction contains several encouraging signals. " +
+        "Continue reinforcing the behaviors that are supporting them."
+      );
 
     case "direct":
-      return `One thing needs your attention right now. ${primary}`;
+      return (
+        "A meaningful tension needs your attention. " +
+        "Choose one focused action before expanding into additional goals."
+      );
 
     case "cautious":
-      return `A possible direction is beginning to emerge, although it is still too early to treat it as settled. ${primary}`;
+      return (
+        "A possible direction is emerging, but Forge needs more repeated " +
+        "evidence before treating it as stable."
+      );
 
     case "steady":
     default:
-      return `Looking across your recent activity, a fairly consistent picture is beginning to emerge. ${primary}`;
+      return (
+        "Your recent activity is beginning to form a coherent picture, " +
+        "although Forge will continue testing that interpretation."
+      );
   }
 }
 
 function buildAssessment(
-  evidence: string[],
-  confidenceStatement: string,
+  narrative: string,
+  longTermThemes: string[],
+  emergingIdentity: string[],
 ): string {
-  const observations =
-    uniqueStrings(
-      evidence,
-    ).slice(
-      0,
-      3,
+  const statements =
+    uniqueStrings([
+      narrative,
+
+      ...longTermThemes.slice(
+        0,
+        2,
+      ),
+
+      ...emergingIdentity.slice(
+        0,
+        2,
+      ),
+    ]);
+
+  if (statements.length === 0) {
+    return (
+      "Forge is still gathering enough repeated evidence to form " +
+      "a durable long-term assessment."
+    );
+  }
+
+  return statements
+    .map(
+      sentenceCase,
+    )
+    .join(" ");
+}
+
+function buildRecommendation(
+  primaryInsight:
+    | ForgeCommunicationInput[
+        "wisdom"
+      ]["insights"][number]
+    | null,
+  opportunities: string[],
+  confidence: number,
+): ForgeCommunicationResult[
+  "recommendation"
+] {
+  const primaryOpportunity =
+    opportunities[0] ??
+    null;
+
+  return {
+    title:
+      primaryInsight?.title
+        ? humanizeTitle(
+            primaryInsight.title,
+          )
+        : "Continue gathering meaningful evidence",
+
+    explanation:
+      buildRecommendationExplanation(
+        primaryInsight?.explanation,
+        primaryOpportunity,
+      ),
+
+    priority:
+      determinePriority(
+        confidence,
+      ),
+  };
+}
+
+function buildRecommendationExplanation(
+  insight:
+    | string
+    | undefined,
+  opportunity:
+    | string
+    | null,
+): string {
+  const statements =
+    uniqueStrings([
+      insight ?? "",
+      opportunity ?? "",
+    ]);
+
+  if (statements.length > 0) {
+    return statements
+      .map(
+        sentenceCase,
+      )
+      .join(" ");
+  }
+
+  return (
+    "Choose one deliberate action that supports your longer-term direction, " +
+    "then allow the result to become new evidence."
+  );
+}
+
+function determinePriority(
+  confidence: number,
+): AdvisorPriority {
+  const normalized =
+    normalizeConfidence(
+      confidence,
+    );
+
+  if (normalized >= 0.75) {
+    return "high";
+  }
+
+  if (normalized >= 0.5) {
+    return "medium";
+  }
+
+  return "low";
+}
+
+function selectCommunicationTone(
+  confidence: number,
+  cautionCount: number,
+  opportunityCount: number,
+): ForgeCommunicationTone {
+  const normalized =
+    normalizeConfidence(
+      confidence,
     );
 
   if (
-    observations.length === 0
+    cautionCount > opportunityCount &&
+    normalized >= 0.65
   ) {
-    return confidenceStatement;
-  }
-
-  return [
-    ...observations,
-    confidenceStatement,
-  ].join(
-    " ",
-  );
-}
-
-function humanizeRecommendationTitle(
-  title:
-    | string
-    | undefined,
-): string {
-  if (!title?.trim()) {
-    return "Take one meaningful next step";
-  }
-
-  const normalized =
-    title
-      .trim()
-      .toLowerCase();
-
-  if (
-    normalized.includes(
-      "recommendation",
-    )
-  ) {
-    return "Turn this insight into practice";
+    return "direct";
   }
 
   if (
-    normalized.includes(
-      "momentum",
-    )
+    cautionCount > 0 ||
+    normalized < 0.5
   ) {
-    return "Rebuild momentum with one clear action";
+    return "cautious";
   }
 
   if (
-    normalized.includes(
-      "identity",
-    )
+    opportunityCount > cautionCount &&
+    normalized >= 0.7
   ) {
-    return "Reinforce the identity you are building";
+    return "encouraging";
   }
 
-  return sentenceCase(
-    title,
-  );
+  return "steady";
 }
 
-function humanizeRecommendationExplanation(
-  description:
-    | string
-    | undefined,
-  rationale:
-    | string[]
-    | undefined,
-): string {
-  const candidates =
-    uniqueStrings([
-      description ?? "",
-      ...(rationale ?? []),
-    ]);
-
-  const first =
-    candidates[0];
-
-  if (!first) {
-    return "Choose one action that clearly supports the person you are trying to become, then use the result as new evidence.";
-  }
-
-  return humanizeAction(
-    first,
-  );
-}
-
-function humanizeAction(
-  value: string,
+function humanizeTitle(
+  title: string,
 ): string {
   const trimmed =
-    value.trim();
+    title.trim();
 
   if (!trimmed) {
-    return trimmed;
+    return "Take one meaningful next step";
   }
 
   const lower =
@@ -307,29 +305,26 @@ function humanizeAction(
 
   if (
     lower.includes(
-      "continue reinforcing",
+      "momentum",
     )
   ) {
-    return "Choose one meaningful action that reinforces this direction today.";
+    return "Protect and strengthen your momentum";
   }
 
   if (
     lower.includes(
-      "monitor",
+      "identity",
     )
   ) {
-    return "Pay attention to whether this becomes a repeated pattern or remains an isolated event.";
+    return "Reinforce the identity you are building";
   }
 
   if (
     lower.includes(
-      "complete",
-    ) &&
-    lower.includes(
-      "practice",
+      "evidence",
     )
   ) {
-    return "Complete one meaningful practice session and treat it as the first step toward rebuilding consistency.";
+    return "Create clearer evidence through action";
   }
 
   return sentenceCase(
@@ -337,16 +332,20 @@ function humanizeAction(
   );
 }
 
-function evidenceWeight(
-  item: ForgeCommunicationInput[
-    "evidence"
-  ][number],
+function normalizeConfidence(
+  confidence: number,
 ): number {
-  return (
-    normalizeConfidence(
-      item.confidence,
-    ) *
-    item.impact
+  const normalized =
+    confidence > 1
+      ? confidence / 100
+      : confidence;
+
+  return Math.max(
+    0,
+    Math.min(
+      normalized,
+      1,
+    ),
   );
 }
 
@@ -379,9 +378,7 @@ function sentenceCase(
   }
 
   const sentence =
-    trimmed
-      .charAt(0)
-      .toUpperCase() +
+    trimmed.charAt(0).toUpperCase() +
     trimmed.slice(1);
 
   return /[.!?]$/.test(
@@ -390,30 +387,3 @@ function sentenceCase(
     ? sentence
     : `${sentence}.`;
 }
-
-
-
-function buildNarrativeSummary(
-  identity: ForgeCommunicationInput["evidence"],
-  momentum: ForgeCommunicationInput["evidence"],
-  vision: ForgeCommunicationInput["evidence"],
-): string {
-  const hasIdentity = identity.length > 0;
-  const hasMomentum = momentum.length > 0;
-  const hasVision = vision.length > 0;
-
-  if (hasIdentity && hasMomentum && hasVision) {
-    return "Your recent activity paints a coherent picture. The person you're becoming is still visible, your momentum is evolving, and your daily actions continue to relate to your longer-term direction.";
-  }
-
-  if (hasIdentity && hasMomentum) {
-    return "Your recent actions continue to shape your identity, although the pace of that growth has shifted.";
-  }
-
-  if (hasMomentum && hasVision) {
-    return "Your current momentum is beginning to reveal how closely your daily choices align with your long-term direction.";
-  }
-
-  return "Forge is continuing to learn from your recent activity.";
-}
-

@@ -1,38 +1,90 @@
 // src/features/forge-engine/advisor-v2/advisor.types.ts
 
-import type { Vision } from "@/features/vision";
-
-import type { BeliefResult } from "../beliefs";
-import type { HistoryResult } from "../history";
-import type { IdentityEngineResult } from "../identity";
-import type { MemoryResult } from "../memory";
-import type { MomentumResult } from "../momentum";
-import type { PatternSummary } from "../patterns";
-import type { PredictionResult } from "../prediction";
-import type { ProgressSummary } from "../progress";
-import type { PracticeTrendAnalysis } from "../trends";
 import type {
-  ReasoningResult,
-} from "./reasoning";
+  Vision,
+} from "@/features/vision";
 
 import type {
-  ConfidenceResult,
-} from "./confidence/confidence.types";
+  BeliefResult,
+} from "../beliefs";
+
+import type {
+  HistoryResult,
+} from "../history";
+
+import type {
+  IdentityEngineResult,
+} from "../identity";
+
+import type {
+  MemoryResult,
+} from "../memory";
+
+import type {
+  MomentumResult,
+} from "../momentum";
+
+import type {
+  PatternSummary,
+} from "../patterns";
+
+import type {
+  PredictionResult,
+} from "../prediction";
+
+import type {
+  ProgressSummary,
+} from "../progress";
+
+import type {
+  PracticeTrendAnalysis,
+} from "../trends";
 
 import type {
   AdvisorBrief,
 } from "./advisor-brief/advisorBrief.types";
 
 import type {
-  AdvisorProvenance,
-} from "./provenance";
+  ConfidenceResult,
+} from "./confidence/confidence.types";
 
-export interface AdvisorResult {
+import type {
+  ExecutiveJudgment,
+} from "./executive-judgment";
+
+import type {
+  ReasoningResult,
+} from "./reasoning";
+
+import type {
+  Reflection,
+} from "./reflection";
+
+import type {
+  Simulation,
+} from "./simulation";
+
+import type {
+  Wisdom,
+} from "./wisdom";
+
+export type AdvisorResult = {
   evidence: AdvisorEvidence[];
+
   reasoning: ReasoningResult;
+
+  judgment: ExecutiveJudgment;
+
+  reflection: Reflection;
+
+  simulation: Simulation;
+
+  wisdom: Wisdom;
+
   confidence: ConfidenceResult;
+
   brief: AdvisorBrief;
-}
+};
 
 export type AdvisorEvidenceCategory =
   | "progress"
@@ -64,11 +116,12 @@ export interface AdvisorEvidence {
 
   /**
    * Specific metric or source within that engine.
+   *
    * Examples:
-   *  - completionRate
-   *  - momentumScore
-   *  - identityConfidence
-   *  - overallDirection
+   * - completionRate
+   * - momentumScore
+   * - identityConfidence
+   * - overallDirection
    */
   source: string;
 
@@ -104,7 +157,6 @@ export interface AdvisorEvidence {
   tags: string[];
 }
 
-  
 export interface AdvisorInsight {
   title: string;
 
@@ -144,13 +196,17 @@ export interface AdvisorAnalysis {
 
   primaryInsight: AdvisorInsight;
 
-  primaryRisk: AdvisorRisk | null;
+  primaryRisk:
+    AdvisorRisk | null;
 
-  primaryOpportunity: AdvisorOpportunity | null;
+  primaryOpportunity:
+    AdvisorOpportunity | null;
 
-  recommendation: AdvisorRecommendation;
+  recommendation:
+    AdvisorRecommendation;
 
-  evidence: AdvisorEvidence[];
+  evidence:
+    AdvisorEvidence[];
 
   confidence: number;
 
@@ -158,23 +214,33 @@ export interface AdvisorAnalysis {
 }
 
 export interface BuildAdvisorAnalysisInput {
-  progress: ProgressSummary;
+  progress:
+    ProgressSummary;
 
-  momentum: MomentumResult;
+  momentum:
+    MomentumResult;
 
-  identity: IdentityEngineResult;
+  identity:
+    IdentityEngineResult;
 
-  memory: MemoryResult;
+  memory:
+    MemoryResult;
 
-  history: HistoryResult;
+  history:
+    HistoryResult;
 
-  patterns: PatternSummary;
+  patterns:
+    PatternSummary;
 
-  beliefs: BeliefResult;
+  beliefs:
+    BeliefResult;
 
-  predictions: PredictionResult;
+  predictions:
+    PredictionResult;
 
-  trendAnalysis: PracticeTrendAnalysis | null;
+  trendAnalysis:
+    PracticeTrendAnalysis | null;
 
-  vision: Vision | null;
+  vision:
+    Vision | null;
 }

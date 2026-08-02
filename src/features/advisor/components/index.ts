@@ -9,3 +9,12 @@ export * from "./PredictionCard";
 export * from "./RecommendationCard";
 export * from "./AdvisorReasoningPanel";
 export * from "./AdvisorActionsCard";
+export {
+  AdvisorReflectionPanel,
+} from "./AdvisorReflectionPanel";
+export {
+  AdvisorSimulationPanel,
+} from "./AdvisorSimulationPanel";
+export {
+  AdvisorWisdomPanel,
+} from "./AdvisorWisdomPanel";
