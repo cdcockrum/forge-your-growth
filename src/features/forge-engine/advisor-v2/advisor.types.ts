@@ -68,6 +68,18 @@ import type {
   Wisdom,
 } from "./wisdom";
 
+import type {
+  EpistemologyResult,
+} from "./epistemology";
+
+import type {
+  CognitiveMemory,
+} from "./cognitive-memory";
+
+import type {
+  CalibrationResult,
+} from "./calibration";
+
 export type AdvisorResult = {
   evidence: AdvisorEvidence[];
 
@@ -80,6 +92,12 @@ export type AdvisorResult = {
   simulation: Simulation;
 
   wisdom: Wisdom;
+
+  epistemology: EpistemologyResult;
+
+  cognitiveMemory: CognitiveMemory;
+
+  calibration: CalibrationResult;
 
   confidence: ConfidenceResult;
 

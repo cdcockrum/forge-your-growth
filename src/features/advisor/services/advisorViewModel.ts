@@ -3,6 +3,10 @@ import type {
 } from "@/features/forge-engine";
 
 import {
+  buildAdvisorCognitiveViewModel,
+} from "@/features/forge-engine/advisor-v2";
+
+import {
   buildAdvisorAnalysis,
 } from "@/features/forge-engine/advisor-v2/advisorEngine";
 
@@ -48,12 +52,32 @@ type AdvisorWisdomInsight = {
   confidence: number;
 };
 
+type AdvisorCognitiveResult =
+  ReturnType<
+    typeof buildAdvisorCognitiveViewModel
+  >;
+
 export type AdvisorViewModel = {
   greeting: string;
 
   summary: string;
 
   assessment: string;
+
+  cognition:
+    AdvisorCognitiveResult[
+      "cognition"
+    ];
+
+  cognitiveRecommendation:
+    AdvisorCognitiveResult[
+      "recommendation"
+    ];
+
+  cognitiveAlerts:
+    AdvisorCognitiveResult[
+      "alerts"
+    ];
 
   recommendation: {
     title: string;
@@ -86,7 +110,11 @@ export type AdvisorViewModel = {
   risks: string[];
 
   strongestContradiction:
-    ForgeState["contradictions"]["strongest"];
+    ForgeState[
+      "contradictions"
+    ][
+      "strongest"
+    ];
 
   pattern: {
     title: string;
@@ -116,7 +144,8 @@ export type AdvisorViewModel = {
   wisdom: {
     narrative: string;
 
-    insights: AdvisorWisdomInsight[];
+    insights:
+      AdvisorWisdomInsight[];
 
     longTermThemes: string[];
 
@@ -136,9 +165,11 @@ export type AdvisorViewModel = {
 
     uncertainties: string[];
 
-    alternativeInterpretations: string[];
+    alternativeInterpretations:
+      string[];
 
-    additionalEvidenceNeeded: string[];
+    additionalEvidenceNeeded:
+      string[];
   };
 
   simulation: {
@@ -211,27 +242,35 @@ export function buildAdvisorViewModel(
       forge,
     );
 
+  const cognitiveViewModel =
+    buildAdvisorCognitiveViewModel(
+      advisor,
+    );
+
   const communication =
-  runCommunicationPipeline({
-    wisdom:
-      advisor.wisdom,
+    runCommunicationPipeline({
+      wisdom:
+        advisor.wisdom,
 
-    confidence:
-      advisor.confidence,
+      confidence:
+        advisor.confidence,
 
-    brief:
-      advisor.brief,
-  });
+      brief:
+        advisor.brief,
+    });
 
   const strongestPattern =
-    forge.patterns.strongestPattern;
+    forge.patterns
+      .strongestPattern;
 
   const strongestPrediction =
-    forge.predictions.strongest;
+    forge.predictions
+      .strongest;
 
   const primaryRecommendation =
     advisor.reasoning
-      .recommendations[0] ?? null;
+      .recommendations[0] ??
+    null;
 
   const readableProvenance =
     buildReadableProvenance(
@@ -248,19 +287,39 @@ export function buildAdvisorViewModel(
     assessment:
       communication.assessment,
 
+    cognition:
+      cognitiveViewModel
+        .cognition,
+
+    cognitiveRecommendation:
+      cognitiveViewModel
+        .recommendation,
+
+    cognitiveAlerts:
+      cognitiveViewModel
+        .alerts,
+
     recommendation: {
       title:
-        communication.recommendation.title,
+        communication
+          .recommendation
+          .title,
 
       explanation:
-        communication.recommendation.explanation,
+        communication
+          .recommendation
+          .explanation,
 
       priority:
-        communication.recommendation.priority,
+        communication
+          .recommendation
+          .priority,
 
       confidence:
-        primaryRecommendation?.confidence ??
-        advisor.confidence.score,
+        primaryRecommendation
+          ?.confidence ??
+        advisor.confidence
+          .score,
 
       provenance:
         readableProvenance,
@@ -270,42 +329,50 @@ export function buildAdvisorViewModel(
       communication.evidence,
 
     beliefs:
-      forge.beliefs.strongest.map(
-        (belief) => ({
-          id:
-            belief.id,
+      forge.beliefs
+        .strongest
+        .map(
+          (belief) => ({
+            id:
+              belief.id,
 
-          statement:
-            belief.statement,
+            statement:
+              belief.statement,
 
-          confidence:
-            belief.confidence,
-        }),
-      ),
+            confidence:
+              belief.confidence,
+          }),
+        ),
 
     opportunities:
-      communication.opportunities,
+      communication
+        .opportunities,
 
     risks:
       communication.risks,
 
     strongestContradiction:
-      forge.contradictions.strongest,
+      forge.contradictions
+        .strongest,
 
     pattern:
       strongestPattern
         ? {
             title:
-              strongestPattern.title,
+              strongestPattern
+                .title,
 
             description:
-              strongestPattern.description,
+              strongestPattern
+                .description,
 
             confidence:
-              strongestPattern.confidence,
+              strongestPattern
+                .confidence,
 
             recommendation:
-              strongestPattern.recommendation,
+              strongestPattern
+                .recommendation,
           }
         : null,
 
@@ -313,132 +380,163 @@ export function buildAdvisorViewModel(
       strongestPrediction
         ? {
             title:
-              strongestPrediction.title,
+              strongestPrediction
+                .title,
 
             description:
-              strongestPrediction.description,
+              strongestPrediction
+                .description,
 
             confidence:
-              strongestPrediction.confidence,
+              strongestPrediction
+                .confidence,
 
             recommendation:
-              strongestPrediction.recommendation,
+              strongestPrediction
+                .recommendation,
           }
         : null,
 
     reasoning:
       communication.reasoning,
 
+    wisdom: {
+      narrative:
+        advisor.wisdom
+          .narrative,
+
+      insights:
+        advisor.wisdom
+          .insights
+          .map(
+            (insight) => ({
+              id:
+                insight.id,
+
+              title:
+                insight.title,
+
+              explanation:
+                insight.explanation,
+
+              confidence:
+                insight.confidence,
+            }),
+          ),
+
+      longTermThemes: [
+        ...advisor.wisdom
+          .longTermThemes,
+      ],
+
+      emergingIdentity: [
+        ...advisor.wisdom
+          .emergingIdentity,
+      ],
+
+      cautions: [
+        ...advisor.wisdom
+          .cautions,
+      ],
+
+      opportunities: [
+        ...advisor.wisdom
+          .opportunities,
+      ],
+
+      confidence:
+        advisor.wisdom
+          .confidence,
+    },
+
     reflection: {
       confidenceStatement:
-        advisor.reflection.confidenceStatement,
-
-      assumptions:
-        advisor.reflection.assumptions,
-
-      uncertainties:
-        advisor.reflection.uncertainties,
-
-      alternativeInterpretations:
         advisor.reflection
+          .confidenceStatement,
+
+      assumptions: [
+        ...advisor.reflection
+          .assumptions,
+      ],
+
+      uncertainties: [
+        ...advisor.reflection
+          .uncertainties,
+      ],
+
+      alternativeInterpretations: [
+        ...advisor.reflection
           .alternativeInterpretations,
+      ],
 
-      additionalEvidenceNeeded:
-        advisor.reflection
+      additionalEvidenceNeeded: [
+        ...advisor.reflection
           .additionalEvidenceNeeded,
+      ],
     },
 
     simulation: {
       bestCase:
         mapSimulationScenario(
-          advisor.simulation.bestCase,
+          advisor.simulation
+            .bestCase,
         ),
 
       expectedCase:
         mapSimulationScenario(
-          advisor.simulation.expectedCase,
+          advisor.simulation
+            .expectedCase,
         ),
 
       worstCase:
         mapSimulationScenario(
-          advisor.simulation.worstCase,
+          advisor.simulation
+            .worstCase,
         ),
     },
 
-    wisdom: {
-  narrative:
-    advisor.wisdom.narrative,
-
-  insights:
-    advisor.wisdom.insights.map(
-      (insight) => ({
-        id:
-          insight.id,
-
-        title:
-          insight.title,
-
-        explanation:
-          insight.explanation,
-
-        confidence:
-          insight.confidence,
-      }),
-    ),
-
-  longTermThemes: [
-    ...advisor.wisdom.longTermThemes,
-  ],
-
-  emergingIdentity: [
-    ...advisor.wisdom.emergingIdentity,
-  ],
-
-  cautions: [
-    ...advisor.wisdom.cautions,
-  ],
-
-  opportunities: [
-    ...advisor.wisdom.opportunities,
-  ],
-
-  confidence:
-    advisor.wisdom.confidence,
-},
-
     actions:
-      communication.actions.length > 0
+      communication.actions
+        .length > 0
         ? communication.actions
-        : forge.advisor.actions,
+        : forge.advisor
+            .actions,
 
     confidenceReasoning:
-      advisor.confidence.score,
+      advisor.confidence
+        .score,
 
     memories:
-      forge.memory.strongest.map(
-        (memory) => ({
-          title:
-            memory.title,
+      forge.memory
+        .strongest
+        .map(
+          (memory) => ({
+            title:
+              memory.title,
 
-          summary:
-            memory.summary,
-        }),
-      ),
+            summary:
+              memory.summary,
+          }),
+        ),
 
     longTermDirection:
-      forge.vision?.north_star
+      forge.vision
+        ?.north_star
         ?.trim() ||
       "Continue becoming the person you described in your vision.",
 
     confidence:
-      advisor.confidence.score,
+      advisor.confidence
+        .score,
   };
 }
 
 function mapSimulationScenario(
   scenario: AdvisorResult[
     "simulation"
-  ]["bestCase"],
+  ][
+    "bestCase"
+  ],
 ): AdvisorSimulationScenario {
   return {
     title:
@@ -463,10 +561,13 @@ function buildReadableProvenance(
   advisor: AdvisorResult,
 ): AdvisorViewModel[
   "recommendation"
-]["provenance"] {
+][
+  "provenance"
+] {
   const recommendation =
     advisor.reasoning
-      .recommendations[0] ?? null;
+      .recommendations[0] ??
+    null;
 
   if (!recommendation) {
     return null;
@@ -478,39 +579,51 @@ function buildReadableProvenance(
 
   const evidenceById =
     new Map<string, string>(
-      advisor.reasoning.graph.nodes.map(
-        (node) => [
-          node.evidence.id,
-          node.evidence.statement,
-        ],
-      ),
+      advisor.reasoning
+        .graph
+        .nodes
+        .map(
+          (node) => [
+            node.evidence.id,
+            node.evidence.statement,
+          ],
+        ),
     );
 
   const hypothesisById =
     new Map<string, string>(
-      advisor.reasoning.hypotheses.map(
-        (hypothesis) => [
-          hypothesis.id,
-          hypothesis.title,
-        ],
-      ),
+      advisor.reasoning
+        .hypotheses
+        .map(
+          (hypothesis) => [
+            hypothesis.id,
+            hypothesis.title,
+          ],
+        ),
     );
 
   const contradictionById =
     new Map<string, string>(
-      advisor.reasoning.evaluation
-        .contradictions.map(
-          (contradiction) => [
+      advisor.reasoning
+        .evaluation
+        .contradictions
+        .map(
+          (
+            contradiction,
+          ) => [
             contradiction.id,
-            contradiction.explanation,
+            contradiction
+              .explanation,
           ],
         ),
     );
 
   const gapById =
     new Map<string, string>(
-      advisor.reasoning.evaluation
-        .gaps.map(
+      advisor.reasoning
+        .evaluation
+        .gaps
+        .map(
           (gap) => [
             gap.id,
             gap.explanation,
@@ -530,7 +643,8 @@ function buildReadableProvenance(
 
     hypotheses:
       resolveReferences(
-        provenance.hypothesisIds,
+        provenance
+          .hypothesisIds,
         hypothesisById,
       ),
 
@@ -550,17 +664,20 @@ function buildReadableProvenance(
 
 function resolveReferences(
   ids: string[],
-  references: ReadonlyMap<
-    string,
-    string
-  >,
+  references:
+    ReadonlyMap<
+      string,
+      string
+    >,
 ): string[] {
   return Array.from(
     new Set(
       ids
         .map(
           (id) =>
-            references.get(id),
+            references.get(
+              id,
+            ),
         )
         .filter(
           (
@@ -576,7 +693,8 @@ function resolveReferences(
 
 function greeting(): string {
   const hour =
-    new Date().getHours();
+    new Date()
+      .getHours();
 
   if (hour < 12) {
     return "Good morning.";

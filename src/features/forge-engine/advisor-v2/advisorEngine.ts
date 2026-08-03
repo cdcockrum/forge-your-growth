@@ -20,26 +20,50 @@ import {
 } from "./executive-judgment";
 
 import {
-  buildSimulation,
-} from "./simulation";
+  buildReflection,
+} from "./reflection";
 
 import {
   runReasoningPipeline,
 } from "./reasoning";
 
 import {
-  buildReflection,
-} from "./reflection";
+  buildSimulation,
+} from "./simulation";
+
+import {
+  validateAdvisor,
+} from "./validation";
 
 import {
   buildWisdom,
 } from "./wisdom";
 
+import {
+  buildEpistemology,
+} from "./epistemology";
+
+import {
+  buildCognitiveMemorySnapshot,
+  compareCognitiveMemory,
+} from "./cognitive-memory";
+
+import {
+  getPreviousCognitiveSnapshot,
+  saveCognitiveSnapshot,
+} from "./cognitive-memory";
+
+import {
+  buildCalibration,
+} from "./calibration";
+
 export function buildAdvisorAnalysis(
   input: BuildAdvisorAnalysisInput,
 ): AdvisorResult {
   const evidence =
-    collectEvidence(input);
+    collectEvidence(
+      input,
+    );
 
   const reasoning =
     runReasoningPipeline(
@@ -64,13 +88,50 @@ export function buildAdvisorAnalysis(
       reflection,
     );
 
-    const wisdom =
-  buildWisdom(
+  const wisdom =
+    buildWisdom(
+      reasoning,
+      judgment,
+      reflection,
+      simulation,
+      null,
+    );
+
+  const epistemology =
+  buildEpistemology(
+    evidence,
     reasoning,
     judgment,
     reflection,
-    simulation,
-    null,
+  );
+
+  const cognitiveSnapshot =
+  buildCognitiveMemorySnapshot({
+    wisdom,
+
+    epistemology,
+  });
+
+ const previousSnapshot =
+  getPreviousCognitiveSnapshot();
+
+  const cognitiveMemory =
+    compareCognitiveMemory(
+      cognitiveSnapshot,
+      previousSnapshot,
+    );
+
+  const calibration =
+  buildCalibration({
+    predictions: [],
+
+    evidence,
+
+    cognitiveMemory,
+  });
+
+  saveCognitiveSnapshot(
+    cognitiveMemory.current,
   );
 
   const confidence =
@@ -84,21 +145,44 @@ export function buildAdvisorAnalysis(
       confidence,
     );
 
-  return {
+  const advisor: AdvisorResult = {
     evidence,
 
     reasoning,
 
     judgment,
 
-    confidence,
-
     reflection,
 
     simulation,
 
     wisdom,
-    
+
+    epistemology,
+
+    cognitiveMemory,
+
+    calibration,
+
+    confidence,
+
     brief,
   };
+
+  const validation =
+    validateAdvisor(
+      advisor,
+    );
+
+  if (
+    import.meta.env.DEV &&
+    validation.issues.length > 0
+  ) {
+    console.warn(
+      "Advisor validation issues:",
+      validation.issues,
+    );
+  }
+
+  return advisor;
 }

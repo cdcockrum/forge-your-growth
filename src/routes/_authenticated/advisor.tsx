@@ -17,15 +17,23 @@ import {
   AdvisorReflectionPanel,
   AdvisorSimulationPanel,
   AdvisorWisdomPanel,
+  CognitiveMemoryCard,
+  ReasoningOverviewCard,
   AssessmentNarrative,
+  AdvisorCognitionSummary,
   BeliefsCard,
   ContradictionCard,
+  CalibrationCard,
   EvidenceCard,
   PatternCard,
   PredictionCard,
   RecommendationCard,
   useAdvisor,
 } from "@/features/advisor";
+
+import {
+  ChevronDown,
+} from "lucide-react";
 
 export const Route = createFileRoute(
   "/_authenticated/advisor",
@@ -73,7 +81,8 @@ function AdvisorContent() {
         confidence={advisor.confidence}
       />
 
-      <RecommendationCard
+      
+     <RecommendationCard
         title={
           advisor.recommendation.title
         }
@@ -103,52 +112,7 @@ function AdvisorContent() {
         reasoning={advisor.reasoning}
       />
 
-      <AdvisorReflectionPanel
-  confidenceStatement={
-    advisor.reflection
-      .confidenceStatement
-  }
-  assumptions={
-    advisor.reflection
-      .assumptions
-  }
-  uncertainties={
-    advisor.reflection
-      .uncertainties
-  }
-  alternativeInterpretations={
-    advisor.reflection
-      .alternativeInterpretations
-  }
-  additionalEvidenceNeeded={
-    advisor.reflection
-      .additionalEvidenceNeeded
-  }
-/>
-
-<AdvisorReflectionPanel
-  confidenceStatement={
-    advisor.reflection
-      .confidenceStatement
-  }
-  assumptions={
-    advisor.reflection
-      .assumptions
-  }
-  uncertainties={
-    advisor.reflection
-      .uncertainties
-  }
-  alternativeInterpretations={
-    advisor.reflection
-      .alternativeInterpretations
-  }
-  additionalEvidenceNeeded={
-    advisor.reflection
-      .additionalEvidenceNeeded
-  }
-/>
-
+     
 <AdvisorSimulationPanel
   bestCase={
     advisor.simulation.bestCase

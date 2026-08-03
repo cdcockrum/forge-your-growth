@@ -18,6 +18,7 @@ import {
   Sparkles,
   Target,
   Telescope,
+  BrainCircuit,
   X,
 } from "lucide-react";
 
@@ -50,6 +51,18 @@ const NAV = [
     label: "Advisor",
     icon: Sparkles,
   },
+
+  {
+    label:
+      "Reasoning",
+
+    to:
+      "/reasoning",
+
+    icon:
+      BrainCircuit,
+  },
+
   {
     to: "/plan",
     label: "Practice",

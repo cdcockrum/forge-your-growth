@@ -19,6 +19,7 @@ import { Route as AuthenticatedTimelineRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedStoryRouteImport } from './routes/_authenticated/story'
 import { Route as AuthenticatedSkillsRouteImport } from './routes/_authenticated/skills'
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
+import { Route as AuthenticatedReasoningRouteImport } from './routes/_authenticated/reasoning'
 import { Route as AuthenticatedProgressRouteImport } from './routes/_authenticated/progress'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPlanRouteImport } from './routes/_authenticated/plan'
@@ -80,6 +81,11 @@ const AuthenticatedSkillsRoute = AuthenticatedSkillsRouteImport.update({
 const AuthenticatedReviewRoute = AuthenticatedReviewRouteImport.update({
   id: '/review',
   path: '/review',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedReasoningRoute = AuthenticatedReasoningRouteImport.update({
+  id: '/reasoning',
+  path: '/reasoning',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedProgressRoute = AuthenticatedProgressRouteImport.update({
@@ -166,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/plan': typeof AuthenticatedPlanRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/progress': typeof AuthenticatedProgressRoute
+  '/reasoning': typeof AuthenticatedReasoningRoute
   '/review': typeof AuthenticatedReviewRoute
   '/skills': typeof AuthenticatedSkillsRoute
   '/story': typeof AuthenticatedStoryRoute
@@ -190,6 +197,7 @@ export interface FileRoutesByTo {
   '/plan': typeof AuthenticatedPlanRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/progress': typeof AuthenticatedProgressRoute
+  '/reasoning': typeof AuthenticatedReasoningRoute
   '/review': typeof AuthenticatedReviewRoute
   '/skills': typeof AuthenticatedSkillsRoute
   '/story': typeof AuthenticatedStoryRoute
@@ -216,6 +224,7 @@ export interface FileRoutesById {
   '/_authenticated/plan': typeof AuthenticatedPlanRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/progress': typeof AuthenticatedProgressRoute
+  '/_authenticated/reasoning': typeof AuthenticatedReasoningRoute
   '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/skills': typeof AuthenticatedSkillsRoute
   '/_authenticated/story': typeof AuthenticatedStoryRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/plan'
     | '/profile'
     | '/progress'
+    | '/reasoning'
     | '/review'
     | '/skills'
     | '/story'
@@ -266,6 +276,7 @@ export interface FileRouteTypes {
     | '/plan'
     | '/profile'
     | '/progress'
+    | '/reasoning'
     | '/review'
     | '/skills'
     | '/story'
@@ -291,6 +302,7 @@ export interface FileRouteTypes {
     | '/_authenticated/plan'
     | '/_authenticated/profile'
     | '/_authenticated/progress'
+    | '/_authenticated/reasoning'
     | '/_authenticated/review'
     | '/_authenticated/skills'
     | '/_authenticated/story'
@@ -378,6 +390,13 @@ declare module '@tanstack/react-router' {
       path: '/review'
       fullPath: '/review'
       preLoaderRoute: typeof AuthenticatedReviewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reasoning': {
+      id: '/_authenticated/reasoning'
+      path: '/reasoning'
+      fullPath: '/reasoning'
+      preLoaderRoute: typeof AuthenticatedReasoningRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/progress': {
@@ -497,6 +516,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPlanRoute: typeof AuthenticatedPlanRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedProgressRoute: typeof AuthenticatedProgressRoute
+  AuthenticatedReasoningRoute: typeof AuthenticatedReasoningRoute
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedSkillsRoute: typeof AuthenticatedSkillsRoute
   AuthenticatedStoryRoute: typeof AuthenticatedStoryRoute
@@ -518,6 +538,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPlanRoute: AuthenticatedPlanRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedProgressRoute: AuthenticatedProgressRoute,
+  AuthenticatedReasoningRoute: AuthenticatedReasoningRoute,
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedSkillsRoute: AuthenticatedSkillsRoute,
   AuthenticatedStoryRoute: AuthenticatedStoryRoute,
