@@ -198,6 +198,15 @@ const MOBILE_MORE = [
       "Review your history over time.",
     icon: History,
   },
+
+  {
+    label: "Reasoning",
+    to: "/reasoning",
+    description:
+    "Inspect Forge’s evidence, memory, calibration, assumptions, and conclusions.",
+    icon: BrainCircuit,
+  }
+
 ] as const;
 
 function isActivePath(
