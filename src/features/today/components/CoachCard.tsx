@@ -1,6 +1,6 @@
 import {
   CoachPanel,
-} from "@/features/coach";
+} from "@/features/coach/CoachPanel";
 
 import type {
   ForgeCoachResult,
