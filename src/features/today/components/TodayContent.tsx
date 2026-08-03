@@ -179,6 +179,11 @@ export function TodayContent() {
                     coach={
                       model.coach.coach
                     }
+                    onRecommendationAction={() => {
+                      void navigate({
+                        to: "/plan",
+                      });
+                    }}
                   />
                 </div>
               </FadeIn>
