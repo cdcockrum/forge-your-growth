@@ -379,7 +379,7 @@ export function AppShell({
         {/* Brand */}
         <div className="border-b border-border px-5 py-6">
           <div className="flex items-center gap-4">
-            <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 via-red-500 to-amber-600 shadow-lg">
+            <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-linear-to-br from-orange-500 via-red-500 to-amber-600 shadow-lg">
               <div className="absolute h-1.5 w-6 rounded-full bg-white/90" />
 
               <div className="absolute mt-2 h-3 w-2 rounded-sm bg-white/90" />
@@ -529,7 +529,7 @@ export function AppShell({
             role="dialog"
             aria-modal="true"
             aria-labelledby="mobile-more-title"
-            className="absolute inset-x-0 bottom-0 max-h-[82vh] overflow-y-auto rounded-t-[2rem] border-t border-border bg-surface px-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-4 shadow-2xl"
+            className="absolute inset-x-0 bottom-0 max-h-[82vh] overflow-y-auto rounded-t-4xl border-t border-border bg-surface px-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-4 shadow-2xl"
           >
             <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-border" />
 
@@ -697,7 +697,7 @@ export function AppShell({
                         : "bg-transparent"
                     }`}
                   >
-                    <item.icon className="size-[18px]" />
+                    <item.icon className="size-4.5" />
                   </span>
 
                   <span className="max-w-full truncate text-[8px] font-extrabold uppercase tracking-[-0.02em] sm:text-[9px]">
@@ -732,7 +732,7 @@ export function AppShell({
                   : "bg-transparent"
               }`}
             >
-              <Menu className="size-[18px]" />
+              <Menu className="size-4.5" />
             </span>
 
             <span className="text-[8px] font-extrabold uppercase tracking-[-0.02em] sm:text-[9px]">

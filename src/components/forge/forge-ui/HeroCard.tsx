@@ -40,7 +40,7 @@ export function HeroCard({
   return (
     <section
       className={[
-        "relative overflow-hidden rounded-[2rem] border border-border",
+        "relative overflow-hidden rounded-4xl border border-border",
         "bg-card",
         className,
       ].join(" ")}

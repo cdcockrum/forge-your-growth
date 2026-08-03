@@ -53,7 +53,7 @@ export function MetricCard({
         </p>
       </div>
 
-      <p className="mt-3 break-words text-lg font-black tracking-tight">
+      <p className="mt-3 wrap-break-word text-lg font-black tracking-tight">
         {value}
       </p>
 

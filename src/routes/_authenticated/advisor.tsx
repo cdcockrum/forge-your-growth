@@ -12,33 +12,24 @@ import {
 
 import {
   AdvisorActionsCard,
-  AdvisorExecutiveSummary,
+  AdvisorExecutiveBriefing,
   AdvisorReasoningPanel,
-  AdvisorReflectionPanel,
   AdvisorSimulationPanel,
   AdvisorWisdomPanel,
-  CognitiveMemoryCard,
-  ReasoningOverviewCard,
   AssessmentNarrative,
-  AdvisorCognitionSummary,
   BeliefsCard,
   ContradictionCard,
-  CalibrationCard,
   EvidenceCard,
   PatternCard,
   PredictionCard,
-  RecommendationCard,
   useAdvisor,
 } from "@/features/advisor";
-
-import {
-  ChevronDown,
-} from "lucide-react";
 
 export const Route = createFileRoute(
   "/_authenticated/advisor",
 )({
-  component: AdvisorPage,
+  component:
+    AdvisorPage,
 });
 
 function AdvisorPage() {
@@ -56,48 +47,35 @@ function AdvisorPage() {
 }
 
 function AdvisorContent() {
-  const advisor = useAdvisor();
+  const advisor =
+    useAdvisor();
 
   return (
     <div className="space-y-10">
-      <header className="max-w-3xl">
-        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-          Personal Intelligence
-        </p>
+      <AdvisorExecutiveBriefing
+        greeting={
+          advisor.greeting
+        }
+        summary={
+          advisor.summary
+        }
+        recommendation={{
+          title:
+            advisor.recommendation
+              .title,
 
-        <h1 className="mt-3 text-4xl font-black tracking-tight md:text-6xl">
-          Advisor
-        </h1>
+          explanation:
+            advisor.recommendation
+              .explanation,
 
-        <p className="mt-4 text-base leading-7 text-muted-foreground">
-          A focused briefing based on your current direction,
-          behavior, identity, patterns, and evidence.
-        </p>
-      </header>
+          priority:
+            advisor.recommendation
+              .priority,
 
-      <AdvisorExecutiveSummary
-        greeting={advisor.greeting}
-        summary={advisor.summary}
-        confidence={advisor.confidence}
-      />
-
-      
-     <RecommendationCard
-        title={
-          advisor.recommendation.title
-        }
-        explanation={
-          advisor.recommendation.explanation
-        }
-        priority={
-          advisor.recommendation.priority
-        }
-        confidence={
-          advisor.recommendation.confidence
-        }
-        provenance={
-          advisor.recommendation.provenance
-        }
+          confidence:
+            advisor.recommendation
+              .confidence,
+        }}
       />
 
       <AdvisorActionsCard
@@ -107,54 +85,68 @@ function AdvisorContent() {
       />
 
       <AdvisorReasoningPanel
-        confidence={advisor.confidenceReasoning}
-        evidence={advisor.evidence}
-        reasoning={advisor.reasoning}
+        confidence={
+          advisor.confidenceReasoning
+        }
+        evidence={
+          advisor.evidence
+        }
+        reasoning={
+          advisor.reasoning
+        }
       />
 
-     
-<AdvisorSimulationPanel
-  bestCase={
-    advisor.simulation.bestCase
-  }
-  expectedCase={
-    advisor.simulation.expectedCase
-  }
-  worstCase={
-    advisor.simulation.worstCase
-  }
-/>
+      <AdvisorSimulationPanel
+        bestCase={
+          advisor.simulation
+            .bestCase
+        }
+        expectedCase={
+          advisor.simulation
+            .expectedCase
+        }
+        worstCase={
+          advisor.simulation
+            .worstCase
+        }
+      />
 
-<AssessmentNarrative
-  narrative={
-    advisor.assessment
-  }
-/>
+      <AssessmentNarrative
+        narrative={
+          advisor.assessment
+        }
+      />
 
-      
-<AdvisorWisdomPanel
-  narrative={
-    advisor.wisdom.narrative
-  }
-  insights={
-    advisor.wisdom.insights
-  }
-  longTermThemes={
-    advisor.wisdom.longTermThemes
-  }
-  emergingIdentity={
-    advisor.wisdom.emergingIdentity
-  }
-  cautions={
-    advisor.wisdom.cautions
-  }
-  opportunities={
-    advisor.wisdom.opportunities
-  }
-  confidence={
-    advisor.wisdom.confidence
-  }
-/>
+      <AdvisorWisdomPanel
+        narrative={
+          advisor.wisdom
+            .narrative
+        }
+        insights={
+          advisor.wisdom
+            .insights
+        }
+        longTermThemes={
+          advisor.wisdom
+            .longTermThemes
+        }
+        emergingIdentity={
+          advisor.wisdom
+            .emergingIdentity
+        }
+        cautions={
+          advisor.wisdom
+            .cautions
+        }
+        opportunities={
+          advisor.wisdom
+            .opportunities
+        }
+        confidence={
+          advisor.wisdom
+            .confidence
+        }
+      />
 
       <section className="space-y-6">
         <header>
@@ -167,8 +159,9 @@ function AdvisorContent() {
           </h2>
 
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-            These are Forge’s strongest current conclusions,
-            tensions, recurring signals, and likely outcomes.
+            These are Forge’s strongest current
+            conclusions, tensions, recurring signals,
+            and likely outcomes.
           </p>
         </header>
 
@@ -181,7 +174,8 @@ function AdvisorContent() {
 
           <ContradictionCard
             contradiction={
-              advisor.strongestContradiction
+              advisor
+                .strongestContradiction
             }
           />
 
@@ -211,28 +205,24 @@ function AdvisorContent() {
 function AdvisorLoadingState() {
   return (
     <div className="space-y-8">
-      <div className="space-y-3">
-        <div className="h-3 w-40 animate-pulse rounded-full bg-muted" />
+      <div className="h-128 animate-pulse rounded-4xl bg-muted motion-reduce:animate-none" />
 
-        <div className="h-12 w-64 animate-pulse rounded-2xl bg-muted" />
+      <div className="h-48 animate-pulse rounded-3xl bg-muted motion-reduce:animate-none" />
 
-        <div className="h-6 max-w-2xl animate-pulse rounded-xl bg-muted" />
-      </div>
+      <div className="h-64 animate-pulse rounded-3xl bg-muted motion-reduce:animate-none" />
 
-      <div className="h-64 animate-pulse rounded-3xl bg-muted" />
+      <div className="h-72 animate-pulse rounded-3xl bg-muted motion-reduce:animate-none" />
 
-      <div className="h-56 animate-pulse rounded-3xl bg-muted" />
-
-      <div className="h-48 animate-pulse rounded-3xl bg-muted" />
+      <div className="h-48 animate-pulse rounded-3xl bg-muted motion-reduce:animate-none" />
 
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="h-64 animate-pulse rounded-3xl bg-muted" />
+        <div className="h-64 animate-pulse rounded-3xl bg-muted motion-reduce:animate-none" />
 
-        <div className="h-64 animate-pulse rounded-3xl bg-muted" />
+        <div className="h-64 animate-pulse rounded-3xl bg-muted motion-reduce:animate-none" />
 
-        <div className="h-64 animate-pulse rounded-3xl bg-muted" />
+        <div className="h-64 animate-pulse rounded-3xl bg-muted motion-reduce:animate-none" />
 
-        <div className="h-64 animate-pulse rounded-3xl bg-muted" />
+        <div className="h-64 animate-pulse rounded-3xl bg-muted motion-reduce:animate-none" />
       </div>
     </div>
   );
