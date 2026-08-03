@@ -114,15 +114,15 @@ function Recommendation({
 
   return (
     <button
-      type="button"
-      onClick={() =>
-        onAction(
-          recommendation,
-        )
-      }
-      className="group w-full rounded-2xl border border-border bg-background p-4 text-left transition-[border-color,background-color,transform] duration-200 hover:border-accent/30 hover:bg-accent/[0.03] active:scale-[0.995] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
-    >
-      {content}
-    </button>
-  );
+  type="button"
+  onClick={() => {
+    onAction(
+      recommendation,
+    );
+  }}
+  className="group min-h-20 w-full touch-manipulation rounded-2xl border border-border bg-background p-4 text-left transition-[border-color,background-color,transform] duration-200 hover:border-accent/30 hover:bg-accent/3 active:scale-[0.995] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
+>
+  {content}
+</button>
+  )
 }

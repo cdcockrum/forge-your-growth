@@ -1,4 +1,8 @@
 import {
+  useNavigate,
+} from "@tanstack/react-router";
+
+import {
   CoachPanel,
 } from "@/features/coach";
 
@@ -9,22 +13,45 @@ import type {
 
 type CoachCardProps = {
   coach: ForgeCoachResult;
-
-  onRecommendationAction?: (
-    recommendation: CoachRecommendation,
-  ) => void;
 };
 
 export function CoachCard({
   coach,
-  onRecommendationAction,
 }: CoachCardProps) {
+  const navigate =
+    useNavigate();
+
+  function handleRecommendationAction(
+    recommendation:
+      CoachRecommendation,
+  ) {
+    switch (
+      recommendation.actionType
+    ) {
+      case "reflect":
+        void navigate({
+          to: "/review",
+        });
+
+        return;
+
+      case "practice":
+      case "adjust_plan":
+      case "recover":
+      case "maintain":
+      default:
+        void navigate({
+          to: "/plan",
+        });
+    }
+  }
+
   return (
     <div className="mb-8">
       <CoachPanel
         coach={coach}
         onRecommendationAction={
-          onRecommendationAction
+          handleRecommendationAction
         }
       />
     </div>
