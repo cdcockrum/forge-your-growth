@@ -6,8 +6,10 @@ import {
 } from "lucide-react";
 
 import {
-  ForgeCard,
-} from "@/components/forge";
+  InsightCard,
+  MetricCard,
+  StatusBadge,
+} from "@/components/forge/forge-ui";
 
 type AdvisorCognitionSummaryProps = {
   overallConfidence: number;
@@ -29,107 +31,92 @@ export function AdvisorCognitionSummary({
   memoryStatus,
 }: AdvisorCognitionSummaryProps) {
   return (
-    <ForgeCard padding="large">
-      <div className="flex items-start gap-3">
-        <div className="rounded-2xl border border-border bg-background p-3">
-          <BrainCircuit className="size-5 text-accent" />
-        </div>
-
-        <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.26em] text-muted-foreground">
-            Forge Intelligence
-          </p>
-
-          <h2 className="mt-2 text-2xl font-black tracking-tight">
-            Current cognitive state
-          </h2>
-
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
-            {strongestBelief}
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric
+    <InsightCard
+      eyebrow="Forge Intelligence"
+      title="Current cognitive state"
+      description={strongestBelief}
+      icon={BrainCircuit}
+      action={
+        <StatusBadge
+          label={memoryStatus}
+          tone={memoryTone(
+            memoryStatus,
+          )}
+        />
+      }
+    >
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
           icon={Gauge}
           label="Overall confidence"
           value={formatPercentage(
             overallConfidence,
           )}
+          emphasis={confidenceEmphasis(
+            overallConfidence,
+          )}
         />
 
-        <Metric
+        <MetricCard
           icon={ShieldCheck}
           label="Evidence quality"
           value={formatLabel(
             evidenceQuality,
           )}
+          emphasis={evidenceEmphasis(
+            evidenceQuality,
+          )}
         />
 
-        <Metric
+        <MetricCard
           icon={BrainCircuit}
           label="Calibration"
           value={formatLabel(
             calibration,
           )}
+          emphasis={calibrationEmphasis(
+            calibration,
+          )}
         />
 
-        <Metric
+        <MetricCard
           icon={Database}
           label="Memory"
           value={formatLabel(
             memoryStatus,
           )}
+          emphasis={memoryEmphasis(
+            memoryStatus,
+          )}
         />
       </div>
-    </ForgeCard>
+    </InsightCard>
   );
 }
 
-function Metric({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof BrainCircuit;
+function normalizeScore(
+  value: number,
+): number {
+  const normalized =
+    Math.abs(value) > 1
+      ? value / 100
+      : value;
 
-  label: string;
-
-  value: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-border bg-background p-4">
-      <div className="flex items-center gap-2">
-        <Icon className="size-4 text-accent" />
-
-        <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-          {label}
-        </p>
-      </div>
-
-      <p className="mt-3 text-lg font-black tracking-tight">
-        {value}
-      </p>
-    </div>
+  return Math.max(
+    0,
+    Math.min(
+      normalized,
+      1,
+    ),
   );
 }
 
 function formatPercentage(
   value: number,
 ): string {
-  const normalized =
-    value > 1
-      ? value / 100
-      : value;
-
   return `${Math.round(
-    Math.max(
-      0,
-      Math.min(
-        normalized,
-        1,
-      ),
+    normalizeScore(
+      value,
     ) * 100,
   )}%`;
 }
@@ -147,4 +134,157 @@ function formatLabel(
       (character) =>
         character.toUpperCase(),
     );
+}
+
+function confidenceEmphasis(
+  value: number,
+):
+  | "default"
+  | "positive"
+  | "warning" {
+  const normalized =
+    normalizeScore(
+      value,
+    );
+
+  if (normalized >= 0.75) {
+    return "positive";
+  }
+
+  if (normalized < 0.45) {
+    return "warning";
+  }
+
+  return "default";
+}
+
+function evidenceEmphasis(
+  value: string,
+):
+  | "default"
+  | "positive"
+  | "warning" {
+  const normalized =
+    value
+      .trim()
+      .toLowerCase();
+
+  if (
+    normalized === "strong" ||
+    normalized === "high"
+  ) {
+    return "positive";
+  }
+
+  if (
+    normalized === "weak" ||
+    normalized === "low"
+  ) {
+    return "warning";
+  }
+
+  return "default";
+}
+
+function calibrationEmphasis(
+  value: string,
+):
+  | "default"
+  | "positive"
+  | "warning" {
+  const normalized =
+    value
+      .trim()
+      .toLowerCase();
+
+  if (
+    normalized ===
+    "well-calibrated"
+  ) {
+    return "positive";
+  }
+
+  if (
+    normalized ===
+      "overconfident" ||
+    normalized ===
+      "underconfident"
+  ) {
+    return "warning";
+  }
+
+  return "default";
+}
+
+function memoryEmphasis(
+  value: string,
+):
+  | "default"
+  | "positive"
+  | "warning"
+  | "critical" {
+  const normalized =
+    value
+      .trim()
+      .toLowerCase();
+
+  if (
+    normalized ===
+      "strengthened" ||
+    normalized ===
+      "stable"
+  ) {
+    return "positive";
+  }
+
+  if (
+    normalized ===
+      "weakened" ||
+    normalized ===
+      "revised"
+  ) {
+    return "warning";
+  }
+
+  if (
+    normalized ===
+    "rejected"
+  ) {
+    return "critical";
+  }
+
+  return "default";
+}
+
+function memoryTone(
+  value: string,
+):
+  | "neutral"
+  | "positive"
+  | "warning"
+  | "critical" {
+  const emphasis =
+    memoryEmphasis(
+      value,
+    );
+
+  if (
+    emphasis === "positive"
+  ) {
+    return "positive";
+  }
+
+  if (
+    emphasis === "warning"
+  ) {
+    return "warning";
+  }
+
+  if (
+    emphasis === "critical"
+  ) {
+    return "critical";
+  }
+
+  return "neutral";
 }
