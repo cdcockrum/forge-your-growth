@@ -3,6 +3,10 @@ import {
 } from "@tanstack/react-router";
 
 import {
+  ChevronDown,
+} from "lucide-react";
+
+import {
   ForgeSection,
   ForgeSidebarLayout,
 } from "@/components/forge";
@@ -40,7 +44,8 @@ import {
 } from "./WeeklyStoryTeaser";
 
 export function TodayContent() {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
   const {
     todaySessions,
@@ -84,7 +89,9 @@ export function TodayContent() {
 
       <div data-tour="today-coach">
         <CoachCard
-          coach={model.coach.coach}
+          coach={
+            model.coach.coach
+          }
         />
       </div>
 
@@ -129,7 +136,9 @@ export function TodayContent() {
                   <div data-tour="today-focus">
                     {focusItems.length > 0 ? (
                       <TodayFocusList
-                        items={focusItems}
+                        items={
+                          focusItems
+                        }
                       />
                     ) : (
                       <div className="rounded-2xl border border-dashed border-border bg-surface/40 px-5 py-6">
@@ -161,7 +170,10 @@ export function TodayContent() {
                   />
 
                   <ForgeMemoryCard
-                    memories={model.memory?.memories ?? []}
+                    memories={
+                      model.memory?.memories ??
+                      []
+                    }
                   />
                 </div>
               </ForgeSection>
@@ -186,7 +198,7 @@ export function TodayContent() {
               </p>
 
               <h2 className="mt-2 text-2xl font-bold tracking-tight">
-                Your current state
+                Your current state 
               </h2>
             </div>
 
@@ -216,25 +228,6 @@ export function TodayContent() {
               />
             </div>
 
-            <div data-tour="today-identity">
-              <IdentityCard
-                identity={
-                  model.identity.identity
-                }
-              />
-            </div>
-
-            <div data-tour="today-forge-score">
-              <ForgeScorePanel
-                score={
-                  model.forgeScore.score
-                }
-                breakdown={
-                  model.forgeScore.breakdown
-                }
-              />
-            </div>
-
             <div data-tour="today-progress">
               <ProgressPanel
                 todayCompleted={
@@ -255,13 +248,53 @@ export function TodayContent() {
               />
             </div>
 
-            <div data-tour="today-achievement">
-              <RecentAchievementCard
-                achievement={
-                  model.achievement.achievement
-                }
-              />
-            </div>
+            <details className="group rounded-3xl border border-border bg-card">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-5">
+                <div className="min-w-0">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                    More intelligence
+                  </p>
+
+                  <p className="mt-1 text-sm font-bold leading-5">
+                    Identity, Forge Score, and achievements
+                  </p>
+                </div>
+
+                <ChevronDown
+                  aria-hidden="true"
+                  className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none"
+                />
+              </summary>
+
+              <div className="space-y-6 border-t border-border p-5">
+                <div data-tour="today-identity">
+                  <IdentityCard
+                    identity={
+                      model.identity.identity
+                    }
+                  />
+                </div>
+
+                <div data-tour="today-forge-score">
+                  <ForgeScorePanel
+                    score={
+                      model.forgeScore.score
+                    }
+                    breakdown={
+                      model.forgeScore.breakdown
+                    }
+                  />
+                </div>
+
+                <div data-tour="today-achievement">
+                  <RecentAchievementCard
+                    achievement={
+                      model.achievement.achievement
+                    }
+                  />
+                </div>
+              </div>
+            </details>
           </div>
         }
       />
