@@ -9,6 +9,7 @@ import {
   InsightCard,
   MetricCard,
   StatusBadge,
+  MetricGrid,
 } from "@/components/forge/forge-ui";
 
 type AdvisorCognitionSummaryProps = {
@@ -45,51 +46,51 @@ export function AdvisorCognitionSummary({
         />
       }
     >
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          icon={Gauge}
-          label="Overall confidence"
-          value={formatPercentage(
-            overallConfidence,
-          )}
-          emphasis={confidenceEmphasis(
-            overallConfidence,
-          )}
-        />
+      <MetricGrid columns={4}>
+  <MetricCard
+    icon={Gauge}
+    label="Overall confidence"
+    value={formatPercentage(
+      overallConfidence,
+    )}
+    emphasis={confidenceEmphasis(
+      overallConfidence,
+    )}
+  />
 
-        <MetricCard
-          icon={ShieldCheck}
-          label="Evidence quality"
-          value={formatLabel(
-            evidenceQuality,
-          )}
-          emphasis={evidenceEmphasis(
-            evidenceQuality,
-          )}
-        />
+  <MetricCard
+    icon={ShieldCheck}
+    label="Evidence quality"
+    value={formatLabel(
+      evidenceQuality,
+    )}
+    emphasis={evidenceEmphasis(
+      evidenceQuality,
+    )}
+  />
 
-        <MetricCard
-          icon={BrainCircuit}
-          label="Calibration"
-          value={formatLabel(
-            calibration,
-          )}
-          emphasis={calibrationEmphasis(
-            calibration,
-          )}
-        />
+  <MetricCard
+    icon={BrainCircuit}
+    label="Calibration"
+    value={formatLabel(
+      calibration,
+    )}
+    emphasis={calibrationEmphasis(
+      calibration,
+    )}
+  />
 
-        <MetricCard
-          icon={Database}
-          label="Memory"
-          value={formatLabel(
-            memoryStatus,
-          )}
-          emphasis={memoryEmphasis(
-            memoryStatus,
-          )}
-        />
-      </div>
+  <MetricCard
+    icon={Database}
+    label="Memory"
+    value={formatLabel(
+      memoryStatus,
+    )}
+    emphasis={memoryEmphasis(
+      memoryStatus,
+    )}
+  />
+</MetricGrid>
     </InsightCard>
   );
 }

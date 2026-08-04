@@ -38,6 +38,13 @@
   --color-ring: var(--ring);
   --color-surface: var(--surface);
   --color-ember: var(--ember);
+  --color-action: var(--action);
+  --color-action-hover: var(--action-hover);
+  --color-action-hover: var(--action-hover);
+  --color-action-border: var(--action-border);
+  --color-action-surface: var(--action-surface);
+  --color-action-surface-hover: var(--action-surface-hover);
+  --color-action-border: var(--action-border);
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
@@ -66,7 +73,14 @@
   --input: oklch(0.18 0.01 60 / 12%);
   --ring: oklch(0.58 0.19 40);
   --surface: oklch(1 0 0);
-}
+  --action: oklch(0.92 0.004 70);
+  --action-hover: oklch(0.88 0.004 70);
+  --action-border: oklch(0.82 0.004 70);
+  --action-surface: oklch(0.91 0.006 70);
+  --action-surface-hover: oklch(0.87 0.006 70);
+  --action-border: oklch(0.80 0.008 70);
+
+  }
 
 .dark {
   --background: oklch(0.14 0.008 60);
@@ -90,15 +104,46 @@
   --input: oklch(1 0 0 / 12%);
   --ring: oklch(0.65 0.19 40);
   --surface: oklch(0.19 0.008 60);
+  --action: oklch(0.28 0.004 60);
+  --action-hover: oklch(0.33 0.004 60);
+  --action-border: oklch(0.40 0.004 60);
+  --action-surface: oklch(0.30 0.008 60);
+  --action-surface-hover: oklch(0.35 0.008 60);
+  --action-border: oklch(0.42 0.008 60);
+  }
+
+@keyframes forge-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(
+      var(--forge-reveal-distance, 18px)
+    );
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-@keyframes forgeReveal {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+.forge-reveal {
+  animation-name: forge-reveal;
+  animation-duration:
+    var(--forge-reveal-duration, 650ms);
+  animation-delay:
+    var(--forge-reveal-delay, 0ms);
+  animation-timing-function:
+    cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: both;
+  will-change: opacity, transform;
 }
 
-@utility animate-reveal {
-  animation: forgeReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+@media (prefers-reduced-motion: reduce) {
+  .forge-reveal {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @layer base {

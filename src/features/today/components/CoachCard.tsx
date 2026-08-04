@@ -8,17 +8,16 @@ import type {
 
 export function CoachCard({
   coach,
-}:{
+}: {
   coach: ForgeCoachResult;
-}){
-
+}) {
   return (
     <div className="mb-8">
-
       <CoachPanel
-        coach={coach}
+        coach={
+          coach
+        }
       />
-
     </div>
   );
 }

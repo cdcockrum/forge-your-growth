@@ -3,13 +3,15 @@ import {
 } from "@tanstack/react-router";
 
 import {
-  ChevronDown,
-} from "lucide-react";
-
-import {
   ForgeSection,
   ForgeSidebarLayout,
 } from "@/components/forge";
+
+import {
+  ExpandableCard,
+  SectionHeader,
+  Stagger,
+} from "@/components/forge/forge-ui";
 
 import {
   CoachCard,
@@ -97,7 +99,10 @@ export function TodayContent() {
 
       <ForgeSidebarLayout
         main={
-          <div className="space-y-12">
+          <Stagger
+            className="space-y-12"
+            step={90}
+          >
             <section data-tour="today-next-action">
               <ForgeSection
                 eyebrow="Today"
@@ -125,8 +130,8 @@ export function TodayContent() {
                   ) : (
                     <NextActionCard
                       title="Choose one meaningful practice"
-                      description="Nothing remains scheduled for today. Review your plan and choose one small action you can complete reliably."
-                      actionLabel="Plan Today"
+                      description="Nothing remains scheduled for today. Choose one small practice you can complete reliably."
+                      actionLabel="Choose a Practice"
                       onAction={
                         handleNextAction
                       }
@@ -188,18 +193,20 @@ export function TodayContent() {
                 <ReflectionPrompt />
               </ForgeSection>
             </section>
-          </div>
+          </Stagger>
         }
         sidebar={
-          <div className="space-y-6">
+          <Stagger
+            className="space-y-6"
+            delay={180}
+            step={80}
+          >
             <div data-tour="today-state-header">
-              <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
-                Intelligence
-              </p>
-
-              <h2 className="mt-2 text-2xl font-bold tracking-tight">
-                Your current state 
-              </h2>
+              <SectionHeader
+                eyebrow="Intelligence"
+                title="Your current state"
+                description="A quick view of your momentum, progress, and deeper signals."
+              />
             </div>
 
             <div data-tour="today-momentum">
@@ -248,25 +255,12 @@ export function TodayContent() {
               />
             </div>
 
-            <details className="group rounded-3xl border border-border bg-card">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-5">
-                <div className="min-w-0">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-                    More intelligence
-                  </p>
-
-                  <p className="mt-1 text-sm font-bold leading-5">
-                    Identity, Forge Score, and achievements
-                  </p>
-                </div>
-
-                <ChevronDown
-                  aria-hidden="true"
-                  className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none"
-                />
-              </summary>
-
-              <div className="space-y-6 border-t border-border p-5">
+            <ExpandableCard
+              eyebrow="More intelligence"
+              title="Explore your deeper signals"
+              description="Identity, Forge Score, and recent achievements"
+            >
+              <div className="space-y-6">
                 <div data-tour="today-identity">
                   <IdentityCard
                     identity={
@@ -294,8 +288,8 @@ export function TodayContent() {
                   />
                 </div>
               </div>
-            </details>
-          </div>
+            </ExpandableCard>
+          </Stagger>
         }
       />
     </div>

@@ -35,3 +35,6 @@ export {
   ReasoningOverviewCard,
 } from "./ReasoningOverviewCard";
 
+export {
+  AdvisorLearningPanel,
+} from "./AdvisorLearningPanel";

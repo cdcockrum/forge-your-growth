@@ -80,7 +80,61 @@ function AdvisorContent() {
         summary={advisor.summary}
         confidence={advisor.confidence}
       />
+  
+      <section className="rounded-3xl border border-border bg-card p-6">
+  <p className="font-mono text-[10px] uppercase tracking-[0.26em] text-muted-foreground">
+    Cognitive Core
+  </p>
 
+  <h2 className="mt-2 text-2xl font-black tracking-tight">
+    {advisor.cognitionSummary.headline}
+  </h2>
+
+  <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
+    {advisor.cognitionSummary.explanation}
+  </p>
+
+  <div className="mt-6 grid gap-4 sm:grid-cols-3">
+    <div className="rounded-2xl border border-border bg-background p-4">
+      <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+        Confidence
+      </p>
+
+      <p className="mt-2 text-2xl font-black">
+        {Math.round(
+          advisor.cognitionSummary.confidence *
+            100,
+        )}
+        %
+      </p>
+    </div>
+
+    <div className="rounded-2xl border border-border bg-background p-4">
+      <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+        Evidence
+      </p>
+
+      <p className="mt-2 text-2xl font-black">
+        {
+          advisor.cognitionSummary
+            .evidenceCount
+        }
+      </p>
+    </div>
+
+    <div className="rounded-2xl border border-border bg-background p-4">
+      <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+        Learning
+      </p>
+
+      <p className="mt-2 text-lg font-black">
+        {advisor.cognitionSummary.isLearning
+          ? "Active"
+          : "Gathering evidence"}
+      </p>
+    </div>
+  </div>
+</section>
       
      <RecommendationCard
         title={

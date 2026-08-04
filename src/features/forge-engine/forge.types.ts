@@ -5,8 +5,8 @@ import type {
 } from "./advisor";
 
 import type {
-  AdvisorAnalysis,
-} from "./advisor-v2";
+  AdvisorResult,
+} from "./advisor-v2/advisor.types";
 
 import type {
   BeliefResult,
@@ -116,7 +116,7 @@ export type ForgeState = {
   /*
    * Evidence-driven Advisor V2 analysis.
    */
-  advisorAnalysis: AdvisorAnalysis;
+  advisorAnalysis: AdvisorResult;
 
   insight: ForgeInsight;
 

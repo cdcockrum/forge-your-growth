@@ -4,30 +4,46 @@ import type {
   Skill,
 } from "@/features/forge/types";
 
-import type { Vision } from "@/features/vision";
+import type {
+  Vision,
+} from "@/features/vision";
 
 import {
   buildAdvisorAnalysis,
-} from "../advisor-v2";
+} from "../advisor-v2/buildAdvisorAnalysis";
 
-import { buildBeliefs } from "../beliefs";
-import { buildDailyBriefing } from "../briefing";
-import { buildCognitiveState } from "../cognitive-state";
+import {
+  buildBeliefs,
+} from "../beliefs";
 
-import type { ForgeState } from "../forge.types";
+import {
+  buildDailyBriefing,
+} from "../briefing";
+
+import {
+  buildCognitiveState,
+} from "../cognitive-state";
+
+import type {
+  ForgeState,
+} from "../forge.types";
 
 import type {
   AchievementSnapshot,
   WeeklyReviewSnapshot,
 } from "../narrative";
 
-import { buildPatternSummary } from "../patterns";
+import {
+  buildPatternSummary,
+} from "../patterns";
 
 import type {
   WeeklyPlanAssessment,
 } from "../planning-assessment/assessment.types";
 
-import { buildPredictions } from "../prediction";
+import {
+  buildPredictions,
+} from "../prediction";
 
 import {
   buildPracticeTrendAnalysis,
@@ -55,22 +71,43 @@ import type {
 
 export type ForgePipelineOptions = {
   vision: Vision | null;
+
   sessions: PracticeSession[];
+
   skills: Skill[];
+
   lifeAreas: LifeArea[];
-  assessment?: WeeklyPlanAssessment;
-  achievements?: AchievementSnapshot[];
-  review?: WeeklyReviewSnapshot | null;
+
+  assessment?:
+    WeeklyPlanAssessment;
+
+  achievements?:
+    AchievementSnapshot[];
+
+  review?:
+    WeeklyReviewSnapshot | null;
+
   userName?: string;
 };
 
 export type ForgePipelineSnapshot = {
-  observation: FoundationStage;
-  interpretation: InterpretationStage;
-  context: ContextStage;
-  reasoning: ReasoningStage;
-  explanation: ExplanationStage;
-  trendAnalysis: PracticeTrendAnalysis;
+  observation:
+    FoundationStage;
+
+  interpretation:
+    InterpretationStage;
+
+  context:
+    ContextStage;
+
+  reasoning:
+    ReasoningStage;
+
+  explanation:
+    ExplanationStage;
+
+  trendAnalysis:
+    PracticeTrendAnalysis;
 };
 
 export function buildForgePipelineSnapshot({
@@ -82,19 +119,27 @@ export function buildForgePipelineSnapshot({
   achievements = [],
   review = null,
 }: ForgePipelineOptions): ForgePipelineSnapshot {
-  const observation = buildFoundationStage({
-    sessions,
-    skills,
-    lifeAreas,
-    weeklyReviewCompleted: Boolean(review),
-  });
+  const observation =
+    buildFoundationStage({
+      sessions,
+      skills,
+      lifeAreas,
 
-  const interpretation = buildInterpretationStage({
-    foundation: observation,
-    sessions,
-    skills,
-    assessment,
-  });
+      weeklyReviewCompleted:
+        Boolean(
+          review,
+        ),
+    });
+
+  const interpretation =
+    buildInterpretationStage({
+      foundation:
+        observation,
+
+      sessions,
+      skills,
+      assessment,
+    });
 
   /*
    * Trend analysis compares the most recent seven-day
@@ -112,27 +157,43 @@ export function buildForgePipelineSnapshot({
    * The context stage is responsible for normalizing those
    * results before they reach the reasoning pipeline.
    */
-  const context = buildContextStage({
-    vision,
-    foundation: observation,
-    interpretation,
-    assessment,
-    achievements,
-    review,
-  });
+  const context =
+    buildContextStage({
+      vision,
 
-  const reasoning = buildReasoningStage({
-    vision,
-    foundation: observation,
-    interpretation,
-    context,
-  });
+      foundation:
+        observation,
 
-  const explanation = buildExplanationStage({
-    foundation: observation,
-    interpretation,
-    reasoning,
-  });
+      interpretation,
+
+      assessment,
+
+      achievements,
+
+      review,
+    });
+
+  const reasoning =
+    buildReasoningStage({
+      vision,
+
+      foundation:
+        observation,
+
+      interpretation,
+
+      context,
+    });
+
+  const explanation =
+    buildExplanationStage({
+      foundation:
+        observation,
+
+      interpretation,
+
+      reasoning,
+    });
 
   return {
     observation,
@@ -154,13 +215,17 @@ export function buildForgeState(
     reasoning,
     explanation,
     trendAnalysis,
-  } = buildForgePipelineSnapshot(options);
+  } =
+    buildForgePipelineSnapshot(
+      options,
+    );
 
   const history = {
     ...context.history,
 
     events:
-      context.history?.events ??
+      context.history
+        ?.events ??
       [],
   };
 
@@ -175,11 +240,13 @@ export function buildForgeState(
     ...reasoning.advisor,
 
     actions:
-      reasoning.advisor?.actions ??
+      reasoning.advisor
+        ?.actions ??
       [],
 
     reasoning:
-      reasoning.advisor?.reasoning ??
+      reasoning.advisor
+        ?.reasoning ??
       [],
   };
 
@@ -190,11 +257,13 @@ export function buildForgeState(
     ...reasoning.intelligence,
 
     evidence:
-      reasoning.intelligence?.evidence ??
+      reasoning.intelligence
+        ?.evidence ??
       [],
 
     reasoning:
-      reasoning.intelligence?.reasoning ??
+      reasoning.intelligence
+        ?.reasoning ??
       [],
   };
 
@@ -202,68 +271,72 @@ export function buildForgeState(
     explanation.evidence ??
     [];
 
-  const beliefs = buildBeliefs({
-    advisor,
+  const beliefs =
+    buildBeliefs({
+      advisor,
 
-    identity:
-      interpretation.identity,
+      identity:
+        interpretation.identity,
 
-    evidence,
+      evidence,
 
-    memory:
-      context.memory,
-  });
+      memory:
+        context.memory,
+    });
 
-  const patterns = buildPatternSummary(
-    [],
-    options.sessions,
-  );
+  const patterns =
+    buildPatternSummary(
+      [],
+      options.sessions,
+    );
 
-  const predictions = buildPredictions({
-    progress:
-      observation.progress,
+  const predictions =
+    buildPredictions({
+      progress:
+        observation.progress,
 
-    momentum:
-      interpretation.momentum,
+      momentum:
+        interpretation.momentum,
 
-    beliefs,
+      beliefs,
 
-    contradictions,
+      contradictions,
 
-    patterns,
-  });
+      patterns,
+    });
 
   /*
    * Advisor V2 receives normalized outputs from the
    * existing cognitive engines and translates them into
    * standardized executive evidence.
    */
-  const advisorAnalysis = buildAdvisorAnalysis({
-    progress:
-      observation.progress,
+  const advisorAnalysis =
+    buildAdvisorAnalysis({
+      progress:
+        observation.progress,
 
-    momentum:
-      interpretation.momentum,
+      momentum:
+        interpretation.momentum,
 
-    identity:
-      interpretation.identity,
+      identity:
+        interpretation.identity,
 
-    memory:
-      context.memory,
+      memory:
+        context.memory,
 
-    history,
+      history,
 
-    patterns,
+      patterns,
 
-    beliefs,
+      beliefs,
 
-    predictions,
+      predictions,
 
-    trendAnalysis,
+      trendAnalysis,
 
-    vision:
-      options.vision,
-  });
+      vision:
+        options.vision,
+    });
 
   /*
    * Cognitive State continues using the existing Advisor
@@ -272,45 +345,48 @@ export function buildForgeState(
    * We will add advisorAnalysis to Cognitive State in a
    * separate, controlled change.
    */
-  const cognitiveState = buildCognitiveState({
-    progress:
-      observation.progress,
+  const cognitiveState =
+    buildCognitiveState({
+      progress:
+        observation.progress,
 
-    momentum:
-      interpretation.momentum,
+      momentum:
+        interpretation.momentum,
 
-    identity:
-      interpretation.identity,
+      identity:
+        interpretation.identity,
 
-    narrative:
-      context.narrative,
+      narrative:
+        context.narrative,
 
-    memory:
-      context.memory,
+      memory:
+        context.memory,
 
-    history,
+      history,
 
-    evidence,
+      evidence,
 
-    predictions,
+      predictions,
 
-    intelligence,
+      intelligence,
 
-    contradictions,
+      contradictions,
 
-    advisor,
+      advisor,
 
-    vision:
-      options.vision,
+      vision:
+        options.vision,
 
-    trendAnalysis,
-  });
+      trendAnalysis,
+    });
 
-  const dailyBriefing = buildDailyBriefing({
-    cognitiveState,
-    userName:
-      options.userName,
-  });
+  const dailyBriefing =
+    buildDailyBriefing({
+      cognitiveState,
+
+      userName:
+        options.userName,
+    });
 
   return {
     vision:

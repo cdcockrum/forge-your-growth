@@ -13,3 +13,4 @@ export * from "./observationValidator";
 export * from "./pattern.types";
 export * from "./patternLibrary";
 export * from "./patternEngine";
+export * from "./advisorVoice";

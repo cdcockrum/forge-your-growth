@@ -18,6 +18,18 @@ import {
   runCommunicationPipeline,
 } from "@/features/forge-engine/advisor-v2/communication";
 
+import type {
+  AdvisorAdaptiveLearning,
+} from "@/features/forge-engine/advisor-v2";
+
+import {
+  runCognitionPipeline,
+} from "@/features/forge-engine/cognition";
+
+import type {
+  ForgeCognitionSummary,
+} from "@/features/forge-engine/cognition";
+
 type ReadableRecommendationProvenance = {
   explanation: string;
 
@@ -196,6 +208,11 @@ export type AdvisorViewModel = {
   longTermDirection: string;
 
   confidence: number;
+
+  adaptiveLearning: AdvisorAdaptiveLearning | null;
+
+  cognitionSummary:
+  ForgeCognitionSummary;
 };
 
 export function buildAdvisorAnalysisFromForge(
@@ -237,10 +254,19 @@ export function buildAdvisorAnalysisFromForge(
 export function buildAdvisorViewModel(
   forge: ForgeState,
 ): AdvisorViewModel {
-  const advisor =
-    buildAdvisorAnalysisFromForge(
+  const cognition =
+    runCognitionPipeline({
       forge,
-    );
+
+      adaptiveLearning:
+        null,
+
+      generatedAt:
+        new Date().toISOString(),
+    });
+
+  const advisor =
+    cognition.state.advisor;
 
   const cognitiveViewModel =
     buildAdvisorCognitiveViewModel(
@@ -258,6 +284,10 @@ export function buildAdvisorViewModel(
       brief:
         advisor.brief,
     });
+
+  const adaptiveLearning:
+    AdvisorAdaptiveLearning | null =
+      null;
 
   const strongestPattern =
     forge.patterns
@@ -286,6 +316,9 @@ export function buildAdvisorViewModel(
 
     assessment:
       communication.assessment,
+
+    cognitionSummary:
+      cognition.summary,
 
     cognition:
       cognitiveViewModel
@@ -505,6 +538,8 @@ export function buildAdvisorViewModel(
     confidenceReasoning:
       advisor.confidence
         .score,
+
+    adaptiveLearning,
 
     memories:
       forge.memory

@@ -9,6 +9,11 @@ import {
   ForgeCard,
 } from "@/components/forge";
 
+import {
+  MetricCard,
+  MetricGrid,
+} from "@/components/forge/forge-ui";
+
 type CalibrationCardProps = {
   calibration: string;
 
@@ -82,8 +87,11 @@ export function CalibrationCard({
         </div>
       </div>
 
-      <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <CalibrationMetric
+      <MetricGrid
+        columns={4}
+        className="mt-7"
+      >
+        <MetricCard
           icon={Target}
           label="Prediction accuracy"
           value={
@@ -95,7 +103,7 @@ export function CalibrationCard({
           }
         />
 
-        <CalibrationMetric
+        <MetricCard
           icon={Gauge}
           label="Average confidence"
           value={
@@ -107,7 +115,7 @@ export function CalibrationCard({
           }
         />
 
-        <CalibrationMetric
+        <MetricCard
           icon={Activity}
           label="Confidence bias"
           value={
@@ -119,33 +127,45 @@ export function CalibrationCard({
           }
         />
 
-        <CalibrationMetric
+        <MetricCard
           icon={ShieldCheck}
           label="Evidence reliability"
           value={formatLabel(
             evidenceReliability,
           )}
+          emphasis={reliabilityEmphasis(
+            evidenceReliability,
+          )}
         />
-      </div>
+      </MetricGrid>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <CalibrationMetric
+      <MetricGrid
+        columns={4}
+        className="mt-4"
+      >
+        <MetricCard
           icon={ShieldCheck}
           label="Evidence coverage"
           value={formatPercentage(
             evidenceCoverage,
           )}
+          emphasis={scoreEmphasis(
+            evidenceCoverage,
+          )}
         />
 
-        <CalibrationMetric
+        <MetricCard
           icon={Activity}
           label="Negative evidence rate"
           value={formatPercentage(
             contradictionRate,
           )}
+          emphasis={inverseScoreEmphasis(
+            contradictionRate,
+          )}
         />
 
-        <CalibrationMetric
+        <MetricCard
           icon={Activity}
           label="Revision rate"
           value={formatPercentage(
@@ -153,59 +173,39 @@ export function CalibrationCard({
           )}
         />
 
-        <CalibrationMetric
+        <MetricCard
           icon={Target}
           label="Predictions tracked"
           value={`${resolvedPredictionCount} of ${predictionCount} resolved`}
         />
-      </div>
+      </MetricGrid>
     </ForgeCard>
   );
 }
 
-function CalibrationMetric({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof Gauge;
+function normalizeScore(
+  value: number,
+): number {
+  const normalized =
+    Math.abs(value) > 1
+      ? value / 100
+      : value;
 
-  label: string;
-
-  value: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-border bg-background p-4">
-      <div className="flex items-center gap-2">
-        <Icon className="size-4 text-accent" />
-
-        <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-          {label}
-        </p>
-      </div>
-
-      <p className="mt-3 text-lg font-black tracking-tight">
-        {value}
-      </p>
-    </div>
+  return Math.max(
+    0,
+    Math.min(
+      normalized,
+      1,
+    ),
   );
 }
 
 function formatPercentage(
   value: number,
 ): string {
-  const normalized =
-    Math.abs(value) > 1
-      ? value / 100
-      : value;
-
   return `${Math.round(
-    Math.max(
-      0,
-      Math.min(
-        normalized,
-        1,
-      ),
+    normalizeScore(
+      value,
     ) * 100,
   )}%`;
 }
@@ -248,4 +248,76 @@ function formatLabel(
       (character) =>
         character.toUpperCase(),
     );
+}
+
+function reliabilityEmphasis(
+  value: string,
+):
+  | "default"
+  | "positive"
+  | "warning" {
+  const normalized =
+    value
+      .trim()
+      .toLowerCase();
+
+  if (
+    normalized === "high" ||
+    normalized === "strong"
+  ) {
+    return "positive";
+  }
+
+  if (
+    normalized === "low" ||
+    normalized === "weak"
+  ) {
+    return "warning";
+  }
+
+  return "default";
+}
+
+function scoreEmphasis(
+  value: number,
+):
+  | "default"
+  | "positive"
+  | "warning" {
+  const normalized =
+    normalizeScore(
+      value,
+    );
+
+  if (normalized >= 0.75) {
+    return "positive";
+  }
+
+  if (normalized < 0.4) {
+    return "warning";
+  }
+
+  return "default";
+}
+
+function inverseScoreEmphasis(
+  value: number,
+):
+  | "default"
+  | "positive"
+  | "warning" {
+  const normalized =
+    normalizeScore(
+      value,
+    );
+
+  if (normalized <= 0.15) {
+    return "positive";
+  }
+
+  if (normalized >= 0.4) {
+    return "warning";
+  }
+
+  return "default";
 }

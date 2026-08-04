@@ -40,3 +40,4 @@ export * from "./cognitive-state";
 export * from "./briefing";
 
 export * from "./trends";
+export * from "./cognition";
