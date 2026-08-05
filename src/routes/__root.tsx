@@ -1,12 +1,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 import {
   Outlet,
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+
 import {
   useEffect,
   useState,
@@ -259,6 +262,41 @@ function ForgeBootScreen() {
   );
 }
 
+function ScrollToTop() {
+  const pathname =
+    useRouterState({
+      select: (state) =>
+        state.location.pathname,
+    });
+
+  useEffect(() => {
+    const frame =
+      window.requestAnimationFrame(
+        () => {
+          window.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: "auto",
+          });
+
+          // Additional protection for mobile Safari.
+          document.documentElement.scrollTop =
+            0;
+
+          document.body.scrollTop =
+            0;
+        },
+      );
+
+    return () =>
+      window.cancelAnimationFrame(
+        frame,
+      );
+  }, [pathname]);
+
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
@@ -273,9 +311,12 @@ function RootComponent() {
   }, [queryClient, router]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Outlet />
-      <Toaster position="top-center" />
-    </QueryClientProvider>
-  );
+  <QueryClientProvider client={queryClient}>
+    <ScrollToTop />
+
+    <Outlet />
+
+    <Toaster position="top-center" />
+  </QueryClientProvider>
+);
 }
