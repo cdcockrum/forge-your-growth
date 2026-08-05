@@ -41,7 +41,7 @@ export function TourCard({
       aria-modal="true"
       aria-labelledby="forge-tour-title"
       aria-describedby="forge-tour-description"
-      className="pointer-events-auto fixed z-[10002] w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-zinc-950 text-white shadow-2xl"
+      className="pointer-events-auto fixed z-[10002] max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-sm overflow-y-auto rounded-3xl border border-white/10 bg-zinc-950 text-white shadow-2xl"
       style={positionStyle}
     >
       <div className="border-b border-white/10 px-5 py-4">

@@ -371,15 +371,17 @@ export function TourProvider({
       activeTour &&
       activeStep ? (
         <TourOverlay>
+          {!highlightRect ? (
           <div
             aria-hidden="true"
             className="fixed inset-0 bg-black/65 backdrop-blur-[1px]"
           />
+        ) : null}
 
           {highlightRect ? (
             <div
               aria-hidden="true"
-              className="pointer-events-none fixed z-[10001] rounded-2xl ring-2 ring-orange-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.68),0_0_40px_rgba(249,115,22,0.55)] transition-all duration-300"
+              className="pointer-events-none fixed z-[10001] rounded-2xl ring-2 ring-orange-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.68),0_0_32px_rgba(249,115,22,0.4)]"
               style={{
                 top:
                   highlightRect.top,
@@ -439,6 +441,22 @@ function getCardPosition({
 
   const viewportHeight =
     window.innerHeight;
+
+  if (viewportWidth < 640) {
+      return {
+        left:
+          VIEWPORT_PADDING,
+
+        bottom:
+          `calc(${VIEWPORT_PADDING}px + env(safe-area-inset-bottom))`,
+
+        top:
+          "auto",
+
+        transform:
+          "none",
+      };
+    }
 
   if (
     !rect ||

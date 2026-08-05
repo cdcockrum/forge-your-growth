@@ -4,7 +4,7 @@ const TOUR_PREFIX =
 function getTourKey(
   id: string,
 ) {
-  return `${TOUR_PREFIX}${id}`;
+  return `${TOUR_PREFIX}${id}:completed`;
 }
 
 export function hasCompletedTour(
