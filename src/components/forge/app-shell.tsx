@@ -46,6 +46,19 @@ const NAV = [
     label: "Today",
     icon: Target,
   },
+
+   {
+    to: "/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+  },
+
+   {
+    to: "/plan",
+    label: "Practice",
+    icon: Calendar,
+  },
+
   {
     to: "/advisor",
     label: "Advisor",
@@ -53,44 +66,33 @@ const NAV = [
   },
 
   {
-    label:
-      "Reasoning",
-
-    to:
-      "/reasoning",
-
-    icon:
-      BrainCircuit,
-  },
-
-  {
-    to: "/plan",
-    label: "Practice",
-    icon: Calendar,
-  },
-  {
     to: "/observatory",
     label: "Observatory",
     icon: Telescope,
   },
+
+  
+
+  // Workspace
+
+  {
+    to: "/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+  },
+
   {
     to: "/intelligence",
     label: "Insights",
     icon: Sparkles,
   },
 
-  // Workspace
-
   {
     to: "/vision",
     label: "Profile",
     icon: LayoutDashboard,
   },
-  {
-    to: "/dashboard",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-  },
+  
   {
     to: "/progress",
     label: "Progress",
@@ -116,6 +118,13 @@ const NAV = [
     label: "Timeline",
     icon: History,
   },
+
+   {
+    to: "/reasoning",
+    label: "Reasoning",
+    icon: BrainCircuit,
+  },
+
 ] as const;
 
 const MOBILE_PRIMARY = [

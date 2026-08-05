@@ -1134,7 +1134,7 @@ function PlanSlot({
   return (
     <article
       className={[
-        "group rounded-lg border p-2.5 transition-all",
+        "group rounded-lg border px-2.5 pb-1 pt-2.5 transition-all",
         status ===
         "completed"
           ? "bg-muted opacity-60"
@@ -1205,7 +1205,7 @@ function PlanSlot({
         ) : null}
       </div>
 
-      <div className="mt-2 flex items-center gap-1">
+      <div className="mt-2 flex items-center gap-1 lg:flex-col lg:items-stretch">
         {status ===
         "scheduled" ? (
           <>
@@ -1232,6 +1232,9 @@ function PlanSlot({
 
             <button
               type="button"
+               aria-label={`Mark ${session.title} complete`}
+               title="Mark session complete"
+
               disabled={
                 updating
               }
@@ -1248,15 +1251,17 @@ function PlanSlot({
                   `${session.title} completed.`,
                 )
               }
-              className="inline-flex items-center gap-1 rounded-md bg-foreground px-1.5 py-1 text-[9px] font-semibold text-background transition hover:bg-foreground/90 disabled:cursor-wait disabled:opacity-50"
+              className="inline-flex min-h-8 lg:w-full items-center justify-center rounded-md bg-foreground px-1 py-1 text-center text-[9px] font-semibold leading-tight text-background transition hover:bg-foreground/90 disabled:cursor-wait disabled:opacity-50"
             >
-              <Check className="size-3" />
-
-              Complete
+              <Check className="size-3 shrink-0" />
+              <span>
+                Mark complete
+              </span>
             </button>
 
             <button
               type="button"
+              
               disabled={
                 updating
               }
@@ -1269,11 +1274,13 @@ function PlanSlot({
                   `${session.title} skipped.`,
                 )
               }
-              className="ml-auto rounded-md p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:cursor-wait disabled:opacity-50"
-              aria-label={`Skip ${session.title}`}
+              className="inline-flex min-h-8 items-center justify-center gap-1 rounded-md border border-zinc-600 bg-zinc-600 px-1.5 py-1 text-[9px] font-semibold text-white transition hover:border-zinc-700 hover:bg-zinc-700 disabled:cursor-wait disabled:opacity-50 lg:w-full"
               title="Skip"
             >
               <SkipForward className="size-3" />
+              <span>
+                Skip
+              </span>
             </button>
           </>
         ) : null}
@@ -1283,6 +1290,8 @@ function PlanSlot({
           <>
             <button
               type="button"
+               aria-label={`Mark ${session.title} complete`}
+               title="Mark session complete"
               disabled={
                 updating
               }
@@ -1299,11 +1308,13 @@ function PlanSlot({
                   `${session.title} completed.`,
                 )
               }
-              className="inline-flex items-center gap-1 rounded-md bg-foreground px-1.5 py-1 text-[9px] font-semibold text-background transition hover:bg-foreground/90 disabled:cursor-wait disabled:opacity-50"
+              className="inline-flex min-h-8 lg:w-full items-center justify-center rounded-md bg-foreground px-1 py-1 text-center text-[9px] font-semibold leading-tight text-background transition hover:bg-foreground/90 disabled:cursor-wait disabled:opacity-50"
             >
-              <Check className="size-3" />
+            <Check className="size-3 shrink-0" />
 
-              Complete
+                <span>
+                  Mark complete
+                </span>
             </button>
 
             <button

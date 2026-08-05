@@ -214,10 +214,9 @@ export function IdentityTree({
             {model.subtitle}
           </p>
 
-          <p className="mt-2 text-xs text-muted-foreground">
-            Select a trait branch to
-            inspect its supporting
-            evidence.
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">
+            Tap a trait to see which completed
+            practices are strengthening it.
           </p>
         </div>
 
@@ -236,7 +235,73 @@ export function IdentityTree({
         </div>
       </header>
 
-      <div className="mt-6 overflow-hidden">
+      <div className="mt-6 grid gap-3 sm:hidden">
+          {model.branches.map((branch) => {
+            const isSelected =
+              selectedBranch?.trait ===
+              branch.trait;
+
+            return (
+              <button
+                key={branch.trait}
+                type="button"
+                onClick={() =>
+                  setSelectedTrait(
+                    branch.trait,
+                  )
+                }
+                aria-pressed={isSelected}
+                className={[
+                  "w-full rounded-xl border p-4 text-left transition",
+                  isSelected
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border bg-background",
+                ].join(" ")}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-semibold">
+                      {branch.label}
+                    </p>
+
+                    <p
+                      className={[
+                        "mt-1 text-xs",
+                        isSelected
+                          ? "text-background/70"
+                          : "text-muted-foreground",
+                      ].join(" ")}
+                    >
+                      {branch.evidence} completed{" "}
+                      {branch.evidence === 1
+                        ? "practice"
+                        : "practices"}
+                    </p>
+                  </div>
+
+                  <div className="shrink-0 text-right">
+                    <p
+                      className={[
+                        "text-[10px] uppercase tracking-wide",
+                        isSelected
+                          ? "text-background/70"
+                          : "text-muted-foreground",
+                      ].join(" ")}
+                    >
+                      Strength
+                    </p>
+
+                    <p className="mt-1 font-semibold">
+                      {branch.strength}/10
+                    </p>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+      <div className="mt-6 hidden overflow-hidden sm:block">
         <div className="flex justify-center">
           <div className="w-full max-w-[760px]">
             <svg
@@ -586,7 +651,7 @@ export function IdentityTree({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Selected trait
+                How this trait is developing
               </p>
 
               <h3 className="mt-1 text-2xl font-semibold">
@@ -602,7 +667,7 @@ export function IdentityTree({
 
             <div className="rounded-xl bg-muted px-4 py-3">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Branch strength
+                Strength
               </p>
 
               <p className="mt-1 text-xl font-semibold">
@@ -639,7 +704,7 @@ export function IdentityTree({
               </p>
 
               <p className="mt-1 text-xs text-muted-foreground">
-                completed sessions
+                completed practices supporting this trait
               </p>
             </div>
 

@@ -42,7 +42,7 @@ const daypartOrder: Array<{
   },
   {
     key: "unscheduled",
-    label: "No time",
+    label: "Unscheduled",
   },
 ];
 
