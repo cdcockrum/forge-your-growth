@@ -7,7 +7,11 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import {
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -112,17 +116,146 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
-function RootShell({ children }: { children: ReactNode }) {
+function RootShell({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const [hydrated, setHydrated] =
+    useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
   return (
     <html lang="en">
       <head>
         <HeadContent />
       </head>
+
       <body>
+        {!hydrated && (
+          <ForgeBootScreen />
+        )}
+
         {children}
+
         <Scripts />
       </body>
     </html>
+  );
+}
+
+function ForgeBootScreen() {
+  return (
+    <>
+      <style>
+        {`
+          @keyframes forge-boot-reveal {
+            from {
+              opacity: 0;
+            }
+
+            to {
+              opacity: 1;
+            }
+          }
+
+          #forge-boot-screen {
+            opacity: 0;
+            animation:
+              forge-boot-reveal
+              160ms
+              ease-out
+              300ms
+              forwards;
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            #forge-boot-screen {
+              opacity: 1;
+              animation: none;
+            }
+          }
+        `}
+      </style>
+
+      <div
+        id="forge-boot-screen"
+        role="status"
+        aria-live="polite"
+        aria-label="Loading Forge"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 9999,
+          display: "grid",
+          placeItems: "center",
+          background:
+            "#fbfaf7",
+          color:
+            "#171410",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "14px",
+            padding: "24px",
+            textAlign: "center",
+          }}
+        >
+          <div
+            aria-hidden="true"
+            style={{
+              display: "grid",
+              width: "46px",
+              height: "46px",
+              placeItems: "center",
+              borderRadius: "16px",
+              background:
+                "#ff5a1f",
+              color:
+                "#ffffff",
+              fontSize: "22px",
+              fontWeight: 800,
+            }}
+          >
+            F
+          </div>
+
+          <div>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "18px",
+                fontWeight: 800,
+                letterSpacing:
+                  "-0.02em",
+              }}
+            >
+              Forge
+            </p>
+
+            <p
+              style={{
+                margin:
+                  "6px 0 0",
+                color:
+                  "#746d65",
+                fontSize: "13px",
+                lineHeight: 1.5,
+              }}
+            >
+              Preparing your intelligence
+            </p>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
