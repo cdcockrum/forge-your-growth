@@ -22,15 +22,18 @@ export function runCommunicationPipeline(
     input.wisdom.insights[0] ??
     null;
 
+  const primaryOpportunity =
+    input.wisdom.opportunities[0] ??
+    null;
+
   const summary =
-    buildSummary(
-      input.wisdom.narrative,
+    buildExecutiveSummary(
+      primaryInsight,
       tone,
     );
 
   const assessment =
     buildAssessment(
-      input.wisdom.narrative,
       input.wisdom.longTermThemes,
       input.wisdom.emergingIdentity,
     );
@@ -38,26 +41,34 @@ export function runCommunicationPipeline(
   const recommendation =
     buildRecommendation(
       primaryInsight,
-      input.wisdom.opportunities,
+      primaryOpportunity,
       input.confidence.score,
     );
 
+  const reservedLanguage = [
+    summary,
+    assessment,
+    recommendation.explanation,
+  ];
+
   const reasoning =
-    uniqueStrings([
-      ...input.wisdom.insights.map(
-        (insight) =>
-          insight.explanation,
-      ),
+    uniqueDistinctStrings(
+      [
+        ...input.wisdom.insights.map(
+          (insight) =>
+            insight.explanation,
+        ),
 
-      ...input.wisdom.longTermThemes,
-
-      ...input.wisdom.emergingIdentity,
-    ]).slice(0, 6);
+        ...input.wisdom.longTermThemes,
+      ],
+      reservedLanguage,
+    ).slice(0, 4);
 
   const actions =
-    uniqueStrings(
+    buildActions(
       input.wisdom.opportunities,
-    ).slice(0, 4);
+      primaryOpportunity,
+    );
 
   const evidence =
     uniqueStrings(
@@ -65,17 +76,17 @@ export function runCommunicationPipeline(
         (insight) =>
           insight.title,
       ),
-    ).slice(0, 6);
+    ).slice(0, 4);
 
   const opportunities =
     uniqueStrings(
       input.wisdom.opportunities,
-    ).slice(0, 4);
+    ).slice(0, 3);
 
   const risks =
     uniqueStrings(
       input.wisdom.cautions,
-    ).slice(0, 4);
+    ).slice(0, 3);
 
   return {
     summary,
@@ -98,79 +109,84 @@ export function runCommunicationPipeline(
   };
 }
 
-function buildSummary(
-  narrative: string,
+function buildExecutiveSummary(
+  primaryInsight:
+    | ForgeCommunicationInput[
+        "wisdom"
+      ]["insights"][number]
+    | null,
   tone: ForgeCommunicationTone,
 ): string {
-  const trimmedNarrative =
-    narrative.trim();
+  const insight =
+    primaryInsight?.explanation
+      .trim() ?? "";
 
-  if (trimmedNarrative) {
-    return sentenceCase(
-      trimmedNarrative,
+  if (insight) {
+    return ensureSentence(
+      insight,
     );
   }
 
   switch (tone) {
     case "encouraging":
-      return (
-        "Your current direction contains several encouraging signals. " +
-        "Continue reinforcing the behaviors that are supporting them."
-      );
+      return "Your recent choices are beginning to reinforce the direction you want to take.";
 
     case "direct":
-      return (
-        "A meaningful tension needs your attention. " +
-        "Choose one focused action before expanding into additional goals."
-      );
+      return "One meaningful tension deserves your attention before you add anything new.";
 
     case "cautious":
-      return (
-        "A possible direction is emerging, but Forge needs more repeated " +
-        "evidence before treating it as stable."
-      );
+      return "A possible direction is emerging, but it needs more consistent behavior before Forge can treat it as established.";
 
     case "steady":
     default:
-      return (
-        "Your recent activity is beginning to form a coherent picture, " +
-        "although Forge will continue testing that interpretation."
-      );
+      return "Your recent activity is beginning to form a clearer picture.";
   }
 }
 
 function buildAssessment(
-  narrative: string,
   longTermThemes: string[],
   emergingIdentity: string[],
 ): string {
-  const statements =
-    uniqueStrings([
-      narrative,
+  const theme =
+    longTermThemes[0]?.trim() ??
+    "";
 
-      ...longTermThemes.slice(
-        0,
-        2,
-      ),
+  const identity =
+    emergingIdentity[0]?.trim() ??
+    "";
 
-      ...emergingIdentity.slice(
-        0,
-        2,
-      ),
-    ]);
+  if (
+    theme &&
+    identity &&
+    !expressesSameThought(
+      theme,
+      identity,
+    )
+  ) {
+    return [
+      `Over time, ${lowercaseFirst(
+        ensureSentence(theme),
+      )}`,
 
-  if (statements.length === 0) {
-    return (
-      "Forge is still gathering enough repeated evidence to form " +
-      "a durable long-term assessment."
-    );
+      `The clearest identity signal is this: ${lowercaseFirst(
+        ensureSentence(identity),
+      )}`,
+    ].join(" ");
   }
 
-  return statements
-    .map(
-      sentenceCase,
-    )
-    .join(" ");
+  if (theme) {
+    return `Over time, ${lowercaseFirst(
+      ensureSentence(theme),
+    )}`;
+  }
+
+  if (identity) {
+    return `The clearest identity signal is this: ${lowercaseFirst(
+      ensureSentence(identity),
+    )}`;
+  }
+
+  return "Forge does not yet have enough repeated evidence to describe a durable change.";
 }
 
 function buildRecommendation(
@@ -179,28 +195,27 @@ function buildRecommendation(
         "wisdom"
       ]["insights"][number]
     | null,
-  opportunities: string[],
+  primaryOpportunity:
+    | string
+    | null,
   confidence: number,
 ): ForgeCommunicationResult[
   "recommendation"
 ] {
-  const primaryOpportunity =
-    opportunities[0] ??
-    null;
-
   return {
     title:
       primaryInsight?.title
         ? humanizeTitle(
             primaryInsight.title,
           )
-        : "Continue gathering meaningful evidence",
+        : "Choose one meaningful next step",
 
     explanation:
-      buildRecommendationExplanation(
-        primaryInsight?.explanation,
-        primaryOpportunity,
-      ),
+      primaryOpportunity
+        ? ensureSentence(
+            primaryOpportunity,
+          )
+        : "Choose one action small enough to repeat, then let the result become new evidence.",
 
     priority:
       determinePriority(
@@ -209,32 +224,33 @@ function buildRecommendation(
   };
 }
 
-function buildRecommendationExplanation(
-  insight:
-    | string
-    | undefined,
-  opportunity:
-    | string
-    | null,
-): string {
-  const statements =
-    uniqueStrings([
-      insight ?? "",
-      opportunity ?? "",
-    ]);
+function buildActions(
+  opportunities: string[],
+  primaryOpportunity: string | null,
+): string[] {
+  const remaining =
+    opportunities.filter(
+      (opportunity) =>
+        !primaryOpportunity ||
+        !expressesSameThought(
+          opportunity,
+          primaryOpportunity,
+        ),
+    );
 
-  if (statements.length > 0) {
-    return statements
-      .map(
-        sentenceCase,
-      )
-      .join(" ");
+  if (remaining.length > 0) {
+    return uniqueStrings(
+      remaining.map(
+        ensureSentence,
+      ),
+    ).slice(0, 3);
   }
 
-  return (
-    "Choose one deliberate action that supports your longer-term direction, " +
-    "then allow the result to become new evidence."
-  );
+  return [
+    "Choose the smallest version of this recommendation that you can complete.",
+    "Notice what helps or prevents you from following through.",
+    "Use the result to adjust the next practice.",
+  ];
 }
 
 function determinePriority(
@@ -267,7 +283,8 @@ function selectCommunicationTone(
     );
 
   if (
-    cautionCount > opportunityCount &&
+    cautionCount >
+      opportunityCount &&
     normalized >= 0.65
   ) {
     return "direct";
@@ -281,7 +298,8 @@ function selectCommunicationTone(
   }
 
   if (
-    opportunityCount > cautionCount &&
+    opportunityCount >
+      cautionCount &&
     normalized >= 0.7
   ) {
     return "encouraging";
@@ -297,38 +315,238 @@ function humanizeTitle(
     title.trim();
 
   if (!trimmed) {
-    return "Take one meaningful next step";
+    return "Choose one meaningful next step";
   }
 
   const lower =
     trimmed.toLowerCase();
 
   if (
-    lower.includes(
-      "momentum",
-    )
-  ) {
-    return "Protect and strengthen your momentum";
-  }
-
-  if (
-    lower.includes(
-      "identity",
-    )
+    lower.includes("identity")
   ) {
     return "Reinforce the identity you are building";
   }
 
   if (
-    lower.includes(
-      "evidence",
-    )
+    lower.includes("momentum")
+  ) {
+    return "Protect the momentum you have created";
+  }
+
+  if (
+    lower.includes("direction")
+  ) {
+    return "Continue strengthening this direction";
+  }
+
+  if (
+    lower.includes("evidence")
   ) {
     return "Create clearer evidence through action";
   }
 
-  return sentenceCase(
+  return cleanHeadline(
     trimmed,
+  );
+}
+
+function uniqueDistinctStrings(
+  values: string[],
+  reserved: string[],
+): string[] {
+  return uniqueStrings(
+    values,
+  ).filter(
+    (value) =>
+      !reserved.some(
+        (used) =>
+          expressesSameThought(
+            value,
+            used,
+          ),
+      ),
+  );
+}
+
+function uniqueStrings(
+  values: string[],
+): string[] {
+  const seen =
+    new Set<string>();
+
+  return values.filter(
+    (value) => {
+      const trimmed =
+        value.trim();
+
+      if (!trimmed) {
+        return false;
+      }
+
+      const key =
+        normalizeForComparison(
+          trimmed,
+        );
+
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+
+      return true;
+    },
+  );
+}
+
+function expressesSameThought(
+  left: string,
+  right: string,
+): boolean {
+  const leftWords =
+    meaningfulWords(left);
+
+  const rightWords =
+    meaningfulWords(right);
+
+  if (
+    leftWords.size === 0 ||
+    rightWords.size === 0
+  ) {
+    return false;
+  }
+
+  const overlap =
+    [...leftWords].filter(
+      (word) =>
+        rightWords.has(word),
+    ).length;
+
+  return (
+    overlap /
+      Math.min(
+        leftWords.size,
+        rightWords.size,
+      ) >=
+    0.6
+  );
+}
+
+function meaningfulWords(
+  value: string,
+): Set<string> {
+  const ignored =
+    new Set([
+      "a",
+      "an",
+      "and",
+      "are",
+      "as",
+      "at",
+      "be",
+      "for",
+      "from",
+      "in",
+      "is",
+      "it",
+      "of",
+      "on",
+      "that",
+      "the",
+      "this",
+      "to",
+      "your",
+    ]);
+
+  return new Set(
+    normalizeForComparison(
+      value,
+    )
+      .split(" ")
+      .filter(
+        (word) =>
+          word.length > 1 &&
+          !ignored.has(word),
+      ),
+  );
+}
+
+function normalizeForComparison(
+  value: string,
+): string {
+  return value
+    .toLowerCase()
+    .replace(
+      /[^a-z0-9\s]/g,
+      " ",
+    )
+    .replace(
+      /\s+/g,
+      " ",
+    )
+    .trim();
+}
+
+function cleanHeadline(
+  value: string,
+): string {
+  const cleaned =
+    value
+      .trim()
+      .replace(
+        /,\s*strongest\b/gi,
+        "",
+      )
+      .replace(
+        /[.!?]+$/,
+        "",
+      );
+
+  if (!cleaned) {
+    return "Choose one meaningful next step";
+  }
+
+  return (
+    cleaned.charAt(0)
+      .toUpperCase() +
+    cleaned.slice(1)
+  );
+}
+
+function ensureSentence(
+  value: string,
+): string {
+  const trimmed =
+    value.trim();
+
+  if (!trimmed) {
+    return "";
+  }
+
+  const sentence =
+    trimmed.charAt(0)
+      .toUpperCase() +
+    trimmed.slice(1);
+
+  return /[.!?]$/.test(sentence)
+    ? sentence
+    : `${sentence}.`;
+}
+
+function lowercaseFirst(
+  value: string,
+): string {
+  const trimmed =
+    value.trim();
+
+  if (!trimmed) {
+    return "";
+  }
+
+  return (
+    trimmed.charAt(0)
+      .toLowerCase() +
+    trimmed.slice(1)
   );
 }
 
@@ -347,43 +565,4 @@ function normalizeConfidence(
       1,
     ),
   );
-}
-
-function uniqueStrings(
-  values: string[],
-): string[] {
-  return Array.from(
-    new Set(
-      values
-        .map(
-          (value) =>
-            value.trim(),
-        )
-        .filter(
-          (value) =>
-            value.length > 0,
-        ),
-    ),
-  );
-}
-
-function sentenceCase(
-  value: string,
-): string {
-  const trimmed =
-    value.trim();
-
-  if (!trimmed) {
-    return trimmed;
-  }
-
-  const sentence =
-    trimmed.charAt(0).toUpperCase() +
-    trimmed.slice(1);
-
-  return /[.!?]$/.test(
-    sentence,
-  )
-    ? sentence
-    : `${sentence}.`;
 }

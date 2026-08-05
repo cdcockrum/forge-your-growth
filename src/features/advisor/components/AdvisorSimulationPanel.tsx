@@ -51,28 +51,34 @@ export function AdvisorSimulationPanel({
           </h2>
 
           <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
-            These scenarios show how the current evidence could develop. They
-            are possibilities, not predictions.
+            These are different ways the current pattern could develop. They
+            are possibilities to consider, not predictions of what will happen.
           </p>
         </div>
       </div>
 
       <div className="mt-7 grid gap-4 lg:grid-cols-3">
         <ScenarioCard
-          eyebrow="Best case"
+          eyebrow="Upside"
+          plausibility="Plausible upside"
+          supportLabel="What strengthens this path"
           scenario={bestCase}
           icon={ArrowUpRight}
         />
 
         <ScenarioCard
-          eyebrow="Expected case"
+          eyebrow="Current course"
+          plausibility="Most plausible"
+          supportLabel="What keeps it moving"
           scenario={expectedCase}
           icon={ArrowRight}
           emphasized
         />
 
         <ScenarioCard
-          eyebrow="Risk case"
+          eyebrow="Risk"
+          plausibility="Worth watching"
+          supportLabel="How to respond"
           scenario={worstCase}
           icon={ArrowDownRight}
         />
@@ -83,11 +89,17 @@ export function AdvisorSimulationPanel({
 
 function ScenarioCard({
   eyebrow,
+  plausibility,
+  supportLabel,
   scenario,
   icon: Icon,
   emphasized = false,
 }: {
   eyebrow: string;
+
+  plausibility: string;
+
+  supportLabel: string;
 
   scenario: SimulationScenario;
 
@@ -95,13 +107,6 @@ function ScenarioCard({
 
   emphasized?: boolean;
 }) {
-  const probability =
-    Math.round(
-      normalizeProbability(
-        scenario.probability,
-      ) * 100,
-    );
-
   return (
     <article
       className={`rounded-2xl border p-5 ${
@@ -126,7 +131,7 @@ function ScenarioCard({
 
       <div className="mt-4 flex flex-wrap gap-2">
         <span className="rounded-full border border-border px-3 py-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
-          {probability}% likelihood
+          {plausibility}
         </span>
 
         <span className="rounded-full border border-border px-3 py-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
@@ -143,7 +148,7 @@ function ScenarioCard({
       {scenario.recommendations.length > 0 && (
         <div className="mt-5 border-t border-border pt-4">
           <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-            What supports this path
+            {supportLabel}
           </p>
 
           <div className="mt-3 space-y-2">
@@ -161,23 +166,6 @@ function ScenarioCard({
         </div>
       )}
     </article>
-  );
-}
-
-function normalizeProbability(
-  probability: number,
-): number {
-  const normalized =
-    probability > 1
-      ? probability / 100
-      : probability;
-
-  return Math.max(
-    0,
-    Math.min(
-      normalized,
-      1,
-    ),
   );
 }
 

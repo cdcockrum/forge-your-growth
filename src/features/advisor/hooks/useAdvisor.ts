@@ -3,6 +3,10 @@ import {
 } from "react";
 
 import {
+  useAdvisorAdaptiveLearning,
+} from "@/features/advisor-learning";
+
+import {
   useTodayDashboard,
 } from "@/features/today/hooks/useTodayDashboard";
 
@@ -16,13 +20,19 @@ export function useAdvisor(): AdvisorViewModel {
     forge,
   } = useTodayDashboard();
 
+  const adaptiveLearningQuery =
+    useAdvisorAdaptiveLearning();
+
   return useMemo(
     () =>
       buildAdvisorViewModel(
         forge,
+        adaptiveLearningQuery.data ??
+          null,
       ),
     [
       forge,
+      adaptiveLearningQuery.data,
     ],
   );
 }

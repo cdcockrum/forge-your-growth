@@ -30,6 +30,14 @@ import type {
   ForgeCognitionSummary,
 } from "@/features/forge-engine/cognition";
 
+import {
+  buildAdvisorNarrative,
+} from "./buildAdvisorNarrative";
+
+import type {
+  AdvisorNarrativeResult,
+} from "./buildAdvisorNarrative";
+
 type ReadableRecommendationProvenance = {
   explanation: string;
 
@@ -76,6 +84,9 @@ export type AdvisorViewModel = {
 
   assessment: string;
 
+  narrative:
+  AdvisorNarrativeResult;
+
   cognition:
     AdvisorCognitiveResult[
       "cognition"
@@ -92,7 +103,9 @@ export type AdvisorViewModel = {
     ];
 
   recommendation: {
-    title: string;
+  id: string | null;
+
+  title: string;
 
     explanation: string;
 
@@ -253,13 +266,16 @@ export function buildAdvisorAnalysisFromForge(
 
 export function buildAdvisorViewModel(
   forge: ForgeState,
+  adaptiveLearning:
+    AdvisorAdaptiveLearning | null =
+      null,
 ): AdvisorViewModel {
   const cognition =
     runCognitionPipeline({
       forge,
 
       adaptiveLearning:
-        null,
+        adaptiveLearning,
 
       generatedAt:
         new Date().toISOString(),
@@ -285,10 +301,6 @@ export function buildAdvisorViewModel(
         advisor.brief,
     });
 
-  const adaptiveLearning:
-    AdvisorAdaptiveLearning | null =
-      null;
-
   const strongestPattern =
     forge.patterns
       .strongestPattern;
@@ -307,7 +319,95 @@ export function buildAdvisorViewModel(
       advisor,
     );
 
+  const advisorNarrative =
+    buildAdvisorNarrative({
+      greeting:
+        greeting(),
+
+      assessment:
+        communication.assessment,
+
+      recommendation: {
+          
+          title:
+            communication
+              .recommendation
+              .title,
+
+        explanation:
+          communication
+            .recommendation
+            .explanation,
+
+        confidence:
+          primaryRecommendation
+            ?.confidence ??
+          advisor.confidence
+            .score,
+      },
+
+      cognitionSummary:
+        cognition.summary,
+
+      strongestBelief:
+        forge.beliefs
+          .strongest[0]
+          ? {
+              statement:
+                forge.beliefs
+                  .strongest[0]
+                  .statement,
+
+              confidence:
+                forge.beliefs
+                  .strongest[0]
+                  .confidence,
+            }
+          : null,
+
+      strongestPattern:
+        strongestPattern
+          ? {
+              title:
+                strongestPattern
+                  .title,
+
+              description:
+                strongestPattern
+                  .description,
+            }
+          : null,
+
+      strongestPrediction:
+        strongestPrediction
+          ? {
+              title:
+                strongestPrediction
+                  .title,
+
+              description:
+                strongestPrediction
+                  .description,
+
+              confidence:
+                strongestPrediction
+                  .confidence,
+            }
+          : null,
+
+      primaryRisk:
+        communication
+          .risks[0] ??
+        null,
+
+      primaryOpportunity:
+        communication
+          .opportunities[0] ??
+        null,
+    });
+
   return {
+    
     greeting:
       greeting(),
 
@@ -316,6 +416,9 @@ export function buildAdvisorViewModel(
 
     assessment:
       communication.assessment,
+
+    narrative:
+      advisorNarrative,
 
     cognitionSummary:
       cognition.summary,
@@ -333,6 +436,10 @@ export function buildAdvisorViewModel(
         .alerts,
 
     recommendation: {
+      id:
+        primaryRecommendation
+          ?.id ?? null,
+
       title:
         communication
           .recommendation

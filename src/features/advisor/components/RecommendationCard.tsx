@@ -1,8 +1,9 @@
 import {
-  ArrowUpRight,
   Check,
   ChevronDown,
   ChevronUp,
+  Clock3,
+  LoaderCircle,
 } from "lucide-react";
 
 import {
@@ -31,27 +32,58 @@ type RecommendationExplanation = {
 };
 
 type RecommendationCardProps = {
+  recommendationId:
+    string | null;
+
   title: string;
 
   explanation: string;
 
-  priority: RecommendationPriority;
+  priority:
+    RecommendationPriority;
 
   confidence: number;
 
   provenance:
     RecommendationExplanation | null;
+
+  lifecycleStatus:
+    string | null;
+
+  evaluationDueAt:
+    string | null;
+
+  loadingResponse: boolean;
+
+  responding: boolean;
+
+  responseError:
+    string | null;
+
+  onTry: () => Promise<void>;
+
+  onDismiss: () => Promise<void>;
 };
 
 export function RecommendationCard({
+  recommendationId,
   title,
   explanation,
   priority,
   confidence,
   provenance,
+  lifecycleStatus,
+  evaluationDueAt,
+  loadingResponse,
+  responding,
+  responseError,
+  onTry,
+  onDismiss,
 }: RecommendationCardProps) {
-  const [expanded, setExpanded] =
-    useState(false);
+  const [
+    expanded,
+    setExpanded,
+  ] = useState(false);
 
   const hasProvenance =
     provenance !== null;
@@ -87,6 +119,33 @@ export function RecommendationCard({
           />
         </div>
       </div>
+
+      <RecommendationLifecycleControl
+        recommendationId={
+          recommendationId
+        }
+        lifecycleStatus={
+          lifecycleStatus
+        }
+        evaluationDueAt={
+          evaluationDueAt
+        }
+        loadingResponse={
+          loadingResponse
+        }
+        responding={
+          responding
+        }
+        responseError={
+          responseError
+        }
+        onTry={
+          onTry
+        }
+        onDismiss={
+          onDismiss
+        }
+      />
 
       {hasProvenance && (
         <div className="mt-7 border-t border-border pt-5">
@@ -126,13 +185,177 @@ export function RecommendationCard({
           )}
         </div>
       )}
-
-      <div className="mt-7 flex items-center gap-2 border-t border-border pt-5 text-sm font-semibold">
-        <ArrowUpRight className="size-4" />
-
-        Highest-leverage next step
-      </div>
     </ForgeCard>
+  );
+}
+
+function RecommendationLifecycleControl({
+  recommendationId,
+  lifecycleStatus,
+  evaluationDueAt,
+  loadingResponse,
+  responding,
+  responseError,
+  onTry,
+  onDismiss,
+}: {
+  recommendationId:
+    string | null;
+
+  lifecycleStatus:
+    string | null;
+
+  evaluationDueAt:
+    string | null;
+
+  loadingResponse: boolean;
+
+  responding: boolean;
+
+  responseError:
+    string | null;
+
+  onTry: () => Promise<void>;
+
+  onDismiss: () => Promise<void>;
+}) {
+  if (!recommendationId) {
+    return (
+      <div className="mt-7 border-t border-border pt-5">
+        <p className="text-sm font-semibold">
+          Forge is still forming a specific next step.
+        </p>
+
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+          Continue recording practices and reflections so the recommendation can become more specific.
+        </p>
+      </div>
+    );
+  }
+
+  if (loadingResponse) {
+    return (
+      <div className="mt-7 flex items-center gap-2 border-t border-border pt-5 text-sm text-muted-foreground">
+        <LoaderCircle className="size-4 animate-spin" />
+
+        Loading your response…
+      </div>
+    );
+  }
+
+  if (
+    lifecycleStatus ===
+      "in-progress" ||
+    lifecycleStatus ===
+      "pending"
+  ) {
+    return (
+      <div className="mt-7 flex items-start gap-3 border-t border-border pt-5">
+        <div className="rounded-full bg-accent/10 p-2">
+          <Clock3 className="size-4 text-accent" />
+        </div>
+
+        <div>
+          <p className="text-sm font-semibold">
+            You’re trying this recommendation.
+          </p>
+
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            {evaluationDueAt
+              ? `Forge will review what changed around ${formatEvaluationDate(
+                  evaluationDueAt,
+                )}.`
+              : "Forge will review what changes after enough evidence accumulates."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const reconsidering =
+    lifecycleStatus ===
+      "dismissed" ||
+    lifecycleStatus ===
+      "evaluated" ||
+    lifecycleStatus ===
+      "expired";
+
+  return (
+    <div className="mt-7 border-t border-border pt-5">
+      {lifecycleStatus ===
+        "dismissed" && (
+        <p className="mb-4 text-sm text-muted-foreground">
+          You chose not to pursue this recommendation.
+        </p>
+      )}
+
+      {lifecycleStatus ===
+        "evaluated" && (
+        <p className="mb-4 text-sm text-muted-foreground">
+          Forge has reviewed the previous outcome of this recommendation.
+        </p>
+      )}
+
+      {lifecycleStatus ===
+        "expired" && (
+        <p className="mb-4 text-sm text-muted-foreground">
+          The previous evaluation period ended without enough evidence.
+        </p>
+      )}
+
+      {responseError && (
+        <p
+          role="alert"
+          className="mb-4 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+        >
+          {responseError}
+        </p>
+      )}
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <button
+          type="button"
+          onClick={() => {
+            void onTry().catch(
+              () => undefined,
+            );
+          }}
+          disabled={
+            responding
+          }
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background transition hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {responding && (
+            <LoaderCircle className="size-4 animate-spin" />
+          )}
+
+          {reconsidering
+            ? "Try it again"
+            : "Try this"}
+        </button>
+
+        {!reconsidering && (
+          <button
+            type="button"
+            onClick={() => {
+              void onDismiss().catch(
+                () => undefined,
+              );
+            }}
+            disabled={
+              responding
+            }
+            className="inline-flex items-center justify-center rounded-full border border-border px-5 py-2.5 text-sm font-semibold transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Not now
+          </button>
+        )}
+
+        <span className="text-xs leading-5 text-muted-foreground sm:ml-2">
+          Forge will not change your plan automatically.
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -266,7 +489,8 @@ function ConfidenceBadge({
 function PriorityBadge({
   priority,
 }: {
-  priority: RecommendationPriority;
+  priority:
+    RecommendationPriority;
 }) {
   return (
     <div className="min-w-24 rounded-2xl border border-border bg-background px-4 py-3">
@@ -279,6 +503,30 @@ function PriorityBadge({
       </p>
     </div>
   );
+}
+
+function formatEvaluationDate(
+  value: string,
+): string {
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
+    return "the end of the evaluation period";
+  }
+
+  return new Intl.DateTimeFormat(
+    "en-US",
+    {
+      month: "short",
+      day: "numeric",
+      timeZone: "UTC",
+    },
+  ).format(date);
 }
 
 function normalizeConfidence(

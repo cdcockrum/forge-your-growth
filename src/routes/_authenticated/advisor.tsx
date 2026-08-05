@@ -1,5 +1,7 @@
 import {
   Suspense,
+  useEffect,
+  useRef,
 } from "react";
 
 import {
@@ -13,17 +15,14 @@ import {
 import {
   AdvisorActionsCard,
   AdvisorExecutiveSummary,
+  AdvisorNarrative,
   AdvisorReasoningPanel,
-  AdvisorReflectionPanel,
+  AdvisorLearningPanel,
   AdvisorSimulationPanel,
   AdvisorWisdomPanel,
-  CognitiveMemoryCard,
-  ReasoningOverviewCard,
   AssessmentNarrative,
-  AdvisorCognitionSummary,
   BeliefsCard,
   ContradictionCard,
-  CalibrationCard,
   EvidenceCard,
   PatternCard,
   PredictionCard,
@@ -32,8 +31,15 @@ import {
 } from "@/features/advisor";
 
 import {
-  ChevronDown,
-} from "lucide-react";
+  useDismissAdvisorRecommendation,
+  useLatestAdvisorRecommendation,
+  useEvaluateDueAdvisorRecommendations,
+  useStartAdvisorRecommendation,
+} from "@/features/advisor-learning";
+
+import {
+  todayIso,
+} from "@/features/forge/queries";
 
 export const Route = createFileRoute(
   "/_authenticated/advisor",
@@ -56,7 +62,153 @@ function AdvisorPage() {
 }
 
 function AdvisorContent() {
-  const advisor = useAdvisor();
+  const advisor =
+    useAdvisor();
+
+  const recommendationId =
+    advisor.recommendation.id;
+
+  const latestRecommendation =
+    useLatestAdvisorRecommendation(
+      recommendationId,
+    );
+
+  const startRecommendation =
+    useStartAdvisorRecommendation();
+
+  const dismissRecommendation =
+    useDismissAdvisorRecommendation();
+
+  const responding =
+    startRecommendation.isPending ||
+    dismissRecommendation.isPending;
+
+  const responseError =
+    mutationErrorMessage(
+      startRecommendation.error,
+    ) ??
+    mutationErrorMessage(
+      dismissRecommendation.error,
+    );
+
+  const evaluateDueRecommendations =
+  useEvaluateDueAdvisorRecommendations();
+
+  const evaluationStarted =
+    useRef(false);
+
+  useEffect(() => {
+    if (
+      evaluationStarted.current
+    ) {
+      return;
+    }
+
+    evaluationStarted.current =
+      true;
+
+    void evaluateDueRecommendations
+      .mutateAsync({
+        currentBeliefs:
+          advisor.beliefs.map(
+            (belief) => ({
+              key:
+                belief.id,
+
+              statement:
+                belief.statement,
+
+              confidence:
+                belief.confidence,
+            }),
+          ),
+      })
+      .catch(
+        () => {
+          // The evaluation will be attempted again
+          // the next time Advisor is opened.
+        },
+      );
+  }, [
+    advisor.beliefs,
+    evaluateDueRecommendations,
+  ]);
+
+  async function handleTryRecommendation() {
+    if (!recommendationId) {
+      return;
+    }
+
+    await startRecommendation.mutateAsync({
+      recommendationKey:
+        recommendationId,
+
+      title:
+        advisor.recommendation
+          .title,
+
+      explanation:
+        advisor.recommendation
+          .explanation,
+
+      confidence:
+        advisor.recommendation
+          .confidence,
+
+      priority:
+        advisor.recommendation
+          .priority,
+
+      baselineSnapshotDate:
+        todayIso(),
+
+      belief:
+  advisor.beliefs[0]
+    ? {
+        key:
+          advisor.beliefs[0].id,
+
+        statement:
+          advisor.beliefs[0]
+            .statement,
+
+        confidence:
+          advisor.beliefs[0]
+            .confidence,
+      }
+    : null,
+    });
+  }
+
+  async function handleDismissRecommendation() {
+    if (!recommendationId) {
+      return;
+    }
+
+    await dismissRecommendation.mutateAsync({
+      recommendationKey:
+        recommendationId,
+
+      title:
+        advisor.recommendation
+          .title,
+
+      explanation:
+        advisor.recommendation
+          .explanation,
+
+      confidence:
+        advisor.recommendation
+          .confidence,
+
+      priority:
+        advisor.recommendation
+          .priority,
+
+      baselineSnapshotDate:
+        todayIso(),
+    });
+  }
 
   return (
     <div className="space-y-10">
@@ -76,81 +228,151 @@ function AdvisorContent() {
       </header>
 
       <AdvisorExecutiveSummary
-        greeting={advisor.greeting}
-        summary={advisor.summary}
-        confidence={advisor.confidence}
-      />
-  
-      <section className="rounded-3xl border border-border bg-card p-6">
-  <p className="font-mono text-[10px] uppercase tracking-[0.26em] text-muted-foreground">
-    Cognitive Core
-  </p>
-
-  <h2 className="mt-2 text-2xl font-black tracking-tight">
-    {advisor.cognitionSummary.headline}
-  </h2>
-
-  <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
-    {advisor.cognitionSummary.explanation}
-  </p>
-
-  <div className="mt-6 grid gap-4 sm:grid-cols-3">
-    <div className="rounded-2xl border border-border bg-background p-4">
-      <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-        Confidence
-      </p>
-
-      <p className="mt-2 text-2xl font-black">
-        {Math.round(
-          advisor.cognitionSummary.confidence *
-            100,
-        )}
-        %
-      </p>
-    </div>
-
-    <div className="rounded-2xl border border-border bg-background p-4">
-      <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-        Evidence
-      </p>
-
-      <p className="mt-2 text-2xl font-black">
-        {
-          advisor.cognitionSummary
-            .evidenceCount
+        greeting={
+          advisor.greeting
         }
-      </p>
-    </div>
-
-    <div className="rounded-2xl border border-border bg-background p-4">
-      <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-        Learning
-      </p>
-
-      <p className="mt-2 text-lg font-black">
-        {advisor.cognitionSummary.isLearning
-          ? "Active"
-          : "Gathering evidence"}
-      </p>
-    </div>
-  </div>
-</section>
-      
-     <RecommendationCard
-        title={
-          advisor.recommendation.title
-        }
-        explanation={
-          advisor.recommendation.explanation
-        }
-        priority={
-          advisor.recommendation.priority
+        summary={
+          advisor.summary
         }
         confidence={
-          advisor.recommendation.confidence
+          advisor.confidence
+        }
+      />
+
+      <section className="rounded-3xl border border-border bg-card p-6">
+        <p className="font-mono text-[10px] uppercase tracking-[0.26em] text-muted-foreground">
+          Cognitive Core
+        </p>
+
+        <h2 className="mt-2 text-2xl font-black tracking-tight">
+          {
+            advisor
+              .cognitionSummary
+              .headline
+          }
+        </h2>
+
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
+          {
+            advisor
+              .cognitionSummary
+              .explanation
+          }
+        </p>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl border border-border bg-background p-4">
+            <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+              Confidence
+            </p>
+
+            <p className="mt-2 text-2xl font-black">
+              {Math.round(
+                advisor
+                  .cognitionSummary
+                  .confidence *
+                  100,
+              )}
+              %
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-background p-4">
+            <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+              Evidence
+            </p>
+
+            <p className="mt-2 text-2xl font-black">
+              {
+                advisor
+                  .cognitionSummary
+                  .evidenceCount
+              }
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-background p-4">
+            <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+              Learning
+            </p>
+
+            <p className="mt-2 text-lg font-black">
+              {advisor
+                .cognitionSummary
+                .isLearning
+                ? "Active"
+                : "Gathering evidence"}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <AdvisorNarrative
+        headline={
+          advisor.narrative
+            .headline
+        }
+        narrative={
+          advisor.narrative
+            .narrative
+        }
+        confidence={
+          advisor.narrative
+            .confidence
+        }
+      />
+
+      <RecommendationCard
+        recommendationId={
+          recommendationId
+        }
+        title={
+          advisor.recommendation
+            .title
+        }
+        explanation={
+          advisor.recommendation
+            .explanation
+        }
+        priority={
+          advisor.recommendation
+            .priority
+        }
+        confidence={
+          advisor.recommendation
+            .confidence
         }
         provenance={
-          advisor.recommendation.provenance
+          advisor.recommendation
+            .provenance
+        }
+        lifecycleStatus={
+          latestRecommendation
+            .data
+            ?.lifecycle_status ??
+          null
+        }
+        evaluationDueAt={
+          latestRecommendation
+            .data
+            ?.evaluation_due_at ??
+          null
+        }
+        loadingResponse={
+          latestRecommendation
+            .isLoading
+        }
+        responding={
+          responding
+        }
+        responseError={
+          responseError
+        }
+        onTry={
+          handleTryRecommendation
+        }
+        onDismiss={
+          handleDismissRecommendation
         }
       />
 
@@ -161,54 +383,83 @@ function AdvisorContent() {
       />
 
       <AdvisorReasoningPanel
-        confidence={advisor.confidenceReasoning}
-        evidence={advisor.evidence}
-        reasoning={advisor.reasoning}
+        confidence={
+          advisor
+            .confidenceReasoning
+        }
+        evidence={
+          advisor.evidence
+        }
+        reasoning={
+          advisor.reasoning
+        }
       />
 
-     
-<AdvisorSimulationPanel
-  bestCase={
-    advisor.simulation.bestCase
-  }
-  expectedCase={
-    advisor.simulation.expectedCase
-  }
-  worstCase={
-    advisor.simulation.worstCase
-  }
-/>
+      <AdvisorSimulationPanel
+        bestCase={
+          advisor.simulation
+            .bestCase
+        }
+        expectedCase={
+          advisor.simulation
+            .expectedCase
+        }
+        worstCase={
+          advisor.simulation
+            .worstCase
+        }
+      />
 
-<AssessmentNarrative
-  narrative={
-    advisor.assessment
-  }
-/>
+      <AssessmentNarrative
+        narrative={
+          advisor.assessment
+        }
+      />
 
-      
-<AdvisorWisdomPanel
-  narrative={
-    advisor.wisdom.narrative
-  }
-  insights={
-    advisor.wisdom.insights
-  }
-  longTermThemes={
-    advisor.wisdom.longTermThemes
-  }
-  emergingIdentity={
-    advisor.wisdom.emergingIdentity
-  }
-  cautions={
-    advisor.wisdom.cautions
-  }
-  opportunities={
-    advisor.wisdom.opportunities
-  }
-  confidence={
-    advisor.wisdom.confidence
-  }
-/>
+      <AdvisorWisdomPanel
+        narrative={
+          advisor.wisdom
+            .narrative
+        }
+        insights={
+          advisor.wisdom
+            .insights
+        }
+        longTermThemes={
+          advisor.wisdom
+            .longTermThemes
+        }
+        emergingIdentity={
+          advisor.wisdom
+            .emergingIdentity
+        }
+        cautions={
+          advisor.wisdom
+            .cautions
+        }
+        opportunities={
+          advisor.wisdom
+            .opportunities
+        }
+        confidence={
+          advisor.wisdom
+            .confidence
+        }
+      />
+
+
+
+  {advisor.adaptiveLearning ? (
+  <AdvisorLearningPanel
+    learning={
+      advisor.adaptiveLearning
+    }
+  />
+) : (
+  <section className="rounded-3xl border border-dashed border-border p-6">
+    Adaptive learning is unavailable.
+  </section>
+)}
 
       <section className="space-y-6">
         <header>
@@ -235,7 +486,8 @@ function AdvisorContent() {
 
           <ContradictionCard
             contradiction={
-              advisor.strongestContradiction
+              advisor
+                .strongestContradiction
             }
           />
 
@@ -260,6 +512,19 @@ function AdvisorContent() {
       />
     </div>
   );
+}
+
+
+function mutationErrorMessage(
+  error: unknown,
+): string | null {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return error
+    ? "Forge could not save your response. Please try again."
+    : null;
 }
 
 function AdvisorLoadingState() {
