@@ -19,6 +19,7 @@ import {
 
 import {
   ArrowRight,
+  Pencil,
   Plus,
   Trash2,
   X,
@@ -141,7 +142,7 @@ function SkillsContent() {
   const queryClient =
     useQueryClient();
 
-  const {
+    const {
     start,
     end,
   } = getHistoryRange();
@@ -171,6 +172,13 @@ function SkillsContent() {
     creating,
     setCreating,
   ] = useState(false);
+
+  const [
+  editingSkillId,
+  setEditingSkillId,
+] = useState<string | null>(
+  null,
+);
 
   const [
     applyingSkillId,
@@ -287,11 +295,15 @@ function SkillsContent() {
               <ForgeButton
                 data-tour="skills-new"
                 type="button"
-                onClick={() =>
+                onClick={() => {
+                  setEditingSkillId(
+                    null,
+                  );
+
                   setCreating(
                     true,
-                  )
-                }
+                  );
+                }}
                 className="gap-2"
               >
                 <Plus className="size-4" />
@@ -342,23 +354,42 @@ function SkillsContent() {
             ) : null}
 
             {skills.map(
-              (skill) => (
-                <SkillRow
-                  key={
-                    skill.id
-                  }
-                  skill={
-                    skill
-                  }
-                  area={areas.find(
-                    (
-                      area,
-                    ) =>
-                      area.id ===
-                      skill.life_area_id,
-                  )}
-                />
-              ),
+              (skill) =>
+                editingSkillId ===
+                skill.id ? (
+                  <SkillForm
+                    key={skill.id}
+                    areas={areas}
+                    skill={skill}
+                    continueAfterCreate={
+                      false
+                    }
+                    onClose={() =>
+                      setEditingSkillId(
+                        null,
+                      )
+                    }
+                  />
+                ) : (
+                  <SkillRow
+                    key={skill.id}
+                    skill={skill}
+                    area={areas.find(
+                      (area) =>
+                        area.id ===
+                        skill.life_area_id,
+                    )}
+                    onEdit={() => {
+                      setCreating(
+                        false,
+                      );
+
+                      setEditingSkillId(
+                        skill.id,
+                      );
+                    }}
+                  />
+                ),
             )}
           </div>
 
@@ -455,11 +486,13 @@ function NoSkillsState({
 type SkillRowProps = {
   skill: Skill;
   area?: LifeArea;
+  onEdit: () => void;
 };
 
 function SkillRow({
   skill,
   area,
+  onEdit,
 }: SkillRowProps) {
   const queryClient =
     useQueryClient();
@@ -594,39 +627,54 @@ function SkillRow({
         </div>
       </div>
 
+      <div className="flex shrink-0 items-center gap-1">
+      <button
+        type="button"
+        onClick={onEdit}
+        className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+        aria-label={`Edit ${skill.name}`}
+      >
+        <Pencil className="size-4" />
+      </button>
+
       <button
         type="button"
         onClick={() => {
           void archive();
         }}
-        disabled={
-          archiving
-        }
-        className="rounded-lg p-2 text-muted-foreground opacity-100 transition hover:bg-destructive/10 hover:text-destructive md:opacity-0 md:group-hover:opacity-100 disabled:cursor-wait disabled:opacity-50"
+        disabled={archiving}
+        className="rounded-lg p-2 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive disabled:cursor-wait disabled:opacity-50"
         aria-label={`Archive ${skill.name}`}
       >
         <Trash2 className="size-4" />
       </button>
-    </ForgeCard>
-  );
-}
+    </div>
+        </ForgeCard>
+      );
+    }
 
 type SkillFormProps = {
   areas: LifeArea[];
+  skill?: Skill;
   continueAfterCreate: boolean;
   onClose: () => void;
 };
 
 function SkillForm({
   areas,
+  skill,
   continueAfterCreate,
   onClose,
 }: SkillFormProps) {
+
   const navigate =
     useNavigate();
 
   const queryClient =
     useQueryClient();
+
+  const isEditing =
+    Boolean(skill);
 
   const [
     name,
@@ -750,34 +798,68 @@ function SkillForm({
         );
       }
 
-      const {
-        error:
-          insertError,
-      } =
-        await supabase
-          .from("skills")
-          .insert({
-            user_id:
-              data.user.id,
-            life_area_id:
-              areaId,
-            name:
-              trimmedName,
-            target_frequency:
-              frequency,
-            session_minutes:
-              minutes,
-            difficulty,
-            preferred_days:
-              days,
-          });
+      const skillValues = {
+  life_area_id:
+    areaId,
 
-      if (
-        insertError
-      ) {
-        throw insertError;
-      }
+  name:
+    trimmedName,
 
+  target_frequency:
+    frequency,
+
+  session_minutes:
+    minutes,
+
+  difficulty,
+
+  preferred_days:
+    DAYS.filter(
+      (day) =>
+        days.includes(day),
+    ),
+};
+
+if (skill) {
+  const {
+    error:
+      updateError,
+  } =
+    await supabase
+      .from("skills")
+      .update(
+        skillValues,
+      )
+      .eq(
+        "id",
+        skill.id,
+      )
+      .eq(
+        "user_id",
+        data.user.id,
+      );
+
+  if (updateError) {
+    throw updateError;
+  }
+} else {
+  const {
+    error:
+      insertError,
+  } =
+    await supabase
+      .from("skills")
+      .insert({
+        user_id:
+          data.user.id,
+
+        ...skillValues,
+      });
+
+  if (insertError) {
+    throw insertError;
+  }
+}
       await queryClient.invalidateQueries({
         queryKey:
           skillsQuery().queryKey,
@@ -789,14 +871,17 @@ function SkillForm({
       });
 
       toast.success(
-        continueAfterCreate
-          ? `${trimmedName} created. Now forge your first week.`
-          : `${trimmedName} created.`,
+        isEditing
+          ? `${trimmedName} updated.`
+          : continueAfterCreate
+            ? `${trimmedName} created. Now forge your first week.`
+            : `${trimmedName} created.`,
       );
 
       onClose();
 
       if (
+        !isEditing &&
         continueAfterCreate
       ) {
         await navigate({
@@ -805,14 +890,18 @@ function SkillForm({
       }
     } catch (error) {
       console.error(
-        "Create skill error:",
+        isEditing
+          ? "Update skill error:"
+          : "Create skill error:",
         error,
       );
 
       toast.error(
         getErrorMessage(
           error,
-          "The skill could not be created.",
+          isEditing
+            ? "The skill could not be updated."
+            : "The skill could not be created.",
         ),
       );
     } finally {
@@ -829,17 +918,20 @@ function SkillForm({
         submit
       }
       className="rounded-2xl border-2 border-foreground bg-card p-5"
-    >
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            New skill
-          </p>
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        {isEditing
+          ? "Edit skill"
+          : "New skill"}
+      </p>
 
-          <p className="mt-1 text-sm text-muted-foreground">
-            Define one repeatable
-            practice.
-          </p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {isEditing
+          ? "Adjust how this skill fits your practice."
+          : "Define one repeatable practice."}
+      </p>
         </div>
 
         <button
@@ -848,7 +940,11 @@ function SkillForm({
             onClose
           }
           className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-          aria-label="Close new skill form"
+                    aria-label={
+            isEditing
+              ? "Close skill editor"
+              : "Close new skill form"
+          }
         >
           <X className="size-4" />
         </button>
@@ -1008,13 +1104,18 @@ function SkillForm({
           className="gap-2"
         >
           {loading
-            ? "Creating..."
+          ? isEditing
+            ? "Saving..."
+            : "Creating..."
+          : isEditing
+            ? "Save changes"
             : continueAfterCreate
               ? "Create and continue"
               : "Create skill"}
 
           {!loading &&
-          continueAfterCreate ? (
+            !isEditing &&
+            continueAfterCreate ? (
             <ArrowRight className="size-4" />
           ) : null}
         </ForgeButton>
