@@ -1252,7 +1252,7 @@ function PlanSlot({
             >
               <Check className="size-3" />
 
-              Done
+              Complete
             </button>
 
             <button
