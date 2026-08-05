@@ -22,7 +22,7 @@ export function buildConfidenceMetrics(
       averageAccuracy: 0,
 
       calibration:
-        "well-calibrated",
+        "insufficient-evidence",
 
       overconfidenceBias: 0,
 

@@ -66,6 +66,9 @@ function validateGraph(
   const nodeIds =
     new Set<string>();
 
+  const evidenceIds =
+    new Set<string>();
+
   for (
     const node
     of reasoning.graph.nodes
@@ -105,6 +108,10 @@ function validateGraph(
       node.id,
     );
 
+    evidenceIds.add(
+      node.evidence.id,
+    );
+
     validateNormalizedScore(
       node.weight,
       "reasoning.node.invalid-weight",
@@ -125,10 +132,10 @@ function validateGraph(
     of reasoning.graph.edges
   ) {
     if (
-      !nodeIds.has(
+      !evidenceIds.has(
         edge.from,
       ) ||
-      !nodeIds.has(
+      !evidenceIds.has(
         edge.to,
       )
     ) {
@@ -140,7 +147,7 @@ function validateGraph(
           "error",
 
         message:
-          `Reasoning edge "${edge.id}" references a node that does not exist.`,
+          `Reasoning edge "${edge.id}" references evidence that does not exist in the graph.`,
       });
     }
 
@@ -152,7 +159,6 @@ function validateGraph(
     );
   }
 }
-
 function validateWeights(
   reasoning: ReasoningResult,
   issues: ValidationIssue[],

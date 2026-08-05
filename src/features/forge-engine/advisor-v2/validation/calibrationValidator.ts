@@ -12,11 +12,12 @@ const VALID_CALIBRATIONS =
     CalibrationResult[
       "confidence"
     ]["calibration"]
-  >([
-    "underconfident",
-    "well-calibrated",
-    "overconfident",
-  ]);
+    >([
+      "insufficient-evidence",
+      "underconfident",
+      "well-calibrated",
+      "overconfident",
+    ]);
 
 const VALID_RELIABILITY_LEVELS =
   new Set<

@@ -41,6 +41,19 @@ describe(
               createCognitiveMemory(),
           });
 
+          expect(
+          result.confidence
+            .calibration,
+        ).toBe(
+          "insufficient-evidence",
+        );
+
+        expect(
+          result.recommendation,
+        ).toBe(
+          "Forge needs resolved prediction outcomes before it can assess how well its confidence matches reality.",
+        );
+
         expect(result).toBeDefined();
 
         expect(

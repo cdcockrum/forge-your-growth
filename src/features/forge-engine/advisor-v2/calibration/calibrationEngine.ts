@@ -98,6 +98,15 @@ function buildCalibrationRecommendation(
 ): string {
   if (
     calibration ===
+      "insufficient-evidence"
+  ) {
+    return (
+      "Forge needs resolved prediction outcomes before it can assess how well its confidence matches reality."
+    );
+  }
+
+  if (
+    calibration ===
       "overconfident" &&
     evidenceReliability ===
       "low"

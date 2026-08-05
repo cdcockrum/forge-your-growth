@@ -4,6 +4,7 @@ export type PredictionOutcome =
   | "unknown";
 
 export type ConfidenceCalibration =
+  | "insufficient-evidence"
   | "underconfident"
   | "well-calibrated"
   | "overconfident";
