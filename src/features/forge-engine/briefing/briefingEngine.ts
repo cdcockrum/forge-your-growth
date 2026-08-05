@@ -222,38 +222,50 @@ function buildStrengths(
   }
 
   if (cognitiveState.progress) {
-    strengths.push({
-      id: "strength-visible-progress",
-      title: "Your progress is becoming visible",
-      description:
-        "Forge has enough progress data to begin identifying meaningful development over time.",
-      confidence: 0.65,
-      evidence: [
-        {
-          source: "progress",
-          description:
-            "Progress data is available in the current cognitive state.",
-        },
-      ],
-    });
-  }
+  strengths.push({
+    id: "strength-visible-progress",
+
+    title:
+      "Your recent progress is becoming easier to understand",
+
+    description:
+      "Your recent activity now provides enough context for Forge to begin identifying meaningful changes over time.",
+
+    confidence: 0.65,
+
+    evidence: [
+      {
+        source: "progress",
+
+        description:
+          "Recent progress provides a starting point for comparison.",
+      },
+    ],
+  });
+}
 
   if (cognitiveState.memory) {
-    strengths.push({
-      id: "strength-growing-continuity",
-      title: "Your history is beginning to form continuity",
-      description:
-        "Derived memory is available, allowing current activity to be interpreted within a broader pattern.",
-      confidence: 0.65,
-      evidence: [
-        {
-          source: "memory",
-          description:
-            "Derived memory is available in the current cognitive state.",
-        },
-      ],
-    });
-  }
+  strengths.push({
+    id: "strength-growing-continuity",
+
+    title:
+      "Your recent actions are forming a clearer pattern",
+
+    description:
+      "Forge can now compare what you are doing today with patterns from your earlier activity.",
+
+    confidence: 0.65,
+
+    evidence: [
+      {
+        source: "memory",
+
+        description:
+          "Earlier activity provides context for interpreting recent choices.",
+      },
+    ],
+  });
+}
 
   return strengths.slice(0, 2);
 }

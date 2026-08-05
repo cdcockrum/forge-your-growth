@@ -5,6 +5,7 @@ import {
 } from "react";
 
 import {
+  ArrowLeft,
   BookOpen,
   Calendar,
   CircleHelp,
@@ -58,6 +59,16 @@ type GuideCommand = {
   icon: LucideIcon;
 };
 
+type HelpCommand = {
+  type: "help";
+  id: string;
+  label: string;
+  description: string;
+  content: string[];
+  keywords: string[];
+  icon: LucideIcon;
+};
+
 type ActionCommand = {
   type: "action";
   id: string;
@@ -71,7 +82,8 @@ type ActionCommand = {
 type CommandItem =
   | NavigationCommand
   | GuideCommand
-  | ActionCommand;
+  | ActionCommand
+  | HelpCommand;
 
 const DESTINATIONS: NavigationCommand[] = [
   {
@@ -339,6 +351,97 @@ const GUIDES: GuideCommand[] = [
   },
 ];
 
+const HELP_TOPICS: HelpCommand[] = [
+  {
+    type: "help",
+    id: "help-how-forge-works",
+    label: "How Forge works",
+    description:
+      "Understand how practice, reflection, memory, and recommendations work together.",
+    content: [
+      "Forge learns from the practices you schedule, complete, or skip and from the reflections you record.",
+      "Over time, it compares those observations to identify patterns, adjust recommendations, and show how your actions are shaping your development.",
+      "Forge becomes more specific as it gathers evidence. Early conclusions should be treated as provisional.",
+    ],
+    keywords: [
+      "help",
+      "how",
+      "works",
+      "learning",
+      "memory",
+      "evidence",
+      "getting started",
+    ],
+    icon: CircleHelp,
+  },
+  {
+    type: "help",
+    id: "help-practice",
+    label: "Plan and complete practices",
+    description:
+      "Learn how Skills become scheduled practices and how to record outcomes.",
+    content: [
+      "Create a Skill, choose its preferred days, frequency, and duration, and then generate your weekly plan.",
+      "Use Start when you begin, Mark complete when you finish, or Skip when the practice did not happen.",
+      "These outcomes help Forge learn which schedules and recommendations work best for you.",
+    ],
+    keywords: [
+      "help",
+      "practice",
+      "skills",
+      "schedule",
+      "complete",
+      "skip",
+      "week",
+    ],
+    icon: Calendar,
+  },
+  {
+    type: "help",
+    id: "help-advisor",
+    label:
+      "Understand Advisor recommendations",
+    description:
+      "Learn how Forge forms advice and updates its confidence.",
+    content: [
+      "The Advisor combines your recent activity, longer-term patterns, reflections, and current priorities.",
+      "Confidence shows how strongly the available evidence supports a recommendation. It is not a guarantee.",
+      "When you try or dismiss a recommendation, Forge records the response and later compares it with what happened.",
+    ],
+    keywords: [
+      "help",
+      "advisor",
+      "recommendation",
+      "confidence",
+      "try this",
+      "not now",
+    ],
+    icon: Sparkles,
+  },
+  {
+    type: "help",
+    id: "help-observatory",
+    label: "Read the Observatory",
+    description:
+      "Understand identity, consistency, patterns, and long-term evidence.",
+    content: [
+      "The Observatory turns your recorded activity into longer-term views of consistency, identity, and recurring patterns.",
+      "Darker consistency cells indicate stronger completion history for that weekday and time period.",
+      "Identity strength reflects completed practices connected to a trait. It develops gradually as more evidence is recorded.",
+    ],
+    keywords: [
+      "help",
+      "observatory",
+      "identity",
+      "tree",
+      "consistency",
+      "heatmap",
+      "patterns",
+    ],
+    icon: Compass,
+  },
+];
+
 const ACTIONS: ActionCommand[] = [
   {
     type: "action",
@@ -363,6 +466,7 @@ const ACTIONS: ActionCommand[] = [
 const ALL_COMMANDS: CommandItem[] = [
   ...DESTINATIONS,
   ...GUIDES,
+  ...HELP_TOPICS,
   ...ACTIONS,
 ];
 
@@ -388,6 +492,13 @@ export function ForgeCommandPalette({
     selectedIndex,
     setSelectedIndex,
   ] = useState(0);
+
+  const [
+  selectedHelp,
+  setSelectedHelp,
+] = useState<HelpCommand | null>(
+  null,
+);
 
   const shortcutLabel = useMemo(() => {
     if (
@@ -438,6 +549,7 @@ export function ForgeCommandPalette({
     if (!open) {
       setQuery("");
       setSelectedIndex(0);
+      setSelectedHelp(null);
     }
   }, [open]);
 
@@ -477,6 +589,16 @@ export function ForgeCommandPalette({
         "Escape"
       ) {
         event.preventDefault();
+
+        if (selectedHelp) {
+          setSelectedHelp(null);
+
+          return;
+        }
+
+      if (selectedHelp) {
+        return;
+      }
 
         onOpenChange(false);
 
@@ -549,6 +671,7 @@ export function ForgeCommandPalette({
     open,
     onOpenChange,
     results,
+    selectedHelp,
     selectedIndex,
   ]);
 
@@ -620,6 +743,16 @@ export function ForgeCommandPalette({
     }
 
     if (
+      command.type ===
+      "help"
+    ) {
+      setSelectedHelp(command);
+      setQuery("");
+
+      return;
+    }
+
+    if (
       command.action ===
       "reset-guides"
     ) {
@@ -650,6 +783,17 @@ export function ForgeCommandPalette({
         "guide"
     ) {
       return "Forge Guides";
+    }
+
+    if (
+      command.type ===
+        "help" &&
+      results[
+        index - 1
+      ]?.type !==
+        "help"
+    ) {
+      return "Help Topics";
     }
 
     if (
@@ -689,44 +833,106 @@ export function ForgeCommandPalette({
         }
       >
         <div className="flex items-center gap-3 border-b border-border px-4">
-          <Search className="size-4 shrink-0 text-muted-foreground" />
+  {selectedHelp ? (
+    <>
+      <button
+        type="button"
+        onClick={() =>
+          setSelectedHelp(null)
+        }
+        className="flex size-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-muted hover:text-foreground"
+        aria-label="Return to search"
+      >
+        <ArrowLeft className="size-4" />
+      </button>
 
-          <input
-            autoFocus
-            value={query}
-            onChange={(
-              event,
-            ) =>
-              setQuery(
-                event.target
-                  .value,
-              )
-            }
-            placeholder="Search pages or Forge Guides..."
-            className="h-14 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          />
+      <div className="min-w-0 flex-1 py-3">
+        <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+          Help topic
+        </p>
 
-          <span className="hidden rounded-md border border-border bg-muted px-2 py-1 font-mono text-[10px] text-muted-foreground sm:inline-flex">
-            {shortcutLabel}
-          </span>
+        <p className="truncate text-sm font-bold">
+          {selectedHelp.label}
+        </p>
+      </div>
+    </>
+  ) : (
+    <>
+      <Search className="size-4 shrink-0 text-muted-foreground" />
 
-          <button
-            type="button"
-            onClick={() =>
-              onOpenChange(
-                false,
-              )
-            }
-            className="flex size-9 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-muted hover:text-foreground"
-            aria-label="Close command search"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
+      <input
+        autoFocus
+        value={query}
+        onChange={(event) =>
+          setQuery(
+            event.target.value,
+          )
+        }
+        placeholder="Search pages, guides, or help..."
+        className="h-14 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+      />
+
+      <span className="hidden rounded-md border border-border bg-muted px-2 py-1 font-mono text-[10px] text-muted-foreground sm:inline-flex">
+        {shortcutLabel}
+      </span>
+    </>
+  )}
+
+  <button
+    type="button"
+    onClick={() =>
+      onOpenChange(false)
+    }
+    className="flex size-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-muted hover:text-foreground"
+    aria-label="Close search and help"
+  >
+    <X className="size-4" />
+  </button>
+</div> 
 
         <div className="max-h-[65vh] overflow-y-auto p-2">
-          {results.length ===
-          0 ? (
+        {selectedHelp ? (
+            <article className="px-4 py-5 sm:px-5">
+              <div className="flex size-11 items-center justify-center rounded-xl border border-border bg-background">
+                <CircleHelp className="size-5" />
+              </div>
+
+              <h2 className="mt-4 text-xl font-black tracking-tight">
+                {selectedHelp.label}
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {selectedHelp.description}
+              </p>
+
+              <div className="mt-6 space-y-3">
+                {selectedHelp.content.map(
+                  (paragraph) => (
+                    <p
+                      key={paragraph}
+                      className="rounded-xl border border-border bg-background p-4 text-sm leading-6 text-muted-foreground"
+                    >
+                      {paragraph}
+                    </p>
+                  ),
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setSelectedHelp(null)
+                }
+                className="mt-6 inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold transition hover:bg-muted"
+              >
+                <ArrowLeft className="size-4" />
+
+                Back to Search & Guides
+              </button>
+            </article>
+          ) : results.length === 0 ? (
+          
+          
             <div className="px-4 py-10 text-center">
               <p className="text-sm font-semibold">
                 Nothing found.
