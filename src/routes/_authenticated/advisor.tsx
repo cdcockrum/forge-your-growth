@@ -316,11 +316,7 @@ function AdvisorContent() {
           advisor.narrative
             .narrative
         }
-        confidence={
-          advisor.narrative
-            .confidence
-        }
-      />
+           />
 
       <RecommendationCard
         recommendationId={

@@ -90,30 +90,9 @@ export function buildAdvisorNarrative(
 }
 
 function buildHeadline(
-  input: AdvisorNarrativeInput,
+  _input: AdvisorNarrativeInput,
 ): string {
-  const recommendationTitle =
-    cleanHeadline(
-      input.recommendation.title,
-    );
-
-  if (recommendationTitle) {
-    return recommendationTitle;
-  }
-
-  const cognitionHeadline =
-    cleanHeadline(
-      input.cognitionSummary.headline,
-    );
-
-  if (cognitionHeadline) {
-    return cognitionHeadline;
-  }
-
-  return (
-    cleanHeadline(input.greeting) ||
-    "A clearer direction is emerging"
-  );
+  return "What this means for you";
 }
 
 function buildObservation(

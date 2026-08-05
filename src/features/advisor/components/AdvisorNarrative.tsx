@@ -7,13 +7,12 @@ type AdvisorNarrativeProps = {
 
   narrative: string;
 
-  confidence: number;
 };
 
 export function AdvisorNarrative({
   headline,
   narrative,
-  confidence,
+  
 }: AdvisorNarrativeProps) {
   return (
     <section className="rounded-3xl border border-border bg-card p-8">
@@ -42,32 +41,7 @@ export function AdvisorNarrative({
 
       </div>
 
-      <div className="mt-10 rounded-2xl border border-border bg-background p-5">
-
-        <div className="flex items-center justify-between">
-
-          <div>
-
-            <p className="font-semibold">
-              Current Confidence
-            </p>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              Overall confidence in this interpretation.
-            </p>
-
-          </div>
-
-          <p className="text-4xl font-black">
-            {Math.round(
-              confidence * 100,
-            )}
-            %
-          </p>
-
-        </div>
-
-      </div>
+      
 
     </section>
   );

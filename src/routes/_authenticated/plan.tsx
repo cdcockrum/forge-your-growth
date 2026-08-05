@@ -69,10 +69,6 @@ import {
 } from "@/features/onboarding";
 
 import {
-  resetTour,
-} from "@/features/tour";
-
-import {
   EmptyPlanState,
 } from "@/features/plan/components/EmptyPlanState";
 
@@ -336,9 +332,6 @@ function PlanContent() {
   }
 
   completeOnboarding();
-
-  // Ensure the first Today visit launches the guided tour.
-  resetTour("today");
 
   toast.success(
     "Your Forge is ready.",
