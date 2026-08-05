@@ -362,6 +362,12 @@ export function TourProvider({
 
     closeTour();
   }
+  
+  const showTargetHighlight =
+    highlightRect !== null &&
+    typeof window !==
+      "undefined" &&
+    window.innerWidth >= 640;
 
   return (
     <>
@@ -371,14 +377,15 @@ export function TourProvider({
       activeTour &&
       activeStep ? (
         <TourOverlay>
-          {!highlightRect ? (
+          {!showTargetHighlight ? (
           <div
             aria-hidden="true"
             className="fixed inset-0 bg-black/65 backdrop-blur-[1px]"
           />
         ) : null}
 
-          {highlightRect ? (
+          {showTargetHighlight &&
+          highlightRect ? (
             <div
               aria-hidden="true"
               className="pointer-events-none fixed z-[10001] rounded-2xl ring-2 ring-orange-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.68),0_0_32px_rgba(249,115,22,0.4)]"
@@ -558,6 +565,7 @@ function getCardPosition({
         maxTop,
       ),
     );
+
 
   return {
     top,
