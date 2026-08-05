@@ -37,6 +37,10 @@ export function RecommendationCard({
     setExpanded,
   ] = useState(false);
 
+  const needsMoreEvidence =
+  adaptation.confidence ===
+  "low";
+
   const recommendationChanged =
     !sameDays(
       adaptation
@@ -191,30 +195,30 @@ export function RecommendationCard({
 
       <div className="mt-5 flex items-center justify-between gap-4">
         <p className="text-xs leading-5 text-muted-foreground">
-          {recommendationChanged
-            ? "Forge will update this skill’s preferred practice days."
-            : "Your current schedule already matches the observed pattern."}
+          {needsMoreEvidence
+            ? "Forge sees a possible pattern, but needs more completed sessions before recommending a schedule change."
+            : recommendationChanged
+              ? "Forge will update this skill’s preferred practice days."
+              : "Your current schedule already matches the observed pattern."}
         </p>
 
         <button
           type="button"
-          onClick={
-            onApply
-          }
+          onClick={onApply}
           disabled={
             applying ||
             !recommendationChanged ||
-            adaptation
-              .confidence ===
-              "low"
+            needsMoreEvidence
           }
           className="shrink-0 rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background transition hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {applying
             ? "Applying..."
-            : recommendationChanged
-              ? "Apply"
-              : "Already aligned"}
+            : needsMoreEvidence
+              ? "More evidence needed"
+              : recommendationChanged
+                ? "Apply schedule"
+                : "Already aligned"}
         </button>
       </div>
     </article>
